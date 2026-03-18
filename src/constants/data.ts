@@ -104,7 +104,7 @@ export const mkSpk = (trend: string, unit = 'K ₺', lang: Lang = 'tr'): SparkPo
 export const mkDeptReports = (l: LangStrings): DeptReport[] => [
   { id: 'yonetim', label: l.dYonetim, icon: 'barChart3', reports: [l.ozetRapor, l.finansalSaglik, l.buyumeAnalizi] },
   { id: 'satis', label: l.dSatis, icon: 'trendUp', reports: [l.satisRaporu, l.pipelineAnalizi, l.kanalPerf, l.musteriSeg] },
-  { id: 'kategori', label: l.dKategori, icon: 'tag', reports: [l.kategoriPerf, l.markaAnalizi, l.abcRaporu] },
+  { id: 'kategori', label: l.dKategori, icon: 'tag', reports: [l.katOzet, l.katPerf, l.katStok, l.katMarka, l.katABC] },
   { id: 'satin-alma', label: l.dSatinAlma, icon: 'shoppingBag', reports: [l.tedarikciRaporu, l.stokRaporu, l.maliyetAnaliziM] },
   { id: 'operasyon', label: l.dOperasyon, icon: 'settings', reports: [l.slaTakibi, l.sevkiyatRaporu, l.verimlilik] },
   { id: 'muhasebe', label: l.dMuhasebe, icon: 'calculator', reports: [l.alacakYas, l.borcYas, l.baBS] },

@@ -9,6 +9,11 @@ import { StrategicSection } from '../components/sections/StrategicSection';
 import { DepartmentSection } from '../components/sections/DepartmentSection';
 import { CashFlowSection } from '../components/sections/CashFlowSection';
 import { DebtSection } from '../components/sections/DebtSection';
+import { CategoryOverview } from '../components/sections/category/CategoryOverview';
+import { CategoryPerformance } from '../components/sections/category/CategoryPerformance';
+import { CategoryStock } from '../components/sections/category/CategoryStock';
+import { CategoryBrand } from '../components/sections/category/CategoryBrand';
+import { CategoryABC } from '../components/sections/category/CategoryABC';
 import { ChatAssistant } from '../components/chat/ChatAssistant';
 import { Icon } from '../components/ui/Icon';
 
@@ -24,7 +29,16 @@ export default function Dashboard() {
     onPinTo: db.pinTo,
   };
 
-  const toolbarTitle = db.isPanel ? (db.activePanelName ?? '') : db.l.yonetimPaneli;
+  const katRepTitles: Record<string, string> = {
+    'kategori__0': db.l.katOzet,
+    'kategori__1': db.l.katPerf,
+    'kategori__2': db.l.katStok,
+    'kategori__3': db.l.katMarka,
+    'kategori__4': db.l.katABC,
+  };
+  const toolbarTitle = db.isPanel
+    ? (db.activePanelName ?? '')
+    : katRepTitles[db.activeRep] ?? db.l.yonetimPaneli;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: db.t.bg, color: db.t.tx, fontFamily: "'Inter',-apple-system,system-ui,sans-serif", fontSize: 14, overflow: 'hidden' }}>
@@ -89,6 +103,16 @@ export default function Dashboard() {
                 onRemoveItem={db.removeFromPanel}
                 onReorder={db.reorderPanel}
               />
+            ) : db.activeRep === 'kategori__0' ? (
+              <CategoryOverview {...kp} dark={db.dark} />
+            ) : db.activeRep === 'kategori__1' ? (
+              <CategoryPerformance {...kp} />
+            ) : db.activeRep === 'kategori__2' ? (
+              <CategoryStock {...kp} dark={db.dark} />
+            ) : db.activeRep === 'kategori__3' ? (
+              <CategoryBrand {...kp} />
+            ) : db.activeRep === 'kategori__4' ? (
+              <CategoryABC {...kp} />
             ) : (
               <>
                 <GeneralSection
