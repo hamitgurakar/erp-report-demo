@@ -14,6 +14,18 @@ import { CategoryPerformance } from '../components/sections/category/CategoryPer
 import { CategoryStock } from '../components/sections/category/CategoryStock';
 import { CategoryBrand } from '../components/sections/category/CategoryBrand';
 import { CategoryABC } from '../components/sections/category/CategoryABC';
+import { SalesOverview } from '../components/satis/SalesOverview';
+import { SalesRevenue } from '../components/satis/SalesRevenue';
+import { SalesPipeline } from '../components/satis/SalesPipeline';
+import { SalesRepPerformance } from '../components/satis/SalesRepPerformance';
+import { SalesCustomerSegment } from '../components/satis/SalesCustomerSegment';
+import { SalesProductCategory } from '../components/satis/SalesProductCategory';
+import { SalesSeasonal } from '../components/satis/SalesSeasonal';
+import { SalesAICoach } from '../components/satis/SalesAICoach';
+import { SalesCommunication } from '../components/satis/SalesCommunication';
+import { SalesForecasting } from '../components/satis/SalesForecasting';
+import { SalesTargets } from '../components/satis/SalesTargets';
+import { ManagementTargets } from '../components/yonetim/ManagementTargets';
 import { ChatAssistant } from '../components/chat/ChatAssistant';
 import { Icon } from '../components/ui/Icon';
 
@@ -29,7 +41,19 @@ export default function Dashboard() {
     onPinTo: db.pinTo,
   };
 
-  const katRepTitles: Record<string, string> = {
+  const repTitles: Record<string, string> = {
+    'yonetim__3': db.l.yonetimHedefler,
+    'satis__0': db.l.satisOzeti,
+    'satis__1': db.l.satisRaporu,
+    'satis__2': db.l.pipelineAnalizi,
+    'satis__3': db.l.kanalPerf,
+    'satis__4': db.l.musteriSeg,
+    'satis__5': db.l.satisUrunKategori,
+    'satis__6': db.l.satisSezonsal,
+    'satis__7': db.l.satisAICoach,
+    'satis__8': db.l.satisIletisim,
+    'satis__9': db.l.satisForecasting,
+    'satis__10': db.l.satisHedefler,
     'kategori__0': db.l.katOzet,
     'kategori__1': db.l.katPerf,
     'kategori__2': db.l.katStok,
@@ -38,7 +62,7 @@ export default function Dashboard() {
   };
   const toolbarTitle = db.isPanel
     ? (db.activePanelName ?? '')
-    : katRepTitles[db.activeRep] ?? db.l.yonetimPaneli;
+    : repTitles[db.activeRep] ?? db.l.yonetimPaneli;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: db.t.bg, color: db.t.tx, fontFamily: "'Inter',-apple-system,system-ui,sans-serif", fontSize: 14, overflow: 'hidden' }}>
@@ -103,6 +127,30 @@ export default function Dashboard() {
                 onRemoveItem={db.removeFromPanel}
                 onReorder={db.reorderPanel}
               />
+            ) : db.activeRep === 'yonetim__3' ? (
+              <ManagementTargets {...kp} />
+            ) : db.activeRep === 'satis__0' ? (
+              <SalesOverview {...kp} />
+            ) : db.activeRep === 'satis__1' ? (
+              <SalesRevenue {...kp} />
+            ) : db.activeRep === 'satis__2' ? (
+              <SalesPipeline {...kp} />
+            ) : db.activeRep === 'satis__3' ? (
+              <SalesRepPerformance {...kp} />
+            ) : db.activeRep === 'satis__4' ? (
+              <SalesCustomerSegment {...kp} />
+            ) : db.activeRep === 'satis__5' ? (
+              <SalesProductCategory {...kp} />
+            ) : db.activeRep === 'satis__6' ? (
+              <SalesSeasonal {...kp} />
+            ) : db.activeRep === 'satis__7' ? (
+              <SalesAICoach {...kp} />
+            ) : db.activeRep === 'satis__8' ? (
+              <SalesCommunication {...kp} />
+            ) : db.activeRep === 'satis__9' ? (
+              <SalesForecasting {...kp} />
+            ) : db.activeRep === 'satis__10' ? (
+              <SalesTargets {...kp} />
             ) : db.activeRep === 'kategori__0' ? (
               <CategoryOverview {...kp} dark={db.dark} />
             ) : db.activeRep === 'kategori__1' ? (

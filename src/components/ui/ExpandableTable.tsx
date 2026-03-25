@@ -4,7 +4,8 @@ import type { PerfRow } from '../../constants/categoryData';
 import { mkSpk } from '../../constants/data';
 import { Spark } from './Spark';
 import { Icon } from './Icon';
-import { ColumnManager, type ColDef } from './ColumnManager';
+import { type ColDef } from './ColumnManager';
+import { ColumnPresetDropdown } from './ColumnPresetDropdown';
 
 interface SortState {
   key: string;
@@ -203,7 +204,7 @@ export const ExpandableTable = ({ t, l, data, lang }: ExpandableTableProps) => {
               style={{ paddingLeft: 28, paddingRight: 10, paddingTop: 5, paddingBottom: 5, borderRadius: 7, border: `1px solid ${t.bd}`, background: t.bg2, fontSize: 12, color: t.tx, outline: 'none', width: 160 }}
             />
           </div>
-          <ColumnManager t={t} l={l} allColumns={ALL_COLUMNS} visibleKeys={visibleKeys} onChange={setVisibleKeys} />
+          <ColumnPresetDropdown t={t} l={l} tableType="performance" allColumns={ALL_COLUMNS} visibleKeys={visibleKeys} onChange={setVisibleKeys} />
           <button
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.bd}`, background: t.bg2, color: t.tx2, fontSize: 12, cursor: 'pointer' }}
           >

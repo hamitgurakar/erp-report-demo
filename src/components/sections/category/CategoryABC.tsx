@@ -10,7 +10,8 @@ import { KPICard } from '../../kpi/KPICard';
 import { SectionHeader } from '../../ui/SectionHeader';
 import { ChartContainer } from '../../ui/ChartContainer';
 import { Icon } from '../../ui/Icon';
-import { ColumnManager, type ColDef } from '../../ui/ColumnManager';
+import { type ColDef } from '../../ui/ColumnManager';
+import { ColumnPresetDropdown } from '../../ui/ColumnPresetDropdown';
 import { Spark } from '../../ui/Spark';
 import { mkSpk } from '../../../constants/data';
 
@@ -262,7 +263,7 @@ export const CategoryABC = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) 
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${t.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: t.tx }}>{l.katAksiyonTablo}</span>
           <div style={{ display: 'flex', gap: 8 }}>
-            <ColumnManager t={t} l={l} allColumns={ABC_COLS} visibleKeys={visibleCols} onChange={setVisibleCols} />
+            <ColumnPresetDropdown t={t} l={l} tableType="abc" allColumns={ABC_COLS} visibleKeys={visibleCols} onChange={setVisibleCols} />
             <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.bd}`, background: t.bg2, color: t.tx2, fontSize: 12, cursor: 'pointer' }}>
               <Icon name="download" size={12} color={t.tx3} />
               Excel

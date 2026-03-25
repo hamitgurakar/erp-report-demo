@@ -12,7 +12,7 @@ export const useDashboard = () => {
   const [view, setView] = useState('report');
   const [activeRep, setActiveRep] = useState('yonetim__0');
   const [expandedDepts, setExpandedDepts] = useState<string[]>(['yonetim']);
-  const [favs, setFavs] = useState<string[]>(['yonetim__0', 'satis__1']);
+  const [favs, setFavs] = useState<string[]>(['yonetim__0', 'satis__2']);
   const [panels, setPanels] = useState<Panel[]>([
     { name: 'Haftalık Kontrolüm', items: ['kpi-ciro', 'kpi-netkar'] },
     { name: 'CFO Görünümü', items: ['kpi-brutkar', 'kpi-stokdeg'] },

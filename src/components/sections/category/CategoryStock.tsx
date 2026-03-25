@@ -14,7 +14,8 @@ import { SectionHeader } from '../../ui/SectionHeader';
 import { ChartContainer } from '../../ui/ChartContainer';
 import { FilterBar, type FilterOption } from '../../ui/FilterBar';
 import { Icon } from '../../ui/Icon';
-import { ColumnManager, type ColDef } from '../../ui/ColumnManager';
+import { type ColDef } from '../../ui/ColumnManager';
+import { ColumnPresetDropdown } from '../../ui/ColumnPresetDropdown';
 
 const CRITICAL_COLS: ColDef[] = [
   { key: 'urun', label: 'Ürün' },
@@ -134,6 +135,9 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
 
   // ABC color for age vs velocity scatter
   const abcColor = (abc: string) => abc === 'A' ? t.gn : abc === 'B' ? t.am : t.rd;
+
+  // Truncate long labels to max 15 chars
+  const trunc = (name: string) => name.length > 15 ? name.slice(0, 14) + '…' : name;
 
   return (
     <>
@@ -255,14 +259,29 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                   ) : null
                 }
               />
-              {['green', 'amber', 'red'].map((c) => (
-                <Scatter
-                  key={c}
-                  data={stockVsSalesData.filter((d) => d.color === c)}
-                  fill={scatterColor(c)}
-                  opacity={0.8}
-                />
-              ))}
+              {['green', 'amber', 'red'].map((c) => {
+                const fill = scatterColor(c);
+                return (
+                  <Scatter
+                    key={c}
+                    data={stockVsSalesData.filter((d) => d.color === c)}
+                    fill={fill}
+                    opacity={0.8}
+                    shape={(props: { cx?: number; cy?: number; payload?: { name: string } }) => {
+                      const { cx = 0, cy = 0, payload } = props;
+                      if (!payload) return <g />;
+                      return (
+                        <g>
+                          <circle cx={cx} cy={cy} r={6} fill={fill} opacity={0.8} />
+                          <text x={cx} y={cy - 10} textAnchor="middle" fontSize={10} fill={t.tx2} fontWeight={500} style={{ pointerEvents: 'none' }}>
+                            {trunc(payload.name)}
+                          </text>
+                        </g>
+                      );
+                    }}
+                  />
+                );
+              })}
             </ScatterChart>
           </ResponsiveContainer>
         </ChartContainer>
@@ -273,7 +292,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${t.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: t.tx }}>{l.katKritikStokTablo}</span>
           <div style={{ display: 'flex', gap: 8 }}>
-            <ColumnManager t={t} l={l} allColumns={CRITICAL_COLS} visibleKeys={visibleCols} onChange={setVisibleCols} />
+            <ColumnPresetDropdown t={t} l={l} tableType="criticalStock" allColumns={CRITICAL_COLS} visibleKeys={visibleCols} onChange={setVisibleCols} />
             <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.bd}`, background: t.bg2, color: t.tx2, fontSize: 12, cursor: 'pointer' }}>
               <Icon name="download" size={12} color={t.tx3} />
               Excel
@@ -384,9 +403,29 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                   ) : null
                 }
               />
-              {['A', 'B', 'C'].map((abc) => (
-                <Scatter key={abc} data={stockAgeVelocityData.filter((d) => d.abc === abc)} fill={abcColor(abc)} opacity={0.85} />
-              ))}
+              {['A', 'B', 'C'].map((abc) => {
+                const fill = abcColor(abc);
+                return (
+                  <Scatter
+                    key={abc}
+                    data={stockAgeVelocityData.filter((d) => d.abc === abc)}
+                    fill={fill}
+                    opacity={0.85}
+                    shape={(props: { cx?: number; cy?: number; payload?: { name: string } }) => {
+                      const { cx = 0, cy = 0, payload } = props;
+                      if (!payload) return <g />;
+                      return (
+                        <g>
+                          <circle cx={cx} cy={cy} r={6} fill={fill} opacity={0.85} />
+                          <text x={cx} y={cy - 10} textAnchor="middle" fontSize={10} fill={t.tx2} fontWeight={500} style={{ pointerEvents: 'none' }}>
+                            {trunc(payload.name)}
+                          </text>
+                        </g>
+                      );
+                    }}
+                  />
+                );
+              })}
             </ScatterChart>
           </ResponsiveContainer>
         </ChartContainer>
@@ -400,7 +439,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
             <span style={{ fontSize: 11, color: t.tx2, marginLeft: 8 }}>{l.verimsizlikInfo}</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <ColumnManager t={t} l={l} allColumns={INEF_COLS} visibleKeys={visibleInefCols} onChange={setVisibleInefCols} />
+            <ColumnPresetDropdown t={t} l={l} tableType="inefficient" allColumns={INEF_COLS} visibleKeys={visibleInefCols} onChange={setVisibleInefCols} />
             <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.bd}`, background: t.bg2, color: t.tx2, fontSize: 12, cursor: 'pointer' }}>
               <Icon name="download" size={12} color={t.tx3} />
               Excel
