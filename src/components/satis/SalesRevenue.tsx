@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell, Legend,
+  BarChart, Bar, Legend,
 } from 'recharts';
 import type { Theme, LangStrings, Lang, Panel } from '../../types';
 import { KPICard } from '../kpi/KPICard';
@@ -39,19 +39,15 @@ const trendPctData = trendData.map((d) => ({
   netKar: +((d.netKar / d.gelir) * 100).toFixed(1),
 }));
 
-const waterfallData = [
-  { name: 'Önceki Dönem', val: 6200, type: 'total' },
-  { name: 'Yeni Müşteri', val: 320, type: 'pos' },
-  { name: 'Yeniden Satış', val: 165, type: 'pos' },
-  { name: 'Fiyat Artışı', val: 85, type: 'pos' },
-  { name: 'Kayıp Müşteri', val: -180, type: 'neg' },
-  { name: 'İade & İptal', val: -42, type: 'neg' },
-  { name: 'Mevcut Gelir', val: 6548, type: 'result' },
-];
-
-const kanalData = [
-  { kanal: 'b2b.muhiku.com', gelir: 4530, brutKar: 1250, netKar: 720 },
-  { kanal: 'B2B Project', gelir: 2439, brutKar: 610, netKar: 305 },
+const customerTypeTrend = [
+  { month: 'Oca', eski: 480, yeni: 95 },
+  { month: 'Şub', eski: 510, yeni: 108 },
+  { month: 'Mar', eski: 565, yeni: 148 },
+  { month: 'Nis', eski: 520, yeni: 135 },
+  { month: 'May', eski: 575, yeni: 152 },
+  { month: 'Haz', eski: 540, yeni: 142 },
+  { month: 'Tem', eski: 590, yeni: 165 },
+  { month: 'Ağu', eski: 525, yeni: 138 },
 ];
 
 const segmentQuarterly = [
@@ -102,60 +98,6 @@ export const SalesRevenue = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
     const bv = (b as Record<string, unknown>)[sortKey] as number;
     return sortDir === 'asc' ? av - bv : bv - av;
   });
-
-  // Waterfall SVG
-  const renderWaterfall = () => {
-    let running = 0;
-    const bars = waterfallData.map((d) => {
-      if (d.type === 'total' || d.type === 'result') {
-        running = d.val;
-        return { ...d, base: 0, h: d.val };
-      }
-      const base = running;
-      running += d.val;
-      return { ...d, base: d.val > 0 ? base : base + d.val, h: Math.abs(d.val) };
-    });
-
-    const max = Math.max(...bars.map((b) => b.base + b.h)) * 1.12;
-    const barW = 62;
-    const gap = 14;
-    const chartW = bars.length * (barW + gap) + 20;
-    const scaleY = (v: number) => 18 + ((max - v) / max) * 160;
-
-    return (
-      <svg width="100%" viewBox={`0 0 ${chartW} 220`} style={{ overflow: 'visible' }}>
-        {bars.map((b, i) => {
-          const x = 10 + i * (barW + gap);
-          const y = scaleY(b.base + b.h);
-          const h = (b.h / max) * 160;
-          const fill = b.type === 'total' ? t.tx3
-            : b.type === 'result' ? t.pr
-              : b.val > 0 ? t.gn : t.rd;
-
-          return (
-            <g key={i}>
-              <rect x={x} y={y} width={barW} height={Math.max(h, 2)} rx={4} fill={fill} opacity={b.type === 'total' ? 0.45 : 0.85} />
-              <text x={x + barW / 2} y={y - 6} textAnchor="middle" fill={b.val >= 0 ? t.gn : t.rd} fontSize={10} fontWeight={600}>
-                {b.type === 'total' || b.type === 'result'
-                  ? fmtK(b.val)
-                  : `${b.val > 0 ? '+' : ''}${b.val}K`}
-              </text>
-              <text x={x + barW / 2} y={208} textAnchor="middle" fill={t.tx2} fontSize={9}>
-                {b.name}
-              </text>
-              {i < bars.length - 1 && b.type !== 'total' && b.type !== 'result' && (
-                <line
-                  x1={x + barW} y1={scaleY(running)}
-                  x2={x + barW + gap} y2={scaleY(running)}
-                  stroke={t.bd} strokeWidth={1} strokeDasharray="3 2"
-                />
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    );
-  };
 
   const marjColor = (v: number) => v >= 28 ? t.gn : v >= 25 ? t.am : t.rd;
 
@@ -243,11 +185,24 @@ export const SalesRevenue = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
                 tickFormatter={(v) => trendMode === 'TL' ? `${v}K` : `${v}%`}
               />
               <Tooltip
-                contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }}
-                formatter={(value: number, name: string) => [
-                  trendMode === 'TL' ? `${value}K ₺` : `${value}%`,
-                  name,
-                ]}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const order = ['gelir', 'brutKar', 'netKar'];
+                  const colors: Record<string, string> = { gelir: '#C7D2FE', brutKar: '#818CF8', netKar: '#4F46E5' };
+                  const sorted = [...payload].sort((a, b) => order.indexOf(a.dataKey as string) - order.indexOf(b.dataKey as string));
+                  return (
+                    <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 4 }}>{label}</div>
+                      {sorted.map((entry) => (
+                        <div key={entry.dataKey as string} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: colors[entry.dataKey as string] ?? t.tx2 }} />
+                          <span style={{ color: t.tx2 }}>{entry.name}:</span>
+                          <span style={{ fontWeight: 600, color: t.tx }}>{trendMode === 'TL' ? `${entry.value}K ₺` : `${entry.value}%`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }}
               />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
               <Area type="monotone" dataKey="gelir" name={lang === 'tr' ? 'Gelir' : 'Revenue'} stroke="#C7D2FE" fill="url(#gradGelir)" strokeWidth={2} dot={false} />
@@ -258,41 +213,56 @@ export const SalesRevenue = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
         </ChartContainer>
       </div>
 
-      {/* ── Section 3: GELİR WATERFALL & KANAL KARLILIK ──────────────────────── */}
-      <SectionHeader title={l.revWaterfallSection ?? 'GELİR WATERFALL & KANAL KARLILIK'} t={t} />
+      {/* ── Section 3: AYLIK CİRO TRENDİ (MÜŞTERİ TİPİ KIRILIMLI) ──────────── */}
+      <SectionHeader title={l.revMusteriTipi ?? 'AYLIK CİRO TRENDİ (MÜŞTERİ TİPİ KIRILIMLI)'} t={t} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: 12 }}>
-        {/* Waterfall */}
-        <ChartContainer t={t} l={l} title={l.revWaterfall ?? 'Gelir Değişim Analizi'} id="rev-chart-waterfall" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
-          {renderWaterfall()}
-        </ChartContainer>
-
-        {/* Kanal Karlılık */}
-        <ChartContainer t={t} l={l} title={l.revKanalKarlilik ?? 'Kanal Karlılık Karşılaştırma'} id="rev-chart-kanal" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {kanalData.map((k) => (
-              <div key={k.kanal}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: t.tx, marginBottom: 8 }}>{k.kanal}</div>
-                {[
-                  { label: lang === 'tr' ? 'Gelir' : 'Revenue', val: k.gelir, color: '#C7D2FE' },
-                  { label: lang === 'tr' ? 'Brüt Kâr' : 'Gross Profit', val: k.brutKar, color: '#818CF8' },
-                  { label: lang === 'tr' ? 'Net Kâr' : 'Net Profit', val: k.netKar, color: '#4F46E5' },
-                ].map((bar) => {
-                  const maxVal = kanalData[0].gelir;
-                  const pct = (bar.val / maxVal) * 100;
+      <div style={{ marginBottom: 12 }}>
+        <ChartContainer t={t} l={l} title={l.revMusteriTipiChart ?? 'Aylık Ciro Trendi (Müşteri Tipi Kırılımlı)'} id="rev-chart-custtype" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={customerTypeTrend} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id="gradEski" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.03} />
+                </linearGradient>
+                <linearGradient id="gradYeni" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0D9488" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#0D9488" stopOpacity={0.03} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const eski = payload.find((p) => p.dataKey === 'eski')?.value as number ?? 0;
+                  const yeni = payload.find((p) => p.dataKey === 'yeni')?.value as number ?? 0;
                   return (
-                    <div key={bar.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                      <span style={{ fontSize: 10, color: t.tx2, width: 56, flexShrink: 0 }}>{bar.label}</span>
-                      <div style={{ flex: 1, height: 14, background: t.bg2, borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: bar.color, borderRadius: 4 }} />
+                    <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 4 }}>{label}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4F46E5' }} />
+                        <span style={{ color: t.tx2 }}>{lang === 'tr' ? 'Eski Müşteri' : 'Existing'}:</span>
+                        <span style={{ fontWeight: 600, color: t.tx }}>{eski}K ₺</span>
                       </div>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: t.tx, width: 52, textAlign: 'right', flexShrink: 0 }}>{fmtK(bar.val)}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0D9488' }} />
+                        <span style={{ color: t.tx2 }}>{lang === 'tr' ? 'Yeni Müşteri' : 'New'}:</span>
+                        <span style={{ fontWeight: 600, color: t.tx }}>{yeni}K ₺</span>
+                      </div>
+                      <div style={{ borderTop: `1px solid ${t.bd}`, paddingTop: 4, marginTop: 4, fontWeight: 600, color: t.tx }}>
+                        {lang === 'tr' ? 'Toplam' : 'Total'}: {eski + yeni}K ₺
+                      </div>
                     </div>
                   );
-                })}
-              </div>
-            ))}
-          </div>
+                }}
+              />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+              <Area type="monotone" dataKey="eski" name={lang === 'tr' ? 'Eski Müşteri' : 'Existing Customer'} stackId="1" stroke="#4F46E5" fill="url(#gradEski)" strokeWidth={2} />
+              <Area type="monotone" dataKey="yeni" name={lang === 'tr' ? 'Yeni Müşteri' : 'New Customer'} stackId="1" stroke="#0D9488" fill="url(#gradYeni)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
         </ChartContainer>
       </div>
 

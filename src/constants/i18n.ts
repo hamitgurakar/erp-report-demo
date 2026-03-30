@@ -402,7 +402,7 @@ const tr: LangStrings = {
   detayli: 'Detaylı',
   ozet: 'Özet',
   // Sales Overview
-  satisOzeti: 'Satış Özeti',
+  satisOzeti: 'Yönetici Özeti',
   satisGenelPerf: 'GENEL PERFORMANS',
   satisToplamCiro: 'Toplam Ciro (Net)',
   satisBrutKar: 'Brüt Kâr',
@@ -1018,7 +1018,7 @@ const en: LangStrings = {
   detayli: 'Detailed',
   ozet: 'Summary',
   // Sales Overview
-  satisOzeti: 'Sales Overview',
+  satisOzeti: 'Executive Overview',
   satisGenelPerf: 'GENERAL PERFORMANCE',
   satisToplamCiro: 'Total Revenue (Net)',
   satisBrutKar: 'Gross Profit',

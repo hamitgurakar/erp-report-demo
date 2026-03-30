@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Theme, LangStrings, Lang, Panel } from '../../types';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -40,7 +41,6 @@ const targetData = [
   { quarter: 'Q2 2025', hedef: 40000, gerceklesen: 44000, sapma: 10.0, hit: true },
   { quarter: 'Q3 2025', hedef: 38000, gerceklesen: 36000, sapma: -5.3, hit: false },
   { quarter: 'Q4 2025', hedef: 42000, gerceklesen: 45000, sapma: 7.1, hit: true },
-  { quarter: 'TTM', hedef: 155000, gerceklesen: 157000, sapma: 1.3, hit: true },
 ];
 
 const top10Products = [
@@ -85,6 +85,8 @@ const fmtK = (v: number) => `${(v / 1000).toLocaleString('tr-TR')}K`;
 export const SalesOverview = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const totalDonut = revenueDonut.reduce((s, d) => s + d.value, 0);
+  const [bkMode, setBkMode] = useState('TL');
+  const [nkMode, setNkMode] = useState('TL');
 
   return (
     <>
@@ -94,18 +96,39 @@ export const SalesOverview = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
       {/* Row 1 — 5 big KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 10 }}>
         <KPICard id="satis-toplam-ciro" title={l.satisToplamCiro ?? 'Toplam Ciro (Net)'} value="6.968.908 ₺" trendValue="+12,5%" sparkTrend="up" color="gn" unit="K ₺" big {...kp} />
-        <KPICard id="satis-brut-kar" title={l.satisBrutKar ?? 'Brüt Kâr'} value="860.000 ₺" trendValue="+9,8%" sparkTrend="up" color="gn" unit="K ₺" big showToggle toggleState="TL" altValue="%25,3" {...kp} />
-        <KPICard id="satis-net-kar" title={l.satisNetKar ?? 'Net Kâr'} value="425.000 ₺" trendValue="+8,3%" sparkTrend="up" color="gn" unit="K ₺" big showToggle toggleState="TL" altValue="%15,7" {...kp} />
+        <KPICard id="satis-brut-kar" title={l.satisBrutKar ?? 'Brüt Kâr'} value="860.000 ₺" trendValue="+9,8%" sparkTrend="up" color="gn" unit="K ₺" big showToggle toggleState={bkMode} onToggle={setBkMode} altValue="%25,3" {...kp} />
+        <KPICard id="satis-net-kar" title={l.satisNetKar ?? 'Net Kâr'} value="425.000 ₺" trendValue="+8,3%" sparkTrend="up" color="gn" unit="K ₺" big showToggle toggleState={nkMode} onToggle={setNkMode} altValue="%15,7" {...kp} />
         <KPICard id="satis-siparis-sayisi" title={l.satisSiparisSayisi ?? 'Sipariş Sayısı'} value="2.847" trendValue="+5,1%" sparkTrend="up" color="c1" unit="adet" big {...kp} />
         <KPICard id="satis-aov" title={l.satisAOV ?? 'Ort. Sipariş Tutarı (AOV)'} value="632,40 ₺" trendValue="+7,0%" sparkTrend="up" color="tl" unit="₺" big {...kp} />
       </div>
 
       {/* Row 2 — 4 KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }}>
         <KPICard id="satis-pipeline" title={l.satisPipeline ?? 'Pipeline Değeri'} value="2.100.000 ₺" trendValue="+14,2%" sparkTrend="up" color="pr" unit="K ₺" {...kp} />
         <KPICard id="satis-winrate" title={l.satisWinRate ?? 'Win Rate'} value="%26,97" trendValue="+3,8%" sparkTrend="up" color="gn" unit="%" {...kp} />
         <KPICard id="satis-yeni-musteri" title={l.satisYeniMusteri ?? 'Yeni Müşteri Sayısı'} value="47" trendValue="+12%" sparkTrend="up" color="tl" unit="adet" {...kp} />
         <KPICard id="satis-dongu" title={l.satisDongu ?? 'Ort. Satış Döngüsü'} value="24 Gün" trendValue="-3 gün" sparkTrend="down" color="gn" unit="gün" {...kp} />
+      </div>
+
+      {/* Row 3 — 4 KPIs (Tahsilat) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }}>
+        <KPICard id="satis-gelecek-tahsilat" title={l.satisGelecekTahsilat ?? 'Gelecek Tahsilatlar'} value="1.840.000 ₺" trendValue="+8,2%" sparkTrend="up" color="gn" unit="K ₺" info={lang === 'tr' ? 'Önümüzdeki 30 gün beklenen' : 'Expected next 30 days'} {...kp} />
+        <KPICard id="satis-ort-tahsilat" title={l.satisOrtTahsilat ?? 'Ortalama Tahsilat Süresi'} value="38 Gün" trendValue="-2 gün" sparkTrend="down" color="gn" unit="gün" {...kp} />
+        <KPICard id="satis-gecikme-tahsilat" title={l.satisGecikmeTahsilat ?? 'Gecikmedeki Tahsilatlar'} value="425.000 ₺" trendValue="+12,5%" sparkTrend="up" color="rd" unit="K ₺" {...kp} />
+        <KPICard id="satis-gecikme-sirket" title={l.satisGecikmeSirket ?? 'Gecikmedeki Tahsilat - Şirketler'} value="18" trendValue="+3" sparkTrend="up" color="rd" unit="adet" info={lang === 'tr' ? 'Vadesi geçmiş şirket sayısı' : 'Overdue company count'} {...kp} />
+      </div>
+
+      {/* Row 4 — 3 KPIs (Gecikme, kırmızı sol border ile vurgulu) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
+        {[
+          { id: 'satis-geciken-proje', title: lang === 'tr' ? 'Geciken Projeler' : 'Delayed Projects', value: '12', trend: '+2', info: lang === 'tr' ? 'Teslimatı geciken proje sayısı' : 'Projects with delayed delivery' },
+          { id: 'satis-geciken-teslimat', title: lang === 'tr' ? 'Geciken Teslimatlar' : 'Delayed Deliveries', value: '847', trend: '+124', info: lang === 'tr' ? 'Geciken sipariş/kutu adedi' : 'Delayed order/box count' },
+          { id: 'satis-geciken-ciro', title: lang === 'tr' ? 'Geciken Teslimat Cirosu' : 'Delayed Delivery Revenue', value: '2.180.000 ₺', trend: '+15,4%', info: lang === 'tr' ? 'Geciken projelerin toplam ciro değeri' : 'Total revenue of delayed projects' },
+        ].map((card) => (
+          <div key={card.id} style={{ borderLeft: '3px solid #FCA5A5', borderRadius: 10 }}>
+            <KPICard id={card.id} title={card.title} value={card.value} trendValue={card.trend} sparkTrend="up" color="rd" unit={card.value.includes('₺') ? 'K ₺' : 'adet'} info={card.info} {...kp} />
+          </div>
+        ))}
       </div>
 
       {/* ── Section 2: CİRO TRENDİ & GELİR DAĞILIMI ────────────────────────── */}

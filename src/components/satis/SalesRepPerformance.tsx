@@ -55,15 +55,27 @@ const ciroBarData = REPS.map((r) => ({
   hedef: Math.round(r.hedef / 1000),
 }));
 
-const quarterlyData = [
-  { q: 'Q1 24', ciro: 4800, netMarj: 14.2, buyume: '' },
-  { q: 'Q2 24', ciro: 5200, netMarj: 15.1, buyume: '+8,3%' },
-  { q: 'Q3 24', ciro: 5600, netMarj: 15.8, buyume: '+7,7%' },
-  { q: 'Q4 24', ciro: 6100, netMarj: 16.3, buyume: '+8,9%' },
-  { q: 'Q1 25', ciro: 6400, netMarj: 16.8, buyume: '+4,9%' },
-  { q: 'Q2 25', ciro: 6700, netMarj: 17.0, buyume: '+4,7%' },
-  { q: 'Q3 25', ciro: 6969, netMarj: 17.1, buyume: '+4,0%' },
+const marjBarData = [
+  { name: 'Ayşe K.', brutMarj: 27.0, netMarj: 27.0 },
+  { name: 'Mehmet D.', brutMarj: 25.8, netMarj: 25.8 },
+  { name: 'Can Y.', brutMarj: 25.9, netMarj: 26.0 },
+  { name: 'Elif S.', brutMarj: 26.8, netMarj: 26.9 },
+  { name: 'Burak A.', brutMarj: 24.7, netMarj: 24.7 },
 ];
+
+const quarterlyData = [
+  { q: 'Q1 24', ayse: 980, mehmet: 820, can: 680, elif: 740, burak: 480, netMarj: 14.2 },
+  { q: 'Q2 24', ayse: 1050, mehmet: 880, can: 720, elif: 790, burak: 510, netMarj: 15.1 },
+  { q: 'Q3 24', ayse: 1120, mehmet: 920, can: 760, elif: 830, burak: 540, netMarj: 15.8 },
+  { q: 'Q4 24', ayse: 1200, mehmet: 980, can: 810, elif: 880, burak: 570, netMarj: 16.3 },
+  { q: 'Q1 25', ayse: 1350, mehmet: 1050, can: 870, elif: 950, burak: 610, netMarj: 16.8 },
+  { q: 'Q2 25', ayse: 1480, mehmet: 1120, can: 920, elif: 1010, burak: 650, netMarj: 17.0 },
+  { q: 'Q3 25', ayse: 1620, mehmet: 1240, can: 980, elif: 1080, burak: 710, netMarj: 17.1 },
+];
+
+const STACK_COLORS = { burak: '#38BDF8', can: '#F59E0B', elif: '#F472B6', mehmet: '#34D399', ayse: '#818CF8' };
+const STACK_ORDER = ['burak', 'can', 'elif', 'mehmet', 'ayse'] as const;
+const STACK_LABELS: Record<string, string> = { ayse: 'Ayşe K.', mehmet: 'Mehmet D.', can: 'Can Y.', elif: 'Elif S.', burak: 'Burak A.' };
 
 const winRateTrend = [
   { month: 'Mar', ayse: 30, mehmet: 26, can: 22, elif: 24, burak: 16 },
@@ -114,6 +126,7 @@ export const SalesRepPerformance = ({ t, l, lang, panels, onAddPanel, onPinTo }:
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [tableSort, setTableSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'ciro', dir: 'desc' });
   const [firmaSort, setFirmaSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'ciro', dir: 'desc' });
+  const [ciroMode, setCiroMode] = useState<'TL' | '%'>('TL');
 
   const handleTableSort = (key: string) => {
     setTableSort((prev) => prev.key === key && prev.dir === 'desc' ? { key, dir: 'asc' } : { key, dir: 'desc' });
@@ -319,21 +332,76 @@ export const SalesRepPerformance = ({ t, l, lang, panels, onAddPanel, onPinTo }:
 
           <div style={{ marginBottom: 12 }}>
             <ChartContainer t={t} l={l} title={l.repCiroChart ?? 'Uzman Bazlı Ciro, Brüt Kâr & Net Kâr'} id="rep-chart-ciro" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+              {/* TL / % toggle */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                <div style={{ display: 'flex', borderRadius: 6, border: `1px solid ${t.bd}`, overflow: 'hidden' }}>
+                  {(['TL', '%'] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setCiroMode(m)}
+                      style={{
+                        padding: '4px 14px', fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none',
+                        background: ciroMode === m ? t.pr : 'transparent',
+                        color: ciroMode === m ? '#fff' : t.tx2,
+                      }}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ciroBarData} margin={{ top: 15, right: 20, bottom: 0, left: 0 }} barGap={3}>
+                <BarChart data={ciroMode === 'TL' ? ciroBarData : marjBarData} margin={{ top: 15, right: 20, bottom: 0, left: 0 }} barGap={3}>
                   <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false}
+                    tickFormatter={(v) => ciroMode === 'TL' ? `${v}K` : `${v}%`}
+                    domain={ciroMode === '%' ? [0, 50] : undefined}
+                  />
                   <Tooltip
-                    contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }}
-                    formatter={(value: number, name: string) => [`${value}K ₺`, name]}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      const order = ciroMode === 'TL' ? ['ciro', 'brutKar', 'netKar'] : ['brutMarj', 'netMarj'];
+                      const colors: Record<string, string> = { ciro: '#C7D2FE', brutKar: '#818CF8', netKar: '#4F46E5', brutMarj: '#818CF8', netMarj: '#4F46E5' };
+                      const labels: Record<string, string> = {
+                        ciro: lang === 'tr' ? 'Ciro' : 'Revenue',
+                        brutKar: lang === 'tr' ? 'Brüt Kâr' : 'Gross Profit',
+                        netKar: lang === 'tr' ? 'Net Kâr' : 'Net Profit',
+                        brutMarj: lang === 'tr' ? 'Brüt Marj' : 'Gross Margin',
+                        netMarj: lang === 'tr' ? 'Net Marj' : 'Net Margin',
+                      };
+                      const sorted = [...payload].sort((a, b) => order.indexOf(a.dataKey as string) - order.indexOf(b.dataKey as string));
+                      return (
+                        <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                          <div style={{ fontWeight: 700, color: '#1E293B', marginBottom: 4 }}>{label}</div>
+                          {sorted.map((entry) => (
+                            <div key={entry.dataKey as string} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: colors[entry.dataKey as string] ?? t.tx2 }} />
+                              <span style={{ color: '#475569' }}>{labels[entry.dataKey as string] ?? entry.name}:</span>
+                              <span style={{ fontWeight: 600, color: '#1E293B' }}>
+                                {ciroMode === 'TL' ? `${entry.value}K ₺` : `%${entry.value}`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }}
                   />
                   <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="ciro" name={lang === 'tr' ? 'Ciro' : 'Revenue'} fill="#C7D2FE" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="brutKar" name={lang === 'tr' ? 'Brüt Kâr' : 'Gross Profit'} fill="#818CF8" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="netKar" name={lang === 'tr' ? 'Net Kâr' : 'Net Profit'} fill="#4F46E5" radius={[3, 3, 0, 0]} />
-                  {/* Hedef reference per-rep would require custom shapes; using overall avg as reference */}
-                  <ReferenceLine y={Math.round(REPS.reduce((s, r) => s + r.hedef, 0) / REPS.length / 1000)} stroke={t.tx3} strokeDasharray="5 3" label={{ value: lang === 'tr' ? 'Ort. Hedef' : 'Avg. Target', fontSize: 10, fill: t.tx3, position: 'insideTopRight' }} />
+                  {ciroMode === 'TL' ? (
+                    <>
+                      <Bar dataKey="ciro" name={lang === 'tr' ? 'Ciro' : 'Revenue'} fill="#C7D2FE" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="brutKar" name={lang === 'tr' ? 'Brüt Kâr' : 'Gross Profit'} fill="#818CF8" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="netKar" name={lang === 'tr' ? 'Net Kâr' : 'Net Profit'} fill="#4F46E5" radius={[3, 3, 0, 0]} />
+                      <ReferenceLine y={Math.round(REPS.reduce((s, r) => s + r.hedef, 0) / REPS.length / 1000)} stroke={t.tx3} strokeDasharray="5 3" label={{ value: lang === 'tr' ? 'Ort. Hedef' : 'Avg. Target', fontSize: 10, fill: t.tx3, position: 'insideTopRight' }} />
+                    </>
+                  ) : (
+                    <>
+                      <Bar dataKey="brutMarj" name={lang === 'tr' ? 'Brüt Marj %' : 'Gross Margin %'} fill="#818CF8" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="netMarj" name={lang === 'tr' ? 'Net Marj %' : 'Net Margin %'} fill="#4F46E5" radius={[3, 3, 0, 0]} />
+                    </>
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -352,11 +420,41 @@ export const SalesRepPerformance = ({ t, l, lang, panels, onAddPanel, onPinTo }:
                   <YAxis yAxisId="left" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
                   <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} domain={[10, 20]} tickFormatter={(v) => `${v}%`} />
                   <Tooltip
-                    contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }}
-                    formatter={(value: number, name: string) => [name.includes('%') ? `${value}%` : `${value}K ₺`, name]}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      const netMarjEntry = payload.find((p) => p.dataKey === 'netMarj');
+                      const repEntries = payload.filter((p) => p.dataKey !== 'netMarj').sort((a, b) => (b.value as number) - (a.value as number));
+                      const total = repEntries.reduce((s, p) => s + (p.value as number), 0);
+                      return (
+                        <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                          <div style={{ fontWeight: 700, color: '#1E293B', marginBottom: 4 }}>{label}</div>
+                          <div style={{ fontWeight: 600, color: '#1E293B', marginBottom: 6 }}>{lang === 'tr' ? 'Toplam Ciro' : 'Total Revenue'}: {total.toLocaleString('tr-TR')}K ₺</div>
+                          {repEntries.map((entry) => {
+                            const pct = total > 0 ? ((entry.value as number) / total * 100).toFixed(1) : '0';
+                            return (
+                              <div key={entry.dataKey as string} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: STACK_COLORS[entry.dataKey as keyof typeof STACK_COLORS] ?? t.tx2 }} />
+                                <span style={{ color: '#475569' }}>{STACK_LABELS[entry.dataKey as string] ?? entry.name}:</span>
+                                <span style={{ fontWeight: 600, color: '#1E293B' }}>{(entry.value as number).toLocaleString('tr-TR')}K ₺</span>
+                                <span style={{ color: '#94A3B8', fontSize: 10 }}>(%{pct})</span>
+                              </div>
+                            );
+                          })}
+                          {netMarjEntry && (
+                            <div style={{ borderTop: `1px solid ${t.bd}`, paddingTop: 4, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.gn }} />
+                              <span style={{ color: '#475569' }}>{lang === 'tr' ? 'Net Kâr Oranı' : 'Net Profit %'}:</span>
+                              <span style={{ fontWeight: 600, color: '#1E293B' }}>%{netMarjEntry.value}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }}
                   />
-                  <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
-                  <Bar yAxisId="left" dataKey="ciro" name={lang === 'tr' ? 'Ciro (K ₺)' : 'Revenue (K ₺)'} fill={t.pr} radius={[4, 4, 0, 0]} opacity={0.75} />
+                  <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
+                  {STACK_ORDER.map((key, i) => (
+                    <Bar key={key} yAxisId="left" dataKey={key} name={STACK_LABELS[key]} stackId="ciro" fill={STACK_COLORS[key]} opacity={0.85} radius={i === STACK_ORDER.length - 1 ? [4, 4, 0, 0] : undefined} />
+                  ))}
                   <Line yAxisId="right" type="monotone" dataKey="netMarj" name={lang === 'tr' ? 'Net Kâr Oranı %' : 'Net Profit %'} stroke={t.gn} strokeWidth={2.5} dot={{ r: 4, fill: t.gn }} />
                 </ComposedChart>
               </ResponsiveContainer>

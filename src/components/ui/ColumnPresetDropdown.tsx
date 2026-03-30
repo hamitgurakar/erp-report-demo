@@ -10,7 +10,7 @@ export interface ColumnPreset {
   isBuiltIn: boolean;
 }
 
-export type TableType = 'performance' | 'criticalStock' | 'brand' | 'inefficient' | 'abc';
+export type TableType = 'performance' | 'criticalStock' | 'brand' | 'inefficient' | 'abc' | 'salesProduct';
 
 const BUILT_IN: Record<TableType, ColumnPreset[]> = {
   performance: [
@@ -31,6 +31,11 @@ const BUILT_IN: Record<TableType, ColumnPreset[]> = {
   ],
   abc: [
     { id: 'abc-def', name: 'Varsayılan', columns: ['urun','abc','ciro','marj','stokGun','satisHizi','trend','aksiyon'], isBuiltIn: true },
+  ],
+  salesProduct: [
+    { id: 'sp-perf', name: 'Performans', columns: ['satis','ciro','ciroPay','cogs','cogsOrani','brutMarj','netMarj','iade','devir','trend'], isBuiltIn: true },
+    { id: 'sp-stok', name: 'Stok Odaklı', columns: ['satis','ciro','stokAdedi','stokDegeri','devir','iade','trend'], isBuiltIn: true },
+    { id: 'sp-marj', name: 'Marj Odaklı', columns: ['satis','ciro','cogs','cogsOrani','brutKar','brutMarj','netKar','netMarj','trend'], isBuiltIn: true },
   ],
 };
 

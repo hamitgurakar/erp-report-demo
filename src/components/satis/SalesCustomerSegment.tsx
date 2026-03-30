@@ -50,8 +50,17 @@ const clvHistogram = [
 ];
 const maxClvCount = Math.max(...clvHistogram.map((d) => d.count));
 
-// CLV avg ~index 2-3 area, median ~index 2 area
-// We'll mark them on the chart with ReferenceLine at approximate x positions
+const orderHistogram = [
+  { range: '1 sipariş', count: 285 },
+  { range: '2-3 sipariş', count: 340 },
+  { range: '4-6 sipariş', count: 260 },
+  { range: '7-10 sipariş', count: 175 },
+  { range: '11-20 sipariş', count: 110 },
+  { range: '21-50 sipariş', count: 52 },
+  { range: '50+', count: 26 },
+];
+const maxOrderCount = Math.max(...orderHistogram.map((d) => d.count));
+const totalOrderCustomers = orderHistogram.reduce((s, d) => s + d.count, 0);
 
 const cohortData = [
   { cohort: 'Oca 2025', values: [100, 82, 74, 68, 62, 58] },
@@ -73,37 +82,43 @@ interface GrowingFirma {
   segment: string;
   sparkTrend: 'up' | 'down' | 'flat';
   ltv: number;
+  sonSatis: string;
+  sonSatisGun: number;
+  sonSatisUzman: string;
   buyume: number;
   sorumlu: string;
 }
 
 const growingFirmalar: GrowingFirma[] = [
-  { firma: 'Trendyol', segment: 'Enterprise', sparkTrend: 'up', ltv: 210000, buyume: 48, sorumlu: 'Mehmet D.' },
-  { firma: 'Hepsiburada', segment: 'Enterprise', sparkTrend: 'up', ltv: 178000, buyume: 42, sorumlu: 'Can Y.' },
-  { firma: 'Getir', segment: 'Mid-Market', sparkTrend: 'up', ltv: 92000, buyume: 38, sorumlu: 'Elif S.' },
-  { firma: 'Enerjisa', segment: 'Mid-Market', sparkTrend: 'up', ltv: 76000, buyume: 35, sorumlu: 'Ayşe K.' },
-  { firma: 'TAV Havalimanları', segment: 'Enterprise', sparkTrend: 'up', ltv: 145000, buyume: 31, sorumlu: 'Can Y.' },
-  { firma: 'Migros', segment: 'Mid-Market', sparkTrend: 'up', ltv: 68000, buyume: 28, sorumlu: 'Mehmet D.' },
-  { firma: 'LC Waikiki', segment: 'Mid-Market', sparkTrend: 'up', ltv: 54000, buyume: 24, sorumlu: 'Burak A.' },
-  { firma: 'Boyner', segment: 'Small', sparkTrend: 'up', ltv: 38000, buyume: 22, sorumlu: 'Elif S.' },
+  { firma: 'Trendyol', segment: 'Enterprise', sparkTrend: 'up', ltv: 210000, sonSatis: '12.03.2025', sonSatisGun: 18, sonSatisUzman: 'Mehmet D.', buyume: 48, sorumlu: 'Mehmet D.' },
+  { firma: 'Hepsiburada', segment: 'Enterprise', sparkTrend: 'up', ltv: 178000, sonSatis: '08.03.2025', sonSatisGun: 22, sonSatisUzman: 'Can Y.', buyume: 42, sorumlu: 'Can Y.' },
+  { firma: 'Getir', segment: 'Mid-Market', sparkTrend: 'up', ltv: 92000, sonSatis: '18.03.2025', sonSatisGun: 12, sonSatisUzman: 'Elif S.', buyume: 38, sorumlu: 'Elif S.' },
+  { firma: 'Enerjisa', segment: 'Mid-Market', sparkTrend: 'up', ltv: 76000, sonSatis: '05.03.2025', sonSatisGun: 25, sonSatisUzman: 'Ayşe K.', buyume: 35, sorumlu: 'Ayşe K.' },
+  { firma: 'TAV Havalimanları', segment: 'Enterprise', sparkTrend: 'up', ltv: 145000, sonSatis: '20.03.2025', sonSatisGun: 10, sonSatisUzman: 'Can Y.', buyume: 31, sorumlu: 'Can Y.' },
+  { firma: 'Migros', segment: 'Mid-Market', sparkTrend: 'up', ltv: 68000, sonSatis: '22.03.2025', sonSatisGun: 8, sonSatisUzman: 'Mehmet D.', buyume: 28, sorumlu: 'Mehmet D.' },
+  { firma: 'LC Waikiki', segment: 'Mid-Market', sparkTrend: 'up', ltv: 54000, sonSatis: '01.03.2025', sonSatisGun: 29, sonSatisUzman: 'Burak A.', buyume: 24, sorumlu: 'Burak A.' },
+  { firma: 'Boyner', segment: 'Small', sparkTrend: 'up', ltv: 38000, sonSatis: '25.02.2025', sonSatisGun: 33, sonSatisUzman: 'Elif S.', buyume: 22, sorumlu: 'Elif S.' },
 ];
 
 interface ChurnRisk {
   firma: string;
   sonAktivite: number;
+  sonSatis: string;
+  sonSatisGun: number;
+  sonSatisUzman: string;
   risk: 'Critical' | 'High' | 'Medium';
   aksiyon: 'reengage' | 'checkin';
 }
 
 const churnRisks: ChurnRisk[] = [
-  { firma: 'Horizon Medya', sonAktivite: 102, risk: 'Critical', aksiyon: 'reengage' },
-  { firma: 'Swift Delivery', sonAktivite: 94, risk: 'High', aksiyon: 'checkin' },
-  { firma: 'Apex Consulting', sonAktivite: 118, risk: 'Critical', aksiyon: 'reengage' },
-  { firma: 'Metro Lojistik', sonAktivite: 78, risk: 'Medium', aksiyon: 'checkin' },
-  { firma: 'Delta İnşaat', sonAktivite: 85, risk: 'High', aksiyon: 'checkin' },
-  { firma: 'Star İletişim', sonAktivite: 110, risk: 'Critical', aksiyon: 'reengage' },
-  { firma: 'Nova Teknoloji', sonAktivite: 65, risk: 'Medium', aksiyon: 'checkin' },
-  { firma: 'Atlas Gıda', sonAktivite: 92, risk: 'High', aksiyon: 'reengage' },
+  { firma: 'Horizon Medya', sonAktivite: 102, sonSatis: '18.12.2024', sonSatisGun: 102, sonSatisUzman: 'Ayşe K.', risk: 'Critical', aksiyon: 'reengage' },
+  { firma: 'Swift Delivery', sonAktivite: 94, sonSatis: '26.12.2024', sonSatisGun: 94, sonSatisUzman: 'Mehmet D.', risk: 'High', aksiyon: 'checkin' },
+  { firma: 'Apex Consulting', sonAktivite: 118, sonSatis: '02.12.2024', sonSatisGun: 118, sonSatisUzman: 'Can Y.', risk: 'Critical', aksiyon: 'reengage' },
+  { firma: 'Metro Lojistik', sonAktivite: 78, sonSatis: '11.01.2025', sonSatisGun: 78, sonSatisUzman: 'Elif S.', risk: 'Medium', aksiyon: 'checkin' },
+  { firma: 'Delta İnşaat', sonAktivite: 85, sonSatis: '04.01.2025', sonSatisGun: 85, sonSatisUzman: 'Burak A.', risk: 'High', aksiyon: 'checkin' },
+  { firma: 'Star İletişim', sonAktivite: 110, sonSatis: '10.12.2024', sonSatisGun: 110, sonSatisUzman: 'Ayşe K.', risk: 'Critical', aksiyon: 'reengage' },
+  { firma: 'Nova Teknoloji', sonAktivite: 65, sonSatis: '24.01.2025', sonSatisGun: 65, sonSatisUzman: 'Mehmet D.', risk: 'Medium', aksiyon: 'checkin' },
+  { firma: 'Atlas Gıda', sonAktivite: 92, sonSatis: '28.12.2024', sonSatisGun: 92, sonSatisUzman: 'Can Y.', risk: 'High', aksiyon: 'reengage' },
 ];
 
 // ── Helpers ─────────────────────────────────────────────────────────────────────
@@ -280,6 +295,7 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
       {/* ── Section 3: CLV DISTRIBUTION & COHORT ─────────────────────────────── */}
       <SectionHeader title={l.cstClvCohort ?? 'CLV DISTRIBUTION & COHORT'} t={t} />
 
+      {/* CLV + Sipariş Adet — yan yana */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
         {/* CLV Histogram */}
         <ChartContainer t={t} l={l} title={l.cstClvDagilim ?? 'CLV Dağılımı'} id="cst-chart-clv" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
@@ -289,9 +305,8 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
               <XAxis dataKey="range" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`${v} müşteri`, '']} />
-              {/* Avg and Median reference lines at approximate bar indices */}
-              <ReferenceLine x="5K-10K" stroke={t.pr} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: `Ort. 8.420 ₺`, fontSize: 9, fill: t.pr, position: 'top' }} />
-              <ReferenceLine x="2K-5K" stroke={t.tl} strokeDasharray="3 3" strokeWidth={1} label={{ value: `Medyan 6.200 ₺`, fontSize: 9, fill: t.tl, position: 'top' }} />
+              <ReferenceLine x="5K-10K" stroke={t.pr} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: 'Ort. 8.420 ₺', fontSize: 9, fill: t.pr, position: 'top' }} />
+              <ReferenceLine x="2K-5K" stroke={t.tl} strokeDasharray="3 3" strokeWidth={1} label={{ value: 'Medyan 6.200 ₺', fontSize: 9, fill: t.tl, position: 'top' }} />
               <Bar dataKey="count" name="Müşteri" radius={[4, 4, 0, 0]}>
                 {clvHistogram.map((d, i) => (
                   <Cell key={i} fill={d.count === maxClvCount ? t.pr : '#818CF8'} opacity={d.count === maxClvCount ? 1 : 0.65} />
@@ -301,6 +316,40 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
           </ResponsiveContainer>
         </ChartContainer>
 
+        {/* Sipariş Adet Dağılımı */}
+        <ChartContainer t={t} l={l} title={l.cstSiparisAdet ?? 'Sipariş Adet Dağılımı'} id="cst-chart-orderhist" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={orderHistogram} margin={{ top: 15, right: 20, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="range" tick={{ fontSize: 9, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.[0]) return null;
+                  const d = payload[0].payload as { range: string; count: number };
+                  const pct = ((d.count / totalOrderCustomers) * 100).toFixed(1);
+                  return (
+                    <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>{d.range}</div>
+                      <div style={{ color: t.tx2 }}>{d.count} {lang === 'tr' ? 'müşteri' : 'customers'} <span style={{ color: t.tx3 }}>(%{pct})</span></div>
+                    </div>
+                  );
+                }}
+              />
+              <ReferenceLine x="4-6 sipariş" stroke={t.pr} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: 'Ort. 5,8 adet', fontSize: 9, fill: t.pr, position: 'top' }} />
+              <ReferenceLine x="2-3 sipariş" stroke={t.tl} strokeDasharray="3 3" strokeWidth={1} label={{ value: 'Medyan 3 adet', fontSize: 9, fill: t.tl, position: 'top' }} />
+              <Bar dataKey="count" name="Müşteri" radius={[4, 4, 0, 0]}>
+                {orderHistogram.map((d, i) => (
+                  <Cell key={i} fill={d.count === maxOrderCount ? t.pr : '#818CF8'} opacity={d.count === maxOrderCount ? 1 : 0.65} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </div>
+
+      {/* Cohort Retention — full width */}
+      <div style={{ marginBottom: 12 }}>
         {/* Cohort Retention Heatmap */}
         <ChartContainer t={t} l={l} title={l.cstCohortRetention ?? 'Cohort Retention Heatmap'} id="cst-chart-cohort" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <div style={{ overflowX: 'auto' }}>
@@ -402,8 +451,9 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                     { key: 'segment', label: 'Segment', align: 'left' },
                     { key: 'trend', label: 'Trend', align: 'center' },
                     { key: 'ltv', label: 'LTV', align: 'right' },
+                    { key: 'sonSatis', label: 'Son Satış', align: 'left' },
+                    { key: 'sonSatisUzman', label: 'Son Satış Uzmanı', align: 'left' },
                     { key: 'buyume', label: 'Büyüme %', align: 'right' },
-                    { key: 'sorumlu', label: 'Sorumlu', align: 'left' },
                   ].map((col) => (
                     <th
                       key={col.key}
@@ -427,8 +477,12 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                       <Spark data={mkSpk(f.sparkTrend, 'K ₺', lang)} color={t.gn} t={t} compact />
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', color: t.tx }}>{fmtTL(f.ltv)}</td>
+                    <td style={{ padding: '8px 10px' }}>
+                      <div style={{ fontSize: 11, color: t.tx }}>{f.sonSatis}</div>
+                      <div style={{ fontSize: 9, color: t.tx3 }}>{f.sonSatisGun} gün önce</div>
+                    </td>
+                    <td style={{ padding: '8px 10px', fontSize: 11, color: t.tx2 }}>{f.sonSatisUzman}</td>
                     <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', fontWeight: 700, color: t.gn }}>+{f.buyume}%</td>
-                    <td style={{ padding: '8px 10px', fontSize: 11, color: t.tx2 }}>{f.sorumlu}</td>
                   </tr>
                 ))}
               </tbody>
@@ -451,6 +505,8 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                 <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                   <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>Firma Adı</th>
                   <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'right' }}>Son Aktivite</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>Son Satış</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>Son Satış Uzmanı</th>
                   <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'center' }}>Risk Skoru</th>
                   <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'center' }}>Aksiyon</th>
                 </tr>
@@ -463,6 +519,11 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                   >
                     <td style={{ padding: '8px 10px', fontSize: 11, fontWeight: 500, color: t.tx }}>{r.firma}</td>
                     <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', color: r.sonAktivite >= 90 ? t.rd : t.tx, fontWeight: r.sonAktivite >= 90 ? 700 : 400 }}>{r.sonAktivite} gün</td>
+                    <td style={{ padding: '8px 10px' }}>
+                      <div style={{ fontSize: 11, color: r.sonSatisGun >= 180 ? '#DC2626' : r.sonSatisGun >= 90 ? '#D97706' : t.tx }}>{r.sonSatis}</div>
+                      <div style={{ fontSize: 9, color: t.tx3 }}>{r.sonSatisGun} gün önce</div>
+                    </td>
+                    <td style={{ padding: '8px 10px', fontSize: 11, color: t.tx2 }}>{r.sonSatisUzman}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>{riskBadge(r.risk)}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>{aksiyonBtn(r.aksiyon)}</td>
                   </tr>
