@@ -1,5 +1,6 @@
 import type { Theme, LangStrings, Lang } from '../../types';
 import { Icon, Flag } from '../ui/Icon';
+import { ProjectSwitcher } from '../ProjectSwitcher';
 
 interface HeaderProps {
   t: Theme;
@@ -20,7 +21,7 @@ export const Header = ({ t, l, lang, dark, onToggleDark, showLang, onToggleLang,
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', padding: '0 20px', height: 48, background: t.bg, borderBottom: `1px solid ${t.bd}`, flexShrink: 0, zIndex: 30 }}>
-      <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: 2, marginRight: 28, cursor: 'pointer' }}>MUHIKU</span>
+      <ProjectSwitcher activeProject="erp" />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
         {menus.map((m) => (
