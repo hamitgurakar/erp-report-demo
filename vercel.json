@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/erp/(.*)", "destination": "/index.html" },
+    { "source": "/erp", "destination": "/index.html" }
+  ]
+}
