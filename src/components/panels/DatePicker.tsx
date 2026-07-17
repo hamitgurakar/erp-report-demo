@@ -2,21 +2,8 @@ import { useState } from 'react';
 import type { Theme, LangStrings, Lang } from '../../types';
 import { mosTR, mosEN } from '../../constants/data';
 import { Icon } from '../ui/Icon';
+import { useTranslation } from '../../i18n/LanguageContext';
 
-const PRESETS = [
-  { tr: 'Bugün', en: 'Today' },
-  { tr: 'Dün', en: 'Yesterday' },
-  { tr: 'Son 7 gün', en: 'Last 7 days' },
-  { tr: 'Son 30 gün', en: 'Last 30 days' },
-  { tr: 'Son 60 gün', en: 'Last 60 days' },
-  { tr: 'Son 90 gün', en: 'Last 90 days' },
-  { tr: 'Son 2 ay', en: 'Last 2 months' },
-  { tr: 'Son 3 ay', en: 'Last 3 months' },
-  { tr: 'Son 6 ay', en: 'Last 6 months' },
-  { tr: 'Son 12 ay', en: 'Last 12 months' },
-  { tr: 'Son 365 gün', en: 'Last 365 days' },
-  { tr: 'Yıl başından beri', en: 'Year to date' },
-];
 
 interface DateDay { m: number; d: number; y: number; }
 
@@ -30,6 +17,7 @@ interface DatePickerProps {
 }
 
 export const DatePicker = ({ t, l, lang, dateRange, setDateRange, onClose }: DatePickerProps) => {
+  const i18n = useTranslation();
   const [fixed, setFixed] = useState(false);
   const [leftMonth, setLeftMonth] = useState(1);
   const [leftYear, setLeftYear] = useState(2026);
@@ -118,8 +106,7 @@ export const DatePicker = ({ t, l, lang, dateRange, setDateRange, onClose }: Dat
     >
       {/* Presets */}
       <div style={{ width: 155, borderRight: `1px solid ${t.bd}`, padding: '12px 0', maxHeight: 400, overflowY: 'auto' }}>
-        {PRESETS.map((p) => {
-          const label = lang === 'en' ? p.en : p.tr;
+        {i18n.dict.common.datePresets.map((label) => {
           const isActive = dateRange === label;
           return (
             <div

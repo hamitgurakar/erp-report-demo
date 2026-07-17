@@ -1,6 +1,7 @@
 import type { Theme, LangStrings, Lang } from '../../types';
 import { Icon, Flag } from '../ui/Icon';
 import { ProjectSwitcher } from '../ProjectSwitcher';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface HeaderProps {
   t: Theme;
@@ -14,10 +15,10 @@ interface HeaderProps {
 }
 
 export const Header = ({ t, l, lang, dark, onToggleDark, showLang, onToggleLang, onChangeLang }: HeaderProps) => {
-  const menus = lang === 'en'
-    ? ['Product', 'CMS', 'Sales', 'Procurement', 'Operations', 'Support', 'Marketing', 'Accounting', 'Reports']
-    : ['Ürün', 'CMS', 'Satış', 'Satınalma', 'Operasyon', 'Destek', 'Marketing', 'Muhasebe', 'Raporlar'];
-  const activeLabel = lang === 'en' ? 'Reports' : 'Raporlar';
+  const i18n = useTranslation();
+  const menus = ['urun', 'cms', 'satis', 'satinAlma', 'operasyon', 'destek', 'pazarlama', 'muhasebe', 'raporlar']
+    .map((k) => i18n.t(`nav.${k}`));
+  const activeLabel = i18n.t('nav.raporlar');
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', padding: '0 20px', height: 48, background: t.bg, borderBottom: `1px solid ${t.bd}`, flexShrink: 0, zIndex: 30 }}>
@@ -37,7 +38,7 @@ export const Header = ({ t, l, lang, dark, onToggleDark, showLang, onToggleLang,
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, border: `1px solid ${t.bd}`, color: t.tx3, fontSize: 12, cursor: 'pointer' }}>
-          <Icon name="search" size={14} />{l.ara}
+          <Icon name="search" size={14} />{i18n.t('common.ara')}
         </div>
 
         <div style={{ position: 'relative' }}>

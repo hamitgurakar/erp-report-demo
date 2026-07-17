@@ -3,12 +3,14 @@ import type { Lang, Panel } from '../types';
 import { TH } from '../constants/theme';
 import { L } from '../constants/i18n';
 import { mkDeptReports } from '../constants/data';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export const useDashboard = () => {
+  const { lang, setLang, dict } = useTranslation();
   const [dark, setDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [acct, setAcct] = useState('total');
-  const [dateRange, setDateRange] = useState('Son 30 gün');
+  const [dateRange, setDateRange] = useState(lang === 'en' ? 'Last 30 days' : 'Son 30 gün');
   const [view, setView] = useState('report');
   const [activeRep, setActiveRep] = useState('yonetim__0');
   const [expandedDepts, setExpandedDepts] = useState<string[]>(['yonetim']);
@@ -18,14 +20,13 @@ export const useDashboard = () => {
     { name: 'CFO Görünümü', items: ['kpi-brutkar', 'kpi-stokdeg'] },
   ]);
   const [delConfirm, setDelConfirm] = useState<string | null>(null);
-  const [lang, setLang] = useState<Lang>('tr');
   const [showLang, setShowLang] = useState(false);
   const [bkMode, setBkMode] = useState('TL');
   const [nkMode, setNkMode] = useState('TL');
 
   const t = dark ? TH.dark : TH.light;
   const l = L[lang];
-  const deptReports = mkDeptReports(l);
+  const deptReports = mkDeptReports(dict);
 
   const isPanel = view.startsWith('panel:');
   const activePanelName = isPanel ? view.replace('panel:', '') : null;

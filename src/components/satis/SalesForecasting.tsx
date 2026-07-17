@@ -8,6 +8,8 @@ import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { tTerm } from '../../i18n/terms';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -133,7 +135,7 @@ export const SalesForecasting = ({ t, l, lang, panels, onAddPanel, onPinTo }: Pr
           <ResponsiveContainer width="100%" height={360}>
             <LineChart data={forecastData} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} domain={[0, 6000]} />
               <Tooltip
                 contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }}
@@ -203,7 +205,7 @@ export const SalesForecasting = ({ t, l, lang, panels, onAddPanel, onPinTo }: Pr
               <thead>
                 <tr style={{ borderBottom: `1px solid ${t.bd}` }}>
                   {['Dönem', 'Win Rate', 'Created', 'Deal Value', 'Companies', 'In Pipeline', 'Deal Rate'].map((h) => (
-                    <th key={h} style={{ padding: '6px 8px', fontSize: 9, fontWeight: 600, color: t.tx2, textAlign: h === 'Dönem' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '6px 8px', fontSize: 9, fontWeight: 600, color: t.tx2, textAlign: h === 'Dönem' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{tTerm(h)}</th>
                   ))}
                 </tr>
               </thead>
@@ -239,7 +241,7 @@ export const SalesForecasting = ({ t, l, lang, panels, onAddPanel, onPinTo }: Pr
               <XAxis dataKey="q" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`${v} deal`, '']} />
-              <Bar dataKey="val" name="Deals Won" fill={t.tl} radius={[4, 4, 0, 0]} opacity={0.8} />
+              <Bar dataKey="val" name={tTerm("Kazanılan Deal'lar")} fill={t.tl} radius={[4, 4, 0, 0]} opacity={0.8} />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

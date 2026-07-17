@@ -9,6 +9,7 @@ import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -465,7 +466,7 @@ export const SalesRepPerformance = ({ t, l, lang, panels, onAddPanel, onPinTo }:
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={winRateTrend} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} domain={[10, 40]} tickFormatter={(v) => `${v}%`} />
                   <Tooltip
                     contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }}

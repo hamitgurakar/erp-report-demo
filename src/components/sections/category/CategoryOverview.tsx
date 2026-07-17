@@ -14,6 +14,8 @@ import { KPICard } from '../../kpi/KPICard';
 import { SectionHeader } from '../../ui/SectionHeader';
 import { ChartContainer } from '../../ui/ChartContainer';
 import { Icon } from '../../ui/Icon';
+import { tTerm } from '../../../i18n/terms';
+import { fmtMonth } from '../../../utils/format';
 
 interface Props {
   t: Theme;
@@ -131,7 +133,7 @@ export const CategoryOverview = ({ t, l, lang, panels, onAddPanel, onPinTo, dark
                 ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} width={35} />
               <Tooltip cursor={{ stroke: t.bd }} contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="elektronik" name="Elektronik" stroke={t.pr} fill={`url(#kat-grad-0)`} strokeWidth={1.8} dot={false} stackId="s" />
@@ -310,7 +312,7 @@ export const CategoryOverview = ({ t, l, lang, panels, onAddPanel, onPinTo, dark
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} width={38} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="deger" name={lang === 'tr' ? 'Stok Değeri (K ₺)' : 'Stock Value (K ₺)'} stroke={t.tl} fill="url(#kat-stokdeg-grad)" strokeWidth={2} dot={false} />
@@ -355,7 +357,7 @@ export const CategoryOverview = ({ t, l, lang, panels, onAddPanel, onPinTo, dark
           <ResponsiveContainer width="100%" height={160}>
             <ComposedChart data={pricingDiscountData}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} domain={[8, 16]} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
@@ -391,7 +393,7 @@ export const CategoryOverview = ({ t, l, lang, panels, onAddPanel, onPinTo, dark
         <ResponsiveContainer width="100%" height={160}>
           <ComposedChart data={salesVelocityData}>
             <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
             <YAxis yAxisId="left" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
             <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
@@ -419,7 +421,7 @@ export const CategoryOverview = ({ t, l, lang, panels, onAddPanel, onPinTo, dark
                 label={{ value: lang === 'tr' ? 'Devir Hızı (x)' : 'Turnover (x)', position: 'insideBottom', offset: -12, fontSize: 10, fill: t.tx3 }}
               />
               <YAxis
-                type="number" dataKey="marj" name="Marj %"
+                type="number" dataKey="marj" name={tTerm('Marj %')}
                 tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false}
                 label={{ value: 'Marj %', angle: -90, position: 'insideLeft', fontSize: 10, fill: t.tx3 }}
               />

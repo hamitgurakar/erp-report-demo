@@ -10,10 +10,12 @@ import { KPICard } from '../../kpi/KPICard';
 import { SectionHeader } from '../../ui/SectionHeader';
 import { ChartContainer } from '../../ui/ChartContainer';
 import { Icon } from '../../ui/Icon';
+import { useTranslation } from '../../../i18n/LanguageContext';
 import { type ColDef } from '../../ui/ColumnManager';
 import { ColumnPresetDropdown } from '../../ui/ColumnPresetDropdown';
 import { Spark } from '../../ui/Spark';
 import { mkSpk } from '../../../constants/data';
+import { tTerm } from '../../../i18n/terms';
 
 const ABC_COLS: ColDef[] = [
   { key: 'urun', label: 'Ürün' },
@@ -36,6 +38,7 @@ interface Props {
 }
 
 export const CategoryABC = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const [visibleCols, setVisibleCols] = useState<string[]>(ABC_COLS.map((c) => c.key));
 
@@ -133,9 +136,9 @@ export const CategoryABC = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) 
           </ResponsiveContainer>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 6 }}>
             {[{ label: 'A (%80)', color: t.gn }, { label: 'B (%15)', color: t.am }, { label: 'C (%5)', color: t.rd }].map((item) => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div key={tTerm(item.label)} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: item.color }} />
-                <span style={{ fontSize: 10, color: t.tx2 }}>{item.label}</span>
+                <span style={{ fontSize: 10, color: t.tx2 }}>{tTerm(item.label)}</span>
               </div>
             ))}
           </div>
@@ -276,7 +279,7 @@ export const CategoryABC = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) 
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {ABC_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => (
                   <th key={col.key} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: col.key === 'urun' || col.key === 'aksiyon' ? 'left' : 'right', whiteSpace: 'nowrap' }}>
-                    {col.label}
+                    {tTerm(col.label)}
                   </th>
                 ))}
               </tr>
@@ -301,7 +304,7 @@ export const CategoryABC = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) 
                     )}
                     {visibleCols.includes('ciro') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: t.tx }}>{row.ciro}K</td>}
                     {visibleCols.includes('marj') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.marj >= 30 ? t.gn : row.marj >= 15 ? t.am : t.rd, fontWeight: 600 }}>{row.marj.toFixed(1)}%</td>}
-                    {visibleCols.includes('stokGun') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.stokGun > 180 ? t.rd : row.stokGun > 90 ? t.am : t.gn, fontWeight: 600 }}>{row.stokGun} gün</td>}
+                    {visibleCols.includes('stokGun') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.stokGun > 180 ? t.rd : row.stokGun > 90 ? t.am : t.gn, fontWeight: 600 }}>{row.stokGun} {i18n.t('common.daysLower')}</td>}
                     {visibleCols.includes('satisHizi') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: t.tx }}>{row.satisHizi}</td>}
                     {visibleCols.includes('trend') && (
                       <td style={{ padding: '9px 14px', textAlign: 'center' }}>

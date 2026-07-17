@@ -5,6 +5,7 @@ import { revData, revPct, donutD, hedefD } from '../../constants/data';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { WaterfallChart } from '../charts/WaterfallChart';
+import { fmtMonth } from '../../utils/format';
 
 interface RevenueSectionProps {
   t: Theme;
@@ -58,7 +59,7 @@ export const RevenueSection = ({ t, l, lang, dark, panels, onAddPanel, onPinTo }
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={revMode === 'TL' ? revData : revPct} barCategoryGap="20%">
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CTooltip />} cursor={{ fill: t.hoverBg }} />
               <Bar dataKey="gelir" name={l.gelir} fill={t.c1} radius={[4, 4, 0, 0]} opacity={0.45} />
@@ -108,7 +109,7 @@ export const RevenueSection = ({ t, l, lang, dark, panels, onAddPanel, onPinTo }
           <ResponsiveContainer width="100%" height={190}>
             <BarChart data={hedefD} barCategoryGap="25%">
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip
                 cursor={{ fill: t.hoverBg }}

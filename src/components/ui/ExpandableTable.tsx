@@ -6,6 +6,7 @@ import { Spark } from './Spark';
 import { Icon } from './Icon';
 import { type ColDef } from './ColumnManager';
 import { ColumnPresetDropdown } from './ColumnPresetDropdown';
+import { tTerm } from '../../i18n/terms';
 
 interface SortState { key: string; dir: 'asc' | 'desc'; }
 
@@ -208,12 +209,12 @@ export const ExpandableTable = ({ t, l, data, lang }: ExpandableTableProps) => {
           {filters.map(f => (
             <div key={f.id} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
               <select value={f.metric} onChange={e => updateFilter(f.id, 'metric', e.target.value)} style={{ width: 140, padding: '4px 8px', borderRadius: 6, border: `1px solid ${t.bd}`, fontSize: 11, color: t.tx, background: t.cd, outline: 'none' }}>
-                {FILTERABLE_COLS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                {FILTERABLE_COLS.map(c => <option key={c.key} value={c.key}>{tTerm(c.label)}</option>)}
               </select>
               <select value={f.operator} onChange={e => updateFilter(f.id, 'operator', e.target.value)} style={{ width: 60, padding: '4px 6px', borderRadius: 6, border: `1px solid ${t.bd}`, fontSize: 11, color: t.tx, background: t.cd, outline: 'none' }}>
                 {OPERATORS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
-              <input type="number" value={f.value || ''} onChange={e => updateFilter(f.id, 'value', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '4px 8px', borderRadius: 6, border: `1px solid ${t.bd}`, fontSize: 11, color: t.tx, background: t.cd, outline: 'none' }} placeholder="değer" />
+              <input type="number" value={f.value || ''} onChange={e => updateFilter(f.id, 'value', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '4px 8px', borderRadius: 6, border: `1px solid ${t.bd}`, fontSize: 11, color: t.tx, background: t.cd, outline: 'none' }} placeholder={tTerm('değer')} />
               <button onClick={() => removeFilter(f.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.tx3, fontSize: 16, lineHeight: 1 }}>×</button>
             </div>
           ))}
@@ -249,7 +250,7 @@ export const ExpandableTable = ({ t, l, data, lang }: ExpandableTableProps) => {
                   style={{ padding: '8px 12px', fontSize: 11, fontWeight: 600, color: sort?.key === col.key ? t.pr : t.tx2, textAlign: 'right', whiteSpace: 'nowrap', cursor: col.key !== 'trend' ? 'pointer' : 'default', userSelect: 'none', position: 'sticky', top: 0, background: t.bg2 }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                    {col.label}
+                    {tTerm(col.label)}
                     {col.key !== 'trend' && <Icon name={sort?.key === col.key ? (sort.dir === 'asc' ? 'arrowUp' : 'arrowDown') : 'arrowDown'} size={10} color={sort?.key === col.key ? t.pr : t.tx3} />}
                   </div>
                 </th>

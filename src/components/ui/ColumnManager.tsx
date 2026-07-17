@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Theme, LangStrings } from '../../types';
 import { Icon } from './Icon';
+import { tTerm } from '../../i18n/terms';
 
 export interface ColDef {
   key: string;
@@ -122,7 +123,7 @@ export const ColumnManager = ({ t, l, allColumns, visibleKeys, onChange }: Colum
                       }}>
                         {draft.includes(col.key) && <Icon name="check" size={10} color="#fff" />}
                       </div>
-                      {col.label}
+                      {tTerm(col.label)}
                     </div>
                   ))}
                 </div>
@@ -131,7 +132,7 @@ export const ColumnManager = ({ t, l, allColumns, visibleKeys, onChange }: Colum
               {/* Right: selected (draggable) */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ padding: '12px 16px', borderBottom: `1px solid ${t.bd}`, fontSize: 11, color: t.tx2, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                  Seçili sütunlar
+                  {tTerm('Seçili sütunlar')}
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
                   {selectedCols.map((col, idx) => (
@@ -151,7 +152,7 @@ export const ColumnManager = ({ t, l, allColumns, visibleKeys, onChange }: Colum
                       }}
                     >
                       <Icon name="gripV" size={14} color={t.tx3} />
-                      <span style={{ flex: 1 }}>{col.label}</span>
+                      <span style={{ flex: 1 }}>{tTerm(col.label)}</span>
                       <button
                         onClick={() => removeFromSelected(col.key)}
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: t.tx3, display: 'flex', padding: 2 }}

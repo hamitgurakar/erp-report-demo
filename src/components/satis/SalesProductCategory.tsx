@@ -5,6 +5,7 @@ import {
   ScatterChart, Scatter, ZAxis,
 } from 'recharts';
 import type { Theme, LangStrings, Lang, Panel } from '../../types';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
@@ -14,6 +15,8 @@ import { Spark } from '../ui/Spark';
 import { mkSpk } from '../../constants/data';
 import { type ColDef } from '../ui/ColumnManager';
 import { ColumnPresetDropdown } from '../ui/ColumnPresetDropdown';
+import { tTerm } from '../../i18n/terms';
+import { fmtMonth } from '../../utils/format';
 
 interface Props { t: Theme; l: LangStrings; lang: Lang; panels: Panel[]; onAddPanel: (name: string) => void; onPinTo: (panelName: string, cardId: string) => void; }
 
@@ -323,6 +326,7 @@ const TreemapContent = (props: { x?: number; y?: number; width?: number; height?
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const [catSort, setCatSort] = useState<{key:string;dir:'asc'|'desc'}>({key:'gelir',dir:'desc'});
   const [bkMode, setBkMode] = useState('TL');
@@ -388,8 +392,8 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
   ];
 
   const durumBadge = (d: string) => { const cfg: Record<string,{color:string;bg:string}> = { Optimal:{color:'#059669',bg:'#D1FAE5'}, Target:{color:'#3B82F6',bg:'#DBEAFE'}, Review:{color:'#DC2626',bg:'#FEE2E2'} }; const c = cfg[d] ?? {color:t.tx2,bg:t.bg2}; return <span style={{fontSize:10,fontWeight:600,color:c.color,background:c.bg,borderRadius:5,padding:'2px 8px'}}>{d}</span>; };
-  const stockDurumBadge = (d: string) => { const cfg: Record<string,{label:string;color:string;bg:string}> = { acil:{label:'Acil',color:'#DC2626',bg:'#FEE2E2'}, uyari:{label:'Uyarı',color:'#D97706',bg:'#FEF3C7'}, izle:{label:'İzle',color:'#3B82F6',bg:'#DBEAFE'} }; const c=cfg[d]??{label:d,color:t.tx2,bg:t.bg2}; return <span style={{fontSize:10,fontWeight:600,color:c.color,background:c.bg,borderRadius:5,padding:'2px 8px'}}>{c.label}</span>; };
-  const stockAksiyonBtn = (d: string) => { const cfg: Record<string,{label:string;color:string}> = { acil:{label:'Sipariş Geç',color:'#16A34A'}, uyari:{label:'İncele',color:'#D97706'}, izle:{label:'İzleniyor',color:'#94A3B8'} }; const c=cfg[d]??{label:d,color:t.tx2}; return <button onClick={()=>window.open('#','_blank')} style={{fontSize:10,fontWeight:600,color:c.color,background:c.color+'14',border:`1px solid ${c.color}44`,borderRadius:6,padding:'4px 10px',cursor:'pointer',whiteSpace:'nowrap'}}>{c.label}</button>; };
+  const stockDurumBadge = (d: string) => { const cfg: Record<string,{label:string;color:string;bg:string}> = { acil:{label:'Acil',color:'#DC2626',bg:'#FEE2E2'}, uyari:{label:'Uyarı',color:'#D97706',bg:'#FEF3C7'}, izle:{label:'İzle',color:'#3B82F6',bg:'#DBEAFE'} }; const c=cfg[d]??{label:d,color:t.tx2,bg:t.bg2}; return <span style={{fontSize:10,fontWeight:600,color:c.color,background:c.bg,borderRadius:5,padding:'2px 8px'}}>{i18n.tBadge(c.label)}</span>; };
+  const stockAksiyonBtn = (d: string) => { const cfg: Record<string,{label:string;color:string}> = { acil:{label:'Sipariş Geç',color:'#16A34A'}, uyari:{label:'İncele',color:'#D97706'}, izle:{label:'İzleniyor',color:'#94A3B8'} }; const c=cfg[d]??{label:d,color:t.tx2}; return <button onClick={()=>window.open('#','_blank')} style={{fontSize:10,fontWeight:600,color:c.color,background:c.color+'14',border:`1px solid ${c.color}44`,borderRadius:6,padding:'4px 10px',cursor:'pointer',whiteSpace:'nowrap'}}>{i18n.tBadge(c.label)}</button>; };
 
   return (
     <>
@@ -401,9 +405,9 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
 
       {/* Row 1 — Gelir & Karlılık */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(6, 1fr)',gap:10,marginBottom:10}}>
-        <KPICard id="prd-net-ciro" title="Net Satış Cirosu" value="2,48M ₺" trendValue="+12,4%" sparkTrend="up" color="gn" unit="K ₺" big {...kp} />
-        <KPICard id="prd-cogs" title="COGS" value="1,62M ₺" trendValue="+4,2%" sparkTrend="up" color="am" unit="K ₺" big info="Satılan Malın Maliyeti — ürün alış maliyeti, kargo ve gümrük dahil doğrudan maliyetler." {...kp} />
-        <KPICard id="prd-brut" title="Brüt Kâr" value="860K ₺" trendValue="+8,1%" sparkTrend="up" color="gn" unit="K ₺" big showToggle toggleState={bkMode} onToggle={setBkMode} altValue="%34,7" {...kp} />
+        <KPICard id="prd-net-ciro" title={tTerm('Net Satış Cirosu')} value="2,48M ₺" trendValue="+12,4%" sparkTrend="up" color="gn" unit="K ₺" big {...kp} />
+        <KPICard id="prd-cogs" title="COGS" value="1,62M ₺" trendValue="+4,2%" sparkTrend="up" color="am" unit="K ₺" big info={tTerm('Satılan Malın Maliyeti — ürün alış maliyeti, kargo ve gümrük dahil doğrudan maliyetler.')} {...kp} />
+        <KPICard id="prd-brut" title={tTerm('Brüt Kâr')} value="860K ₺" trendValue="+8,1%" sparkTrend="up" color="gn" unit="K ₺" big showToggle toggleState={bkMode} onToggle={setBkMode} altValue="%34,7" {...kp} />
         <KPICard id="prd-net" title="Net Kâr" value="425K ₺" trendValue="+15,2%" sparkTrend="up" color="gn" unit="K ₺" big showToggle toggleState={nkMode} onToggle={setNkMode} altValue="%17,1" {...kp} />
         <KPICard id="prd-gelir" title={l.prdToplamGelir??'Toplam Gelir'} value="1.420.000 ₺" trendValue="+8,7%" sparkTrend="up" color="gn" unit="K ₺" big {...kp} />
         <KPICard id="prd-aov" title={l.prdAOV??'Ort. Sipariş Değeri'} value="214,50 ₺" trendValue="-0,8%" sparkTrend="down" color="rd" unit="₺" big {...kp} />
@@ -411,19 +415,19 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
 
       {/* Row 2 — Stok & Operasyonel */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(6, 1fr)',gap:10,marginBottom:10}}>
-        <KPICard id="prd-stok-adet" title="Toplam Stok Adedi" value="28.920" trendValue="+45" sparkTrend="up" color="c1" unit="adet" {...kp} />
-        <KPICard id="prd-stok-deger" title="Toplam Stok Değeri" value="2,91M ₺" trendValue="+4,5%" sparkTrend="up" color="pu" unit="K ₺" {...kp} />
-        <KPICard id="prd-sepet" title="Ort. Sepet Tutarı" value="487 ₺" trendValue="+6,2%" sparkTrend="up" color="gn" unit="₺" {...kp} />
-        <KPICard id="prd-fiyat" title="Ort. Ürün Fiyatı" value="342 ₺" trendValue="+4,7%" sparkTrend="up" color="gn" unit="₺" {...kp} />
-        <KPICard id="prd-iade" title="İade Oranı" value="%3,8" trendValue="-0,4%" sparkTrend="down" color="gn" unit="%" {...kp} />
-        <KPICard id="prd-stok-satis" title="Stok/Satış Oranı" value="2,1 ay" trendValue="-0,2 ay" sparkTrend="down" color="gn" unit="ay" info="Mevcut stokun kaç aylık satışa yeteceği" {...kp} />
+        <KPICard id="prd-stok-adet" title={tTerm('Toplam Stok Adedi')} value="28.920" trendValue="+45" sparkTrend="up" color="c1" unit="adet" {...kp} />
+        <KPICard id="prd-stok-deger" title={tTerm('Toplam Stok Değeri')} value="2,91M ₺" trendValue="+4,5%" sparkTrend="up" color="pu" unit="K ₺" {...kp} />
+        <KPICard id="prd-sepet" title={tTerm('Ort. Sepet Tutarı')} value="487 ₺" trendValue="+6,2%" sparkTrend="up" color="gn" unit="₺" {...kp} />
+        <KPICard id="prd-fiyat" title={tTerm('Ort. Ürün Fiyatı')} value="342 ₺" trendValue="+4,7%" sparkTrend="up" color="gn" unit="₺" {...kp} />
+        <KPICard id="prd-iade" title={tTerm('İade Oranı')} value="%3,8" trendValue="-0,4%" sparkTrend="down" color="gn" unit="%" {...kp} />
+        <KPICard id="prd-stok-satis" title={tTerm('Stok/Satış Oranı')} value="2,1 ay" trendValue="-0,2 ay" sparkTrend="down" color="gn" unit="ay" info={tTerm('Mevcut stokun kaç aylık satışa yeteceği')} {...kp} />
       </div>
 
 
       {/* ── 2. PROJE AMACI KATKI DAĞILIMI & TOP ÜRÜNLER ─────────────────────── */}
       <SectionHeader title={l.prdTreemapSection ?? 'PROJE AMACI KATKI DAĞILIMI & TOP ÜRÜNLER'} t={t} />
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-        <ChartContainer t={t} l={l} title="Proje Amacı Katkı Dağılımı" id="prd-chart-treemap" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Proje Amacı Katkı Dağılımı')} id="prd-chart-treemap" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <ResponsiveContainer width="100%" height={300}>
             <Treemap data={treemapData} dataKey="size" stroke="#fff" content={<TreemapContent />}>
               <Tooltip content={({active,payload})=>active&&payload?.[0]?(<div style={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,padding:'8px 12px',fontSize:12}}><div style={{fontWeight:600,marginBottom:4}}>{payload[0].payload.name}</div><div style={{color:t.tx2}}>Gelir: <b>{payload[0].payload.size}K ₺</b></div><div style={{color:t.tx2}}>Marj: <b>%{payload[0].payload.marj}</b></div><div style={{color:t.tx2}}>Deal: <b>{payload[0].payload.deals}</b></div></div>):null} />
@@ -477,7 +481,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
       </div>
 
       {/* ── 4. PERFORMANS ANALİZİ (Kategori Bazlı, Hiyerarşik) ────────────── */}
-      <SectionHeader title="PERFORMANS ANALİZİ" t={t} />
+      <SectionHeader title={tTerm('PERFORMANS ANALİZİ')} t={t} />
       <div style={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:10,overflow:'hidden',marginBottom:16}}>
         {/* Toolbar */}
         <div style={{padding:'12px 16px',borderBottom:`1px solid ${t.bd}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -507,7 +511,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
                 <select value={f.operator} onChange={e=>updatePerfFilter(f.id,'operator',e.target.value)} style={{width:60,padding:'4px 6px',borderRadius:6,border:`1px solid ${t.bd}`,fontSize:11,color:t.tx,background:t.cd,outline:'none'}}>
                   {PERF_OPS.map(o=><option key={o} value={o}>{o}</option>)}
                 </select>
-                <input type="number" value={f.value||''} onChange={e=>updatePerfFilter(f.id,'value',parseFloat(e.target.value)||0)} style={{width:90,padding:'4px 8px',borderRadius:6,border:`1px solid ${t.bd}`,fontSize:11,color:t.tx,background:t.cd,outline:'none'}} placeholder="değer"/>
+                <input type="number" value={f.value||''} onChange={e=>updatePerfFilter(f.id,'value',parseFloat(e.target.value)||0)} style={{width:90,padding:'4px 8px',borderRadius:6,border:`1px solid ${t.bd}`,fontSize:11,color:t.tx,background:t.cd,outline:'none'}} placeholder={tTerm('değer')}/>
                 <button onClick={()=>removePerfFilter(f.id)} style={{background:'none',border:'none',cursor:'pointer',color:t.tx3,fontSize:16,lineHeight:1}}>×</button>
               </div>
             ))}
@@ -530,7 +534,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
         <div style={{overflowX:'auto'}}>
           <table style={{width:'100%',borderCollapse:'collapse'}}>
             <thead><tr style={{borderBottom:`1px solid ${t.bd}`,background:t.bg2}}>
-              <th style={{padding:'7px 10px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'left',whiteSpace:'nowrap'}}>Kategori</th>
+              <th style={{padding:'7px 10px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'left',whiteSpace:'nowrap'}}>{tTerm('Kategori')}</th>
               {PERF_ALL_COLUMNS.filter(c=>perfVisibleCols.includes(c.key)).map((h,i)=>(
                 <th key={h.key} style={{padding:'7px 10px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:h.key==='trend'?'center':'right',whiteSpace:'nowrap'}}>{h.label}</th>
               ))}
@@ -605,13 +609,13 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
       </div>
 
       {/* ── 5. CİRO TRENDİ & PAY DEĞİŞİMİ ───────────────────────────────────── */}
-      <SectionHeader title="CİRO TRENDİ & PAY DEĞİŞİMİ" t={t} />
+      <SectionHeader title={tTerm('CİRO TRENDİ & PAY DEĞİŞİMİ')} t={t} />
       <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:12,marginBottom:12}}>
-        <ChartContainer t={t} l={l} title="Aylık Ciro Trendi (Proje Amacı Bazlı)" id="prd-chart-cirotrend" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Aylık Ciro Trendi (Proje Amacı Bazlı)')} id="prd-chart-cirotrend" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={ciroTrendData} margin={{top:10,right:20,bottom:0,left:0}}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false}/>
-              <XAxis dataKey="month" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/>
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/>
               <YAxis tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}K`}/>
               <Tooltip contentStyle={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,fontSize:12}} formatter={(v:number,n:string)=>[`${v}K ₺`,n]}/>
               <Legend iconSize={10} wrapperStyle={{fontSize:10}}/>
@@ -624,13 +628,13 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
             </LineChart>
           </ResponsiveContainer>
         </ChartContainer>
-        <ChartContainer t={t} l={l} title="Ciro Payı Değişim Tablosu" id="prd-chart-revshare" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Ciro Payı Değişim Tablosu')} id="prd-chart-revshare" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
               <thead><tr style={{borderBottom:`1px solid ${t.bd}`,background:t.bg2}}>
-                <th style={{padding:'6px 8px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'left'}}>Amaç</th>
+                <th style={{padding:'6px 8px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'left'}}>{tTerm('Amaç')}</th>
                 <th style={{padding:'6px 8px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'right'}}>Bu Ay</th>
-                <th style={{padding:'6px 8px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'right'}}>Pay %</th>
+                <th style={{padding:'6px 8px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'right'}}>{tTerm('Pay %')}</th>
                 <th style={{padding:'6px 8px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'right'}}>Δ (pp)</th>
                 <th style={{padding:'6px 8px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:'center'}}>Trend</th>
               </tr></thead>
@@ -649,9 +653,9 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
       </div>
 
       {/* ── 6. KARLILIK MATRİSİ ──────────────────────────────────────────────── */}
-      <SectionHeader title="KARLILIK MATRİSİ" t={t} />
+      <SectionHeader title={tTerm('KARLILIK MATRİSİ')} t={t} />
       <div style={{marginBottom:12}}>
-        <ChartContainer t={t} l={l} title="Proje Amacı Kârlılık Matrisi" id="prd-chart-matrix" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Proje Amacı Kârlılık Matrisi')} id="prd-chart-matrix" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <div style={{position:'relative'}}>
             <div style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:1}}>
               <div style={{position:'absolute',top:12,right:32,fontSize:10,color:t.gn,fontWeight:600,opacity:0.6}}>★ Yıldız</div>
@@ -676,30 +680,30 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
       </div>
 
       {/* ── 7. STOK & ENVANTER ANALİZİ ───────────────────────────────────────── */}
-      <SectionHeader title="STOK & ENVANTER ANALİZİ" t={t} />
+      <SectionHeader title={tTerm('STOK & ENVANTER ANALİZİ')} t={t} />
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-        <ChartContainer t={t} l={l} title="Stok Sağlığı Dağılımı" id="prd-chart-stockhealth" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Stok Sağlığı Dağılımı')} id="prd-chart-stockhealth" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <div style={{display:'flex',alignItems:'center',gap:20}}>
             <div style={{position:'relative'}}><ResponsiveContainer width={130} height={130}><PieChart><Pie data={stockHealth} cx="50%" cy="50%" innerRadius={38} outerRadius={58} dataKey="value" strokeWidth={0}>{stockHealth.map((e,i)=><Cell key={i} fill={e.color}/>)}</Pie></PieChart></ResponsiveContainer><div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}><div style={{fontSize:16,fontWeight:700,color:t.tx}}>1,247</div><div style={{fontSize:9,color:t.tx2}}>SKU</div></div></div>
             <div style={{flex:1,display:'flex',flexDirection:'column',gap:8}}>{stockHealth.map(d=>(<div key={d.name} style={{display:'flex',alignItems:'center',gap:8}}><div style={{width:10,height:10,borderRadius:3,background:d.color,flexShrink:0}}/><span style={{fontSize:11,color:t.tx2,flex:1}}>{d.name}</span><span style={{fontSize:12,fontWeight:600,color:t.tx}}>{d.value}%</span></div>))}</div>
           </div>
         </ChartContainer>
-        <ChartContainer t={t} l={l} title="Stok Devir Trendi" id="prd-chart-stockturn" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Stok Devir Trendi')} id="prd-chart-stockturn" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <ResponsiveContainer width="100%" height={130}>
-            <LineChart data={stockTurnover}><CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false}/><XAxis dataKey="month" tick={{fontSize:11,fill:t.tx2}} axisLine={false} tickLine={false}/><YAxis tick={{fontSize:11,fill:t.tx2}} axisLine={false} tickLine={false} domain={[3.5,7]}/><Tooltip contentStyle={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,fontSize:12}}/><ReferenceLine y={6} stroke={t.rd} strokeDasharray="5 3" label={{value:'Hedef 6x',fontSize:10,fill:t.rd,position:'insideTopRight'}}/><Line type="monotone" dataKey="devir" stroke={t.tl} strokeWidth={2.5} dot={{r:4,fill:t.tl}}/></LineChart>
+            <LineChart data={stockTurnover}><CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false}/><XAxis dataKey="month" tickFormatter={fmtMonth} tick={{fontSize:11,fill:t.tx2}} axisLine={false} tickLine={false}/><YAxis tick={{fontSize:11,fill:t.tx2}} axisLine={false} tickLine={false} domain={[3.5,7]}/><Tooltip contentStyle={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,fontSize:12}}/><ReferenceLine y={6} stroke={t.rd} strokeDasharray="5 3" label={{value:'Hedef 6x',fontSize:10,fill:t.rd,position:'insideTopRight'}}/><Line type="monotone" dataKey="devir" stroke={t.tl} strokeWidth={2.5} dot={{r:4,fill:t.tl}}/></LineChart>
           </ResponsiveContainer>
         </ChartContainer>
       </div>
 
       {/* ── 8. STOK DETAY GRAFİKLERİ ─────────────────────────────────────────── */}
-      <SectionHeader title="STOK DETAY GRAFİKLERİ" t={t} />
+      <SectionHeader title={tTerm('STOK DETAY GRAFİKLERİ')} t={t} />
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-        <ChartContainer t={t} l={l} title="Stok Yaşlanma Analizi" id="prd-chart-aging" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Stok Yaşlanma Analizi')} id="prd-chart-aging" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={stockAging} layout="vertical" barCategoryGap="18%"><CartesianGrid strokeDasharray="3 3" stroke={t.bd} horizontal={false}/><XAxis type="number" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/><YAxis type="category" dataKey="name" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} width={80}/><Tooltip contentStyle={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,fontSize:12}} formatter={(v:number)=>`${v}%`}/><Bar dataKey="d0_30" name="0-30 gün" stackId="a" fill="#059669"/><Bar dataKey="d31_60" name="31-60 gün" stackId="a" fill="#10B981"/><Bar dataKey="d61_90" name="61-90 gün" stackId="a" fill="#D97706"/><Bar dataKey="d90plus" name="90+ gün" stackId="a" fill="#DC2626" radius={[0,3,3,0]}/></BarChart>
+            <BarChart data={stockAging} layout="vertical" barCategoryGap="18%"><CartesianGrid strokeDasharray="3 3" stroke={t.bd} horizontal={false}/><XAxis type="number" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/><YAxis type="category" dataKey="name" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} width={80}/><Tooltip contentStyle={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,fontSize:12}} formatter={(v:number)=>`${v}%`}/><Bar dataKey="d0_30" name={`0-30 ${i18n.t('common.daysLower')}`} stackId="a" fill="#059669"/><Bar dataKey="d31_60" name={`31-60 ${i18n.t('common.daysLower')}`} stackId="a" fill="#10B981"/><Bar dataKey="d61_90" name={`61-90 ${i18n.t('common.daysLower')}`} stackId="a" fill="#D97706"/><Bar dataKey="d90plus" name={`90+ ${i18n.t('common.daysLower')}`} stackId="a" fill="#DC2626" radius={[0,3,3,0]}/></BarChart>
           </ResponsiveContainer>
         </ChartContainer>
-        <ChartContainer t={t} l={l} title="Stok vs Satış Hızı" id="prd-chart-stockscatter" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Stok vs Satış Hızı')} id="prd-chart-stockscatter" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <div style={{display:'flex',gap:10,marginBottom:4,flexWrap:'wrap'}}>{[{label:'İyi Denge',color:t.gn},{label:'Orta',color:t.am},{label:'Verimsiz',color:t.rd}].map(item=>(<span key={item.label} style={{display:'flex',alignItems:'center',gap:4,fontSize:10,color:t.tx2}}><div style={{width:8,height:8,borderRadius:'50%',background:item.color}}/>{item.label}</span>))}</div>
           <ResponsiveContainer width="100%" height={170}>
             <ScatterChart margin={{top:6,right:16,bottom:0,left:0}}><CartesianGrid strokeDasharray="3 3" stroke={t.bd}/><XAxis type="number" dataKey="stokDeg" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/><YAxis type="number" dataKey="satisHizi" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/><ZAxis range={[40,120]}/>
@@ -711,7 +715,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
       </div>
 
       {/* ── 9. KRİTİK STOK & UYARILAR ────────────────────────────────────────── */}
-      <SectionHeader title="KRİTİK STOK & UYARILAR" t={t} />
+      <SectionHeader title={tTerm('KRİTİK STOK & UYARILAR')} t={t} />
       <div style={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:10,overflow:'hidden',marginBottom:16}}>
         <div style={{padding:'12px 16px',borderBottom:`1px solid ${t.bd}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <span style={{fontSize:13,fontWeight:500,color:t.tx}}>Kritik Stok Tablosu</span>
@@ -721,7 +725,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
           <table style={{width:'100%',borderCollapse:'collapse'}}>
             <thead><tr style={{borderBottom:`1px solid ${t.bd}`,background:t.bg2}}>
               {['Ürün','Proje Amacı','Mevcut Stok','Gnlk Satış Hızı','Thmni Tükenme','Tedarik Süresi','Durum','Aksiyon'].map(h=>(
-                <th key={h} style={{padding:'8px 12px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:['Ürün','Proje Amacı','Durum','Aksiyon'].includes(h)?'left':'right',whiteSpace:'nowrap'}}>{h}</th>
+                <th key={h} style={{padding:'8px 12px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:['Ürün','Proje Amacı','Durum','Aksiyon'].includes(h)?'left':'right',whiteSpace:'nowrap'}}>{tTerm(h)}</th>
               ))}
             </tr></thead>
             <tbody>{criticalStock.map(r=>(
@@ -730,8 +734,8 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
                 <td style={{padding:'8px 12px',fontSize:11,color:t.tx2}}>{r.amac}</td>
                 <td style={{padding:'8px 12px',fontSize:11,textAlign:'right',color:r.stok<10?t.rd:t.tx,fontWeight:r.stok<10?700:400}}>{r.stok}</td>
                 <td style={{padding:'8px 12px',fontSize:11,textAlign:'right',color:t.tx}}>{r.hiz.toFixed(1)}</td>
-                <td style={{padding:'8px 12px',fontSize:11,textAlign:'right',color:r.tukenme<=7?t.rd:r.tukenme<=14?t.am:t.gn,fontWeight:600}}>{r.tukenme} gün</td>
-                <td style={{padding:'8px 12px',fontSize:11,textAlign:'right',color:t.tx2}}>{r.tedarik} gün</td>
+                <td style={{padding:'8px 12px',fontSize:11,textAlign:'right',color:r.tukenme<=7?t.rd:r.tukenme<=14?t.am:t.gn,fontWeight:600}}>{r.tukenme} {i18n.t('common.daysLower')}</td>
+                <td style={{padding:'8px 12px',fontSize:11,textAlign:'right',color:t.tx2}}>{r.tedarik} {i18n.t('common.daysLower')}</td>
                 <td style={{padding:'8px 12px'}}>{stockDurumBadge(r.durum)}</td>
                 <td style={{padding:'8px 12px'}}>{stockAksiyonBtn(r.durum)}</td>
               </tr>
@@ -741,11 +745,11 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
       </div>
 
       {/* ── 10. MARKA ANALİZİ ────────────────────────────────────────────────── */}
-      <SectionHeader title="MARKA ANALİZİ" t={t} />
+      <SectionHeader title={tTerm('MARKA ANALİZİ')} t={t} />
 
       {/* Top 20 Marka */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-        <ChartContainer t={t} l={l} title="Top 10 Marka" id="prd-chart-brandtop" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Top 10 Marka')} id="prd-chart-brandtop" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={brandTop} layout="vertical" margin={{top:0,right:20,bottom:0,left:0}}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} horizontal={false}/><XAxis type="number" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}K`}/><YAxis type="category" dataKey="name" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} width={85}/>
@@ -754,7 +758,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
-        <ChartContainer t={t} l={l} title="Marka Büyüme Matrisi" id="prd-chart-brandmatrix" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Marka Büyüme Matrisi')} id="prd-chart-brandmatrix" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <ResponsiveContainer width="100%" height={280}>
             <ScatterChart margin={{top:20,right:20,bottom:10,left:0}}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd}/><XAxis type="number" dataKey="buyume" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} label={{value:'Büyüme %',position:'insideBottom',offset:-5,fontSize:9,fill:t.tx3}}/><YAxis type="number" dataKey="marjDelta" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false} label={{value:'Marj Δ',angle:-90,position:'insideLeft',fontSize:9,fill:t.tx3}}/>
@@ -777,7 +781,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
           <table style={{width:'100%',borderCollapse:'collapse'}}>
             <thead><tr style={{borderBottom:`1px solid ${t.bd}`,background:t.bg2}}>
               {['Marka','Ciro (K)','Pay %','Marj %','SKU','Satış','Stok (K)','İade %','Büyüme %'].map((h,i)=>(
-                <th key={h} style={{padding:'7px 10px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:i===0?'left':'right',whiteSpace:'nowrap'}}>{h}</th>
+                <th key={h} style={{padding:'7px 10px',fontSize:10,fontWeight:600,color:t.tx2,textAlign:i===0?'left':'right',whiteSpace:'nowrap'}}>{tTerm(h)}</th>
               ))}
             </tr></thead>
             <tbody>{brandTable.map(r=>(
@@ -798,19 +802,19 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
       </div>
 
       {/* ── AYLIK SATIŞ HACMİ & ÇEYREKLİK DEAL HEATMAP ─────────────────────── */}
-      <SectionHeader title="AYLIK SATIŞ HACMİ & SEZONSAL" t={t} />
+      <SectionHeader title={tTerm('AYLIK SATIŞ HACMİ & SEZONSAL')} t={t} />
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-        <ChartContainer t={t} l={l} title="Aylık Satış Hacmi (Adet)" id="prd-chart-aylik" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Aylık Satış Hacmi (Adet)')} id="prd-chart-aylik" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlySales} margin={{top:15,right:20,bottom:0,left:0}}><CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false}/><XAxis dataKey="month" tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/><YAxis tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/><Tooltip contentStyle={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,fontSize:12}} formatter={(v:number)=>[`${v.toLocaleString('tr-TR')} adet`,'']}/><Bar dataKey="adet" radius={[4,4,0,0]}>{monthlySales.map((d,i)=><Cell key={i} fill={d.adet===maxMonthly?t.am:t.pr} opacity={d.adet===maxMonthly?1:0.7}/>)}</Bar></BarChart>
+            <BarChart data={monthlySales} margin={{top:15,right:20,bottom:0,left:0}}><CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false}/><XAxis dataKey="month" tickFormatter={fmtMonth} tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/><YAxis tick={{fontSize:10,fill:t.tx2}} axisLine={false} tickLine={false}/><Tooltip contentStyle={{background:t.cd,border:`1px solid ${t.bd}`,borderRadius:8,fontSize:12}} formatter={(v:number)=>[`${v.toLocaleString('tr-TR')} adet`,'']}/><Bar dataKey="adet" radius={[4,4,0,0]}>{monthlySales.map((d,i)=><Cell key={i} fill={d.adet===maxMonthly?t.am:t.pr} opacity={d.adet===maxMonthly?1:0.7}/>)}</Bar></BarChart>
           </ResponsiveContainer>
         </ChartContainer>
 
         {/* Satış Yoğunluğu Heatmap */}
-        <ChartContainer t={t} l={l} title="Satış Yoğunluğu (Gün × Saat)" id="prd-chart-heatmap" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+        <ChartContainer t={t} l={l} title={tTerm('Satış Yoğunluğu (Gün × Saat)')} id="prd-chart-heatmap" panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
           <div style={{overflowX:'auto'}}>
             <div style={{display:'grid',gridTemplateColumns:'40px repeat(12, 1fr)',gap:2,marginBottom:2}}><div/>{HOURS.map(h=><div key={h} style={{fontSize:8,color:t.tx3,textAlign:'center'}}>{h}</div>)}</div>
-            {DAYS.map((day,di)=>(<div key={day} style={{display:'grid',gridTemplateColumns:'40px repeat(12, 1fr)',gap:2,marginBottom:2}}><div style={{fontSize:9,color:t.tx2,display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:4}}>{day}</div>{heatmapValues[di].map((val,hi)=>(<div key={hi} style={{height:18,borderRadius:3,background:heatColor(val,heatmapMax,'#4F46E5'),display:'flex',alignItems:'center',justifyContent:'center'}} title={`${day} ${HOURS[hi]}: ${val}`}>{val>10&&<span style={{fontSize:7,color:'#fff',fontWeight:600}}>{val}</span>}</div>))}</div>))}
+            {DAYS.map((day,di)=>(<div key={day} style={{display:'grid',gridTemplateColumns:'40px repeat(12, 1fr)',gap:2,marginBottom:2}}><div style={{fontSize:9,color:t.tx2,display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:4}}>{tTerm(day)}</div>{heatmapValues[di].map((val,hi)=>(<div key={hi} style={{height:18,borderRadius:3,background:heatColor(val,heatmapMax,'#4F46E5'),display:'flex',alignItems:'center',justifyContent:'center'}} title={`${day} ${HOURS[hi]}: ${val}`}>{val>10&&<span style={{fontSize:7,color:'#fff',fontWeight:600}}>{val}</span>}</div>))}</div>))}
           </div>
           <div style={{fontSize:9,color:t.tx2,textAlign:'center',marginTop:6,fontStyle:'italic'}}>Peak B2B sipariş: 09:00-11:00, Salı & Çarşamba</div>
         </ChartContainer>
@@ -821,7 +825,7 @@ export const SalesProductCategory = ({ t, l, lang, panels, onAddPanel, onPinTo }
         <div style={{padding:'12px 16px',borderBottom:`1px solid ${t.bd}`}}><span style={{fontSize:13,fontWeight:500,color:t.tx}}>Çeyreklik Deal Dağılımı (Amaç Bazlı)</span></div>
         <div style={{overflowX:'auto',padding:'12px 16px'}}>
           <table style={{width:'100%',borderCollapse:'collapse'}}>
-            <thead><tr><th style={{padding:'8px 14px',fontSize:11,fontWeight:600,color:t.tx2,textAlign:'left'}}>Amaç</th>{['Q1','Q2','Q3','Q4'].map(q=><th key={q} style={{padding:'8px 14px',fontSize:11,fontWeight:600,color:t.tx2,textAlign:'center'}}>{q}</th>)}<th style={{padding:'8px 14px',fontSize:11,fontWeight:600,color:t.tx2,textAlign:'right'}}>Toplam</th></tr></thead>
+            <thead><tr><th style={{padding:'8px 14px',fontSize:11,fontWeight:600,color:t.tx2,textAlign:'left'}}>{tTerm('Amaç')}</th>{['Q1','Q2','Q3','Q4'].map(q=><th key={q} style={{padding:'8px 14px',fontSize:11,fontWeight:600,color:t.tx2,textAlign:'center'}}>{q}</th>)}<th style={{padding:'8px 14px',fontSize:11,fontWeight:600,color:t.tx2,textAlign:'right'}}>{tTerm('Toplam')}</th></tr></thead>
             <tbody>{qDealRows.map(r=>{const total=r.q1+r.q2+r.q3+r.q4;return(<tr key={r.amac} style={{borderTop:`1px solid ${t.bd}`}}><td style={{padding:'8px 14px',fontSize:12,fontWeight:500,color:t.tx}}>{r.amac}</td>{[r.q1,r.q2,r.q3,r.q4].map((v,qi)=>{const ratio=qMax>0?v/qMax:0;const alpha=Math.round(ratio*200+20).toString(16).padStart(2,'0');return(<td key={qi} style={{padding:'6px 10px',textAlign:'center'}}><div style={{background:`#4F46E5${alpha}`,color:ratio>0.5?'#fff':t.tx,borderRadius:4,padding:'6px 8px',fontSize:12,fontWeight:600}}>{v}</div></td>);})}<td style={{padding:'8px 14px',fontSize:12,fontWeight:700,color:t.tx,textAlign:'right'}}>{total}</td></tr>);})}</tbody>
           </table>
         </div>

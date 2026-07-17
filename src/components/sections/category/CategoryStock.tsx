@@ -14,8 +14,11 @@ import { SectionHeader } from '../../ui/SectionHeader';
 import { ChartContainer } from '../../ui/ChartContainer';
 import { FilterBar, type FilterOption } from '../../ui/FilterBar';
 import { Icon } from '../../ui/Icon';
+import { useTranslation } from '../../../i18n/LanguageContext';
 import { type ColDef } from '../../ui/ColumnManager';
 import { ColumnPresetDropdown } from '../../ui/ColumnPresetDropdown';
+import { fmtPercent, fmtMonth } from '../../../utils/format';
+import { tTerm } from '../../../i18n/terms';
 
 const CRITICAL_COLS: ColDef[] = [
   { key: 'urun', label: 'Ürün' },
@@ -52,6 +55,7 @@ interface Props {
 }
 
 export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const [visibleCols, setVisibleCols] = useState<string[]>(CRITICAL_COLS.map((c) => c.key));
   const [visibleInefCols, setVisibleInefCols] = useState<string[]>(INEF_COLS.map((c) => c.key));
@@ -74,7 +78,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
     }[durum];
     return (
       <span style={{ fontSize: 10, fontWeight: 600, color: conf.color, background: conf.bg, borderRadius: 5, padding: '2px 8px' }}>
-        {conf.label}
+        {tTerm(conf.label)}
       </span>
     );
   };
@@ -90,7 +94,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
         onClick={() => window.open('#', '_blank')}
         style={{ fontSize: 10, fontWeight: 600, color: conf.color, background: conf.bg, border: `1px solid ${conf.color}44`, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}
       >
-        {conf.label}
+        {tTerm(conf.label)}
       </button>
     );
   };
@@ -103,7 +107,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
     }[durum];
     return (
       <span style={{ fontSize: 10, fontWeight: 600, color: conf.color, background: conf.bg, borderRadius: 5, padding: '2px 8px' }}>
-        {conf.label}
+        {tTerm(conf.label)}
       </span>
     );
   };
@@ -125,7 +129,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           cursor: 'pointer', whiteSpace: 'nowrap', letterSpacing: '0.01em',
         }}
       >
-        {c.label}
+        {tTerm(c.label)}
       </button>
     );
   };
@@ -154,10 +158,10 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
 
       {/* B1: Row 2 — 4 small KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }}>
-        <KPICard id="kat-stok-karsilama" title={l.katKarsılamaSuresi} value="48 gün" trendValue="-3 gün" sparkTrend="down" color="gn" unit="gün" {...kp} />
+        <KPICard id="kat-stok-karsilama" title={l.katKarsılamaSuresi} value={`48 ${i18n.t('common.daysLower')}`} trendValue={`-3 ${i18n.t('common.daysLower')}`} sparkTrend="down" color="gn" unit={i18n.t('common.daysLower')} {...kp} />
         <KPICard id="kat-stok-fazla" title={l.katFazlaStokDeg} value="185K ₺" trendValue="+12K" sparkTrend="up" color="am" unit="K ₺" {...kp} />
-        <KPICard id="kat-stok-tedarik" title={l.katOrtTedarikSuresi} value="12 gün" trendValue="-1 gün" sparkTrend="down" color="gn" unit="gün" {...kp} />
-        <KPICard id="kat-stok-yas" title={l.katStokYasi} value="34 gün" trendValue="+2 gün" sparkTrend="up" color="am" unit="gün" {...kp} />
+        <KPICard id="kat-stok-tedarik" title={l.katOrtTedarikSuresi} value={`12 ${i18n.t('common.daysLower')}`} trendValue={`-1 ${i18n.t('common.daysLower')}`} sparkTrend="down" color="gn" unit={i18n.t('common.daysLower')} {...kp} />
+        <KPICard id="kat-stok-yas" title={l.katStokYasi} value={`34 ${i18n.t('common.daysLower')}`} trendValue={`+2 ${i18n.t('common.daysLower')}`} sparkTrend="up" color="am" unit={i18n.t('common.daysLower')} {...kp} />
       </div>
 
       {/* B1: Row 3 — 3 small KPIs */}
@@ -202,7 +206,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           <ResponsiveContainer width="100%" height={130}>
             <LineChart data={stockTurnoverTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} domain={[3.5, 7]} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
               <ReferenceLine y={6} stroke={t.rd} strokeDasharray="5 3" label={{ value: lang === 'tr' ? 'Hedef 6x' : 'Target 6x', fontSize: 10, fill: t.rd, position: 'insideTopRight' }} />
@@ -219,10 +223,10 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
               <XAxis type="number" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} width={80} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(v) => `${v}%`} />
-              <Bar dataKey="d0_30" name="0-30 gün" stackId="a" fill="#059669" />
-              <Bar dataKey="d31_60" name="31-60 gün" stackId="a" fill="#10B981" />
-              <Bar dataKey="d61_90" name="61-90 gün" stackId="a" fill="#D97706" />
-              <Bar dataKey="d90plus" name="90+ gün" stackId="a" fill="#DC2626" radius={[0, 3, 3, 0]} />
+              <Bar dataKey="d0_30" name={`0-30 ${i18n.t('common.daysLower')}`} stackId="a" fill="#059669" />
+              <Bar dataKey="d31_60" name={`31-60 ${i18n.t('common.daysLower')}`} stackId="a" fill="#10B981" />
+              <Bar dataKey="d61_90" name={`61-90 ${i18n.t('common.daysLower')}`} stackId="a" fill="#D97706" />
+              <Bar dataKey="d90plus" name={`90+ ${i18n.t('common.daysLower')}`} stackId="a" fill="#DC2626" radius={[0, 3, 3, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
@@ -235,9 +239,9 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
               { label: lang === 'tr' ? 'Orta' : 'Mid', color: t.am },
               { label: lang === 'tr' ? 'Verimsiz' : 'Inefficient', color: t.rd },
             ].map((item) => (
-              <span key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: t.tx2 }}>
+              <span key={tTerm(item.label)} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: t.tx2 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
-                {item.label}
+                {tTerm(item.label)}
               </span>
             ))}
           </div>
@@ -305,7 +309,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {CRITICAL_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => (
                   <th key={col.key} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: col.key === 'urun' || col.key === 'kategori' ? 'left' : 'right', whiteSpace: 'nowrap' }}>
-                    {col.label}
+                    {tTerm(col.label)}
                   </th>
                 ))}
               </tr>
@@ -322,8 +326,8 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                   {visibleCols.includes('kategori') && <td style={{ padding: '9px 14px', fontSize: 12, color: t.tx2, textAlign: 'left' }}>{row.kategori}</td>}
                   {visibleCols.includes('mevcutStok') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.mevcutStok < 10 ? t.rd : t.tx, fontWeight: row.mevcutStok < 10 ? 700 : 400 }}>{row.mevcutStok}</td>}
                   {visibleCols.includes('gunlukSatisHizi') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: t.tx }}>{row.gunlukSatisHizi.toFixed(1)}</td>}
-                  {visibleCols.includes('tahminTukenme') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.tahminTukenme <= 7 ? t.rd : row.tahminTukenme <= 14 ? t.am : t.gn, fontWeight: 600 }}>{row.tahminTukenme} gün</td>}
-                  {visibleCols.includes('tedarikSuresi') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: t.tx2 }}>{row.tedarikSuresi} gün</td>}
+                  {visibleCols.includes('tahminTukenme') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.tahminTukenme <= 7 ? t.rd : row.tahminTukenme <= 14 ? t.am : t.gn, fontWeight: 600 }}>{row.tahminTukenme} {i18n.t('common.daysLower')}</td>}
+                  {visibleCols.includes('tedarikSuresi') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: t.tx2 }}>{row.tedarikSuresi} {i18n.t('common.daysLower')}</td>}
                   {visibleCols.includes('durum') && <td style={{ padding: '9px 14px', textAlign: 'right' }}>{durumBadge(row.durum)}</td>}
                   {visibleCols.includes('aksiyon') && <td style={{ padding: '9px 14px', textAlign: 'right' }}>{aksiyonBtn(row.durum)}</td>}
                 </tr>
@@ -355,7 +359,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: t.rd }}>%40</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: t.rd }}>{fmtPercent(40, 0)}</div>
                 <div style={{ fontSize: 10, color: t.tx2 }}>{lang === 'tr' ? 'Verimsiz' : 'Inefficient'}</div>
               </div>
             </div>
@@ -365,9 +369,9 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                 { label: l.yavasLabel, pct: '18%', color: t.am },
                 { label: lang === 'tr' ? 'Sağlıklı' : 'Healthy', pct: '60%', color: t.gn },
               ].map((d) => (
-                <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div key={tTerm(d.label)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: t.tx2, flex: 1 }}>{d.label}</span>
+                  <span style={{ fontSize: 11, color: t.tx2, flex: 1 }}>{tTerm(d.label)}</span>
                   <span style={{ fontSize: 12, fontWeight: 600, color: d.color }}>{d.pct}</span>
                 </div>
               ))}
@@ -396,7 +400,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                   active && payload?.[0] ? (
                     <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '6px 10px', fontSize: 11 }}>
                       <div style={{ fontWeight: 600 }}>{payload[0].payload.name}</div>
-                      <div style={{ color: t.tx2 }}>{lang === 'tr' ? 'Yaş' : 'Age'}: {payload[0].payload.yas} gün</div>
+                      <div style={{ color: t.tx2 }}>{lang === 'tr' ? 'Yaş' : 'Age'}: {payload[0].payload.yas} {i18n.t('common.daysLower')}</div>
                       <div style={{ color: t.tx2 }}>{lang === 'tr' ? 'Hız' : 'Velocity'}: {payload[0].payload.hiz}</div>
                       <div style={{ color: t.tx2 }}>{lang === 'tr' ? 'Stok Değeri' : 'Stock Value'}: {payload[0].payload.stokDeg}K ₺</div>
                     </div>
@@ -452,7 +456,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {INEF_COLS.filter((c) => visibleInefCols.includes(c.key)).map((col) => (
                   <th key={col.key} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: col.key === 'urun' || col.key === 'kategori' || col.key === 'durum' || col.key === 'aksiyon' ? 'left' : 'right', whiteSpace: 'nowrap' }}>
-                    {col.label}
+                    {tTerm(col.label)}
                   </th>
                 ))}
               </tr>
@@ -468,7 +472,7 @@ export const CategoryStock = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                   {visibleInefCols.includes('urun') && <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 500, color: t.tx, textAlign: 'left' }}>{row.urun}</td>}
                   {visibleInefCols.includes('kategori') && <td style={{ padding: '9px 14px', fontSize: 12, color: t.tx2, textAlign: 'left' }}>{row.kategori}</td>}
                   {visibleInefCols.includes('stokDeg') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: t.tx }}>{row.stokDeg}K ₺</td>}
-                  {visibleInefCols.includes('stokYas') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.stokYas > 180 ? t.rd : row.stokYas > 90 ? t.am : t.tx, fontWeight: row.stokYas > 90 ? 600 : 400 }}>{row.stokYas} gün</td>}
+                  {visibleInefCols.includes('stokYas') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.stokYas > 180 ? t.rd : row.stokYas > 90 ? t.am : t.tx, fontWeight: row.stokYas > 90 ? 600 : 400 }}>{row.stokYas} {i18n.t('common.daysLower')}</td>}
                   {visibleInefCols.includes('son30Gun') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.son30Gun < 5 ? t.rd : t.tx }}>{row.son30Gun}</td>}
                   {visibleInefCols.includes('son90Gun') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: t.tx }}>{row.son90Gun}</td>}
                   {visibleInefCols.includes('stokDevir') && <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.stokDevir < 2 ? t.rd : row.stokDevir < 4 ? t.am : t.gn, fontWeight: 600 }}>{row.stokDevir.toFixed(1)}x</td>}

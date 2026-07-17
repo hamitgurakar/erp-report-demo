@@ -1,4 +1,5 @@
 import type { LangStrings, Lang, SparkPoint, KPIDef, DeptReport, Alert } from '../types';
+import type { Dict } from '../i18n/tr';
 
 export const mosTR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 export const mosEN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -101,15 +102,28 @@ export const mkSpk = (trend: string, unit = 'K ₺', lang: Lang = 'tr'): SparkPo
   });
 };
 
-export const mkDeptReports = (l: LangStrings): DeptReport[] => [
-  { id: 'yonetim', label: l.dYonetim, icon: 'barChart3', reports: [l.ozetRapor, l.finansalSaglik, l.buyumeAnalizi, l.yonetimHedefler] },
-  { id: 'satis', label: l.dSatis, icon: 'trendUp', reports: [l.satisOzeti, l.satisRaporu, l.pipelineAnalizi, l.kanalPerf, l.musteriSeg, l.satisUrunKategori, l.satisSezonsal, l.satisAICoach, l.satisIletisim, l.satisForecasting, l.satisHedefler] },
-  { id: 'kategori', label: l.dKategori, icon: 'tag', reports: [l.katOzet, l.katPerf, l.katStok, l.katMarka, l.katABC] },
-  { id: 'satin-alma', label: l.dSatinAlma, icon: 'shoppingBag', reports: [l.tedarikciRaporu, l.stokRaporu, l.maliyetAnaliziM] },
-  { id: 'operasyon', label: l.dOperasyon, icon: 'settings', reports: [l.slaTakibi, l.sevkiyatRaporu, l.verimlilik] },
-  { id: 'muhasebe', label: l.dMuhasebe, icon: 'calculator', reports: [l.alacakYas, l.borcYas, l.baBS] },
-  { id: 'pazarlama', label: l.dPazarlama, icon: 'megaphone', reports: [l.kampanyaROI, l.kanalAttr] },
-  { id: 'destek', label: l.dDestek, icon: 'headphones', reports: [l.ticketAnalizi, l.slaPerf, l.ekipRaporu] },
+// Whitelist: report keys that have a real component in Dashboard.tsx's render chain.
+// Any report key NOT in this set is treated as "coming soon" (Yakında) in the sidebar.
+// When a new page is wired into Dashboard.tsx, add its key here and the badge disappears.
+export const IMPLEMENTED_REPORTS = new Set<string>([
+  'yonetim__0', 'yonetim__3',
+  'satis__0', 'satis__1', 'satis__2', 'satis__3', 'satis__4', 'satis__5',
+  'satis__6', 'satis__7', 'satis__8', 'satis__9', 'satis__10',
+  'kategori__0', 'kategori__1', 'kategori__2', 'kategori__3', 'kategori__4',
+  'satin-alma__0', 'satin-alma__1', 'satin-alma__2', 'satin-alma__3', 'satin-alma__4', 'satin-alma__5', 'satin-alma__6', 'satin-alma__7', 'satin-alma__8',
+]);
+
+export const isComingSoon = (repKey: string): boolean => !IMPLEMENTED_REPORTS.has(repKey);
+
+export const mkDeptReports = (d: Dict): DeptReport[] => [
+  { id: 'yonetim', label: d.sidebar.depts.yonetim, icon: 'barChart3', reports: [...d.sidebar.reports.yonetim] },
+  { id: 'satis', label: d.sidebar.depts.satis, icon: 'trendUp', reports: [...d.sidebar.reports.satis] },
+  { id: 'kategori', label: d.sidebar.depts.kategori, icon: 'tag', reports: [...d.sidebar.reports.kategori] },
+  { id: 'satin-alma', label: d.sidebar.depts.satinAlma, icon: 'shoppingBag', reports: [...d.sidebar.reports.satinAlma] },
+  { id: 'operasyon', label: d.sidebar.depts.operasyon, icon: 'settings', reports: [...d.sidebar.reports.operasyon] },
+  { id: 'muhasebe', label: d.sidebar.depts.muhasebe, icon: 'calculator', reports: [...d.sidebar.reports.muhasebe] },
+  { id: 'pazarlama', label: d.sidebar.depts.pazarlama, icon: 'megaphone', reports: [...d.sidebar.reports.pazarlama] },
+  { id: 'destek', label: d.sidebar.depts.destek, icon: 'headphones', reports: [...d.sidebar.reports.destek] },
 ];
 
 export const mkAlerts = (l: LangStrings): Alert[] => [

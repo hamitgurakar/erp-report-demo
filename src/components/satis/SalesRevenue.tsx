@@ -8,6 +8,7 @@ import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -179,7 +180,7 @@ export const SalesRevenue = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis
                 tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false}
                 tickFormatter={(v) => trendMode === 'TL' ? `${v}K` : `${v}%`}
@@ -231,7 +232,7 @@ export const SalesRevenue = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
               <Tooltip
                 content={({ active, payload, label }) => {

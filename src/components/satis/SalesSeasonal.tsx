@@ -9,6 +9,8 @@ import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { tTerm } from '../../i18n/terms';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -155,7 +157,7 @@ export const SalesSeasonal = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
               <Tooltip
                 contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }}
@@ -197,11 +199,11 @@ export const SalesSeasonal = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={seasonalIndex} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} domain={[50, 170]} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`${v}`, 'İndeks']} />
               <ReferenceLine y={100} stroke={t.tx3} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: lang === 'tr' ? 'Ortalama (100)' : 'Average (100)', fontSize: 10, fill: t.tx3, position: 'insideTopRight' }} />
-              <Bar dataKey="idx" name="İndeks" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="idx" name={tTerm('İndeks')} radius={[4, 4, 0, 0]}>
                 {seasonalIndex.map((d, i) => (
                   <Cell key={i} fill={d.idx >= 100 ? t.gn : t.rd} opacity={0.75} />
                 ))}

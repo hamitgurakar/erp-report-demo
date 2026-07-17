@@ -14,6 +14,15 @@ import { CategoryPerformance } from '../components/sections/category/CategoryPer
 import { CategoryStock } from '../components/sections/category/CategoryStock';
 import { CategoryBrand } from '../components/sections/category/CategoryBrand';
 import { CategoryABC } from '../components/sections/category/CategoryABC';
+import { ExecutiveSummary } from './procurement/ExecutiveSummary';
+import { Operations } from './procurement/Operations';
+import { BuyerPerformance } from './procurement/BuyerPerformance';
+import { ProjectPricing } from './procurement/ProjectPricing';
+import { Suppliers } from './procurement/Suppliers';
+import { Cost } from './procurement/Cost';
+import { Payables } from './procurement/Payables';
+import { StockReplenishment } from './procurement/StockReplenishment';
+import { Profitability } from './procurement/Profitability';
 import { SalesOverview } from '../components/satis/SalesOverview';
 import { SalesRevenue } from '../components/satis/SalesRevenue';
 import { SalesPipeline } from '../components/satis/SalesPipeline';
@@ -39,6 +48,8 @@ export default function Dashboard() {
     panels: db.panels,
     onAddPanel: db.addPanel,
     onPinTo: db.pinTo,
+    onSelectRep: db.selectRep,
+    acct: db.acct,
   };
 
   const repTitles: Record<string, string> = {
@@ -161,6 +172,24 @@ export default function Dashboard() {
               <CategoryBrand {...kp} />
             ) : db.activeRep === 'kategori__4' ? (
               <CategoryABC {...kp} />
+            ) : db.activeRep === 'satin-alma__0' ? (
+              <ExecutiveSummary {...kp} />
+            ) : db.activeRep === 'satin-alma__2' ? (
+              <Operations {...kp} />
+            ) : db.activeRep === 'satin-alma__3' ? (
+              <BuyerPerformance {...kp} />
+            ) : db.activeRep === 'satin-alma__4' ? (
+              <ProjectPricing {...kp} />
+            ) : db.activeRep === 'satin-alma__1' ? (
+              <Suppliers {...kp} />
+            ) : db.activeRep === 'satin-alma__5' ? (
+              <Cost {...kp} />
+            ) : db.activeRep === 'satin-alma__7' ? (
+              <Payables {...kp} />
+            ) : db.activeRep === 'satin-alma__8' ? (
+              <StockReplenishment {...kp} />
+            ) : db.activeRep === 'satin-alma__6' ? (
+              <Profitability {...kp} />
             ) : (
               <>
                 <GeneralSection

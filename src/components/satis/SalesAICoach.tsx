@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { Theme, LangStrings, Lang, Panel } from '../../types';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { Icon } from '../ui/Icon';
+import { tTerm } from '../../i18n/terms';
 
 interface Props {
   t: Theme;
@@ -95,6 +97,7 @@ const fmtTL = (v: number) =>
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const SalesAICoach = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const [actionTab, setActionTab] = useState<'haftalik' | 'aylik' | 'ceyreklik'>('haftalik');
   const [tipFilter, setTipFilter] = useState('Tümü');
@@ -124,7 +127,7 @@ export const SalesAICoach = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
       'Tamamlandı': { color: '#059669', bg: '#D1FAE5' },
     };
     const c = cfg[d] ?? { color: t.tx2, bg: t.bg2 };
-    return <span style={{ fontSize: 10, fontWeight: 600, color: c.color, background: c.bg, borderRadius: 5, padding: '2px 8px' }}>{d}</span>;
+    return <span style={{ fontSize: 10, fontWeight: 600, color: c.color, background: c.bg, borderRadius: 5, padding: '2px 8px' }}>{i18n.tBadge(d)}</span>;
   };
 
   const tipBadge = (tip: string) => {
@@ -136,7 +139,7 @@ export const SalesAICoach = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
       Kampanya: { color: '#7C3AED', bg: '#F3E8FF' },
     };
     const c = cfg[tip] ?? { color: t.tx2, bg: t.bg2 };
-    return <span style={{ fontSize: 10, fontWeight: 600, color: c.color, background: c.bg, borderRadius: 5, padding: '2px 8px', whiteSpace: 'nowrap' }}>{tip}</span>;
+    return <span style={{ fontSize: 10, fontWeight: 600, color: c.color, background: c.bg, borderRadius: 5, padding: '2px 8px', whiteSpace: 'nowrap' }}>{tTerm(tip)}</span>;
   };
 
   return (
@@ -300,7 +303,7 @@ export const SalesAICoach = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
                 {agent.trigger}
               </span>
               {/* Last run */}
-              <span style={{ fontSize: 10, color: t.tx3, whiteSpace: 'nowrap', width: 80 }}>{agent.lastRun}</span>
+              <span style={{ fontSize: 10, color: t.tx3, whiteSpace: 'nowrap', width: 80 }}>{tTerm(agent.lastRun)}</span>
               {/* Toggle */}
               <button
                 onClick={() => toggleAgent(idx)}
@@ -351,7 +354,7 @@ export const SalesAICoach = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
                   color: tipFilter === f ? t.pr : t.tx3,
                 }}
               >
-                {f}
+                {tTerm(f)}
               </button>
             ))}
           </div>
@@ -400,7 +403,7 @@ export const SalesAICoach = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
                   <td style={{ padding: '8px 10px', fontSize: 11, fontWeight: 500, color: t.tx, whiteSpace: 'nowrap' }}>{r.firma}</td>
                   <td style={{ padding: '8px 10px', fontSize: 10, color: t.tx2, maxWidth: 260, lineHeight: 1.4 }}>{r.aciklama}</td>
                   <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', fontWeight: 600, color: t.tx }}>{fmtTL(r.deger)}</td>
-                  <td style={{ padding: '8px 10px', fontSize: 10, textAlign: 'right', color: t.tx2 }}>{r.sonAktivite}</td>
+                  <td style={{ padding: '8px 10px', fontSize: 10, textAlign: 'right', color: t.tx2 }}>{tTerm(r.sonAktivite)}</td>
                   <td style={{ padding: '8px 10px', fontSize: 11, color: t.tx2, whiteSpace: 'nowrap' }}>{r.sorumlu}</td>
                   <td style={{ padding: '8px 10px', textAlign: 'center' }}>{durumBadge(r.durum)}</td>
                 </tr>

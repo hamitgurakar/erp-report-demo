@@ -7,6 +7,9 @@ import type { Theme, LangStrings, Lang, Panel } from '../../types';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { tTerm } from '../../i18n/terms';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -129,6 +132,7 @@ const groupLabelColor = (g: string) => g === 'b2c' ? '#0D9488' : g === 'b2b' ? '
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const [selectedYear, setSelectedYear] = useState('2025');
   const [yearDD, setYearDD] = useState(false);
   const [toast, setToast] = useState(false);
@@ -178,11 +182,11 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
         {summaryCards.map(c => (
           <div key={c.title} style={{ background:t.cd, border:`1px solid ${t.bd}`, borderRadius:10, padding:'14px 16px' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-              <span style={{ fontSize:10, fontWeight:600, color:t.tx2 }}>{c.title}</span>
-              <span style={{ fontSize:8, fontWeight:700, color:c.bc, background:c.bg, padding:'2px 6px', borderRadius:4 }}>{c.badge}</span>
+              <span style={{ fontSize:10, fontWeight:600, color:t.tx2 }}>{tTerm(c.title)}</span>
+              <span style={{ fontSize:8, fontWeight:700, color:c.bc, background:c.bg, padding:'2px 6px', borderRadius:4 }}>{i18n.tBadge(c.badge)}</span>
             </div>
             <div style={{ fontSize:18, fontWeight:800, color:t.tx, marginBottom:3 }}>{c.gercek}</div>
-            <div style={{ fontSize:9, color:t.tx3, marginBottom:6 }}>Hedef: {c.hedef}</div>
+            <div style={{ fontSize:9, color:t.tx3, marginBottom:6 }}>{tTerm('Hedef')}: {c.hedef}</div>
             <div style={{ height:5, background:t.bg2, borderRadius:3, overflow:'hidden', marginBottom:3, position:'relative' }}>
               <div style={{ position:'absolute', left:`${(100/120)*100}%`, top:0, bottom:0, width:1, background:t.tx3, opacity:0.3 }} />
               <div style={{ height:'100%', width:`${Math.min(c.pct,120)/120*100}%`, background:barColor(c.pct), borderRadius:3 }} />
@@ -196,12 +200,12 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
       <SectionHeader title={l.mgtB2CB2B ?? 'B2C + B2B YAN YANA KARŞILAŞTIRMA'} t={t} />
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:4 }}>
         {[{ title:'B2C Özet', data:b2cSummary, color:'#0D9488' }, { title:'B2B Özet', data:b2bSummary, color:'#4F46E5' }].map(panel => (
-          <ChartContainer key={panel.title} t={t} l={l} title={panel.title} id={`mgt-${panel.title}`} panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
+          <ChartContainer key={panel.title} t={t} l={l} title={tTerm(panel.title)} id={`mgt-${panel.title}`} panels={panels} onAddPanel={onAddPanel} onPinTo={onPinTo}>
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <tbody>
                 {panel.data.map(r => (
                   <tr key={r.m} style={{ borderBottom:`1px solid ${t.bd}` }}>
-                    <td style={{ padding:'7px 10px', fontSize:11, color:t.tx2 }}>{r.m}</td>
+                    <td style={{ padding:'7px 10px', fontSize:11, color:t.tx2 }}>{tTerm(r.m)}</td>
                     <td style={{ padding:'7px 10px', fontSize:12, fontWeight:600, color:t.tx, textAlign:'right' }}>{r.v}</td>
                   </tr>
                 ))}
@@ -214,7 +218,7 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
       <div style={{ background:'#F0F9FF', border:`1px solid ${t.bd}`, borderRadius:10, padding:'12px 16px', marginBottom:12, display:'flex', gap:16, flexWrap:'wrap', justifyContent:'space-around' }}>
         {consolidatedTotals.map(c => (
           <div key={c.m} style={{ textAlign:'center' }}>
-            <div style={{ fontSize:9, color:t.tx3 }}>{c.m}</div>
+            <div style={{ fontSize:9, color:t.tx3 }}>{tTerm(c.m)}</div>
             <div style={{ fontSize:13, fontWeight:700, color:t.tx }}>{c.v}</div>
           </div>
         ))}
@@ -224,7 +228,7 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
       <SectionHeader title={l.mgtMatris ?? 'AYLIK DETAY MATRİSİ (B2C + B2B BİRLEŞİK)'} t={t} />
       <div style={{ background:t.cd, border:`1px solid ${t.bd}`, borderRadius:10, overflow:'hidden', marginBottom:16 }}>
         <div style={{ padding:'12px 16px', borderBottom:`1px solid ${t.bd}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <span style={{ fontSize:13, fontWeight:500, color:t.tx }}>Aylık Detay Matrisi</span>
+          <span style={{ fontSize:13, fontWeight:500, color:t.tx }}>{tTerm('Aylık Detay Matrisi')}</span>
           <button style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:8, border:`1px solid ${t.bd}`, background:t.bg2, color:t.tx2, fontSize:12, cursor:'pointer' }}>
             <Icon name="download" size={12} color={t.tx3} /> Excel
           </button>
@@ -234,8 +238,8 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
             <thead>
               <tr style={{ background:t.bg2, borderBottom:`1px solid ${t.bd}` }}>
                 <th style={{ padding:'8px 12px', fontSize:10, fontWeight:600, color:t.tx2, textAlign:'left', position:'sticky', left:0, background:t.bg2, zIndex:2, minWidth:160, whiteSpace:'nowrap' }}>Metrik</th>
-                {MONTHS.map(m => <th key={m} style={{ padding:'8px 8px', fontSize:10, fontWeight:600, color:t.tx2, textAlign:'right', whiteSpace:'nowrap', minWidth:80 }}>{m}</th>)}
-                <th style={{ padding:'8px 12px', fontSize:10, fontWeight:700, color:t.tx, textAlign:'right', minWidth:100, background:'#F0F9FF' }}>Yıl Toplam</th>
+                {MONTHS.map(m => <th key={m} style={{ padding:'8px 8px', fontSize:10, fontWeight:600, color:t.tx2, textAlign:'right', whiteSpace:'nowrap', minWidth:80 }}>{fmtMonth(m)}</th>)}
+                <th style={{ padding:'8px 12px', fontSize:10, fontWeight:700, color:t.tx, textAlign:'right', minWidth:100, background:'#F0F9FF' }}>{tTerm('Yıl Toplam')}</th>
               </tr>
             </thead>
             <tbody>
@@ -251,7 +255,7 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
                     </tr>
                   )}
                   <tr key={ri} style={{ borderBottom:`1px solid ${t.bd}` }}>
-                    <td style={{ padding:'6px 12px', fontSize:10, fontWeight:row.bold ? 600 : 400, color:t.tx, position:'sticky', left:0, zIndex:1, background:row.bold ? '#F0F9FF' : t.cd, whiteSpace:'nowrap' }}>{row.metric}</td>
+                    <td style={{ padding:'6px 12px', fontSize:10, fontWeight:row.bold ? 600 : 400, color:t.tx, position:'sticky', left:0, zIndex:1, background:row.bold ? '#F0F9FF' : t.cd, whiteSpace:'nowrap' }}>{tTerm(row.metric)}</td>
                     {row.values.map((v, ci) => (
                       <td key={ci} style={{ padding:'6px 8px', fontSize:9, textAlign:'right', whiteSpace:'nowrap', fontWeight:row.bold ? 600 : 400, color:t.tx, background:row.bold ? '#F0F9FF' : 'transparent' }}>
                         {fmtCell(v as number, row.fmt)}
@@ -324,7 +328,7 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={stackedMonthly} margin={{ top:10, right:20, bottom:0, left:0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}K`} />
               <Tooltip contentStyle={{ background:t.cd, border:`1px solid ${t.bd}`, borderRadius:8, fontSize:12 }} formatter={(v:number,n:string) => [`${v}K ₺`, n]} />
               <Legend iconSize={10} wrapperStyle={{ fontSize:10 }} />
@@ -342,8 +346,8 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
               <YAxis tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}K`} />
               <Tooltip contentStyle={{ background:t.cd, border:`1px solid ${t.bd}`, borderRadius:8, fontSize:12 }} formatter={(v:number,n:string) => [`${v.toLocaleString('tr-TR')}K ₺`, n]} />
               <Legend iconSize={10} wrapperStyle={{ fontSize:10 }} />
-              <Bar dataKey="hedef" name="Hedef" fill={t.tx3} opacity={0.3} radius={[4,4,0,0]} />
-              <Bar dataKey="actual" name="Gerçekleşen" radius={[4,4,0,0]}>
+              <Bar dataKey="hedef" name={tTerm('Hedef')} fill={t.tx3} opacity={0.3} radius={[4,4,0,0]} />
+              <Bar dataKey="actual" name={tTerm('Gerçekleşen')} radius={[4,4,0,0]}>
                 {qHedefActual.map((d,i) => <Cell key={i} fill={d.actual >= d.hedef ? t.gn : t.rd} opacity={0.85} />)}
               </Bar>
             </BarChart>
@@ -354,12 +358,12 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={yoyGrowth} margin={{ top:10, right:20, bottom:0, left:0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
               <Tooltip contentStyle={{ background:t.cd, border:`1px solid ${t.bd}`, borderRadius:8, fontSize:12 }} formatter={(v:number,n:string) => [`${v}%`, n]} />
               <Legend iconSize={10} wrapperStyle={{ fontSize:10 }} />
-              <Line type="monotone" dataKey="b2c" name="B2C Büyüme %" stroke={t.tl} strokeWidth={2} dot={{ r:3, fill:t.tl }} />
-              <Line type="monotone" dataKey="b2b" name="B2B Büyüme %" stroke={t.pr} strokeWidth={2} dot={{ r:3, fill:t.pr }} />
+              <Line type="monotone" dataKey="b2c" name={tTerm('B2C Büyüme %')} stroke={t.tl} strokeWidth={2} dot={{ r:3, fill:t.tl }} />
+              <Line type="monotone" dataKey="b2b" name={tTerm('B2B Büyüme %')} stroke={t.pr} strokeWidth={2} dot={{ r:3, fill:t.pr }} />
             </LineChart>
           </ResponsiveContainer>
         </ChartContainer>
@@ -368,7 +372,7 @@ export const ManagementTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: P
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={profitTrend} margin={{ top:10, right:20, bottom:0, left:0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize:10, fill:t.tx2 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}K`} />
               <Tooltip contentStyle={{ background:t.cd, border:`1px solid ${t.bd}`, borderRadius:8, fontSize:12 }} formatter={(v:number,n:string) => [`${v}K ₺`, n]} />
               <Legend iconSize={10} wrapperStyle={{ fontSize:10 }} />

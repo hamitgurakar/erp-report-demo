@@ -10,6 +10,9 @@ import { Icon } from '../ui/Icon';
 import { useState } from 'react';
 import { Spark } from '../ui/Spark';
 import { mkSpk } from '../../constants/data';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { fmtPercent, fmtRelativeDays, fmtMonth } from '../../utils/format';
+import { tTerm } from '../../i18n/terms';
 
 interface Props {
   t: Theme;
@@ -149,6 +152,7 @@ const retentionBg = (pct: number): string => {
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
 
   const [growSort, setGrowSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'buyume', dir: 'desc' });
@@ -302,12 +306,12 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={clvHistogram} margin={{ top: 15, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="range" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="range" tickFormatter={tTerm} tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`${v} müşteri`, '']} />
-              <ReferenceLine x="5K-10K" stroke={t.pr} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: 'Ort. 8.420 ₺', fontSize: 9, fill: t.pr, position: 'top' }} />
-              <ReferenceLine x="2K-5K" stroke={t.tl} strokeDasharray="3 3" strokeWidth={1} label={{ value: 'Medyan 6.200 ₺', fontSize: 9, fill: t.tl, position: 'top' }} />
-              <Bar dataKey="count" name="Müşteri" radius={[4, 4, 0, 0]}>
+              <ReferenceLine x="5K-10K" stroke={t.pr} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: `${tTerm('Ort.')} 8.420 ₺`, fontSize: 9, fill: t.pr, position: 'top' }} />
+              <ReferenceLine x="2K-5K" stroke={t.tl} strokeDasharray="3 3" strokeWidth={1} label={{ value: `${tTerm('Medyan')} 6.200 ₺`, fontSize: 9, fill: t.tl, position: 'top' }} />
+              <Bar dataKey="count" name={tTerm('Müşteri')} radius={[4, 4, 0, 0]}>
                 {clvHistogram.map((d, i) => (
                   <Cell key={i} fill={d.count === maxClvCount ? t.pr : '#818CF8'} opacity={d.count === maxClvCount ? 1 : 0.65} />
                 ))}
@@ -321,7 +325,7 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={orderHistogram} margin={{ top: 15, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="range" tick={{ fontSize: 9, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="range" tickFormatter={tTerm} tick={{ fontSize: 9, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip
                 content={({ active, payload }) => {
@@ -336,9 +340,9 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                   );
                 }}
               />
-              <ReferenceLine x="4-6 sipariş" stroke={t.pr} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: 'Ort. 5,8 adet', fontSize: 9, fill: t.pr, position: 'top' }} />
-              <ReferenceLine x="2-3 sipariş" stroke={t.tl} strokeDasharray="3 3" strokeWidth={1} label={{ value: 'Medyan 3 adet', fontSize: 9, fill: t.tl, position: 'top' }} />
-              <Bar dataKey="count" name="Müşteri" radius={[4, 4, 0, 0]}>
+              <ReferenceLine x="4-6 sipariş" stroke={t.pr} strokeDasharray="5 3" strokeWidth={1.5} label={{ value: `${tTerm('Ort.')} 5,8 ${tTerm('adet')}`, fontSize: 9, fill: t.pr, position: 'top' }} />
+              <ReferenceLine x="2-3 sipariş" stroke={t.tl} strokeDasharray="3 3" strokeWidth={1} label={{ value: `${tTerm('Medyan')} 3 ${tTerm('adet')}`, fontSize: 9, fill: t.tl, position: 'top' }} />
+              <Bar dataKey="count" name={tTerm('Müşteri')} radius={[4, 4, 0, 0]}>
                 {orderHistogram.map((d, i) => (
                   <Cell key={i} fill={d.count === maxOrderCount ? t.pr : '#818CF8'} opacity={d.count === maxOrderCount ? 1 : 0.65} />
                 ))}
@@ -364,8 +368,8 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
               </thead>
               <tbody>
                 {cohortData.map((row) => (
-                  <tr key={row.cohort}>
-                    <td style={{ padding: '6px 8px', fontSize: 10, fontWeight: 500, color: t.tx, whiteSpace: 'nowrap' }}>{row.cohort}</td>
+                  <tr key={fmtMonth(row.cohort)}>
+                    <td style={{ padding: '6px 8px', fontSize: 10, fontWeight: 500, color: t.tx, whiteSpace: 'nowrap' }}>{fmtMonth(row.cohort)}</td>
                     {cohortHeaders.map((_, ci) => {
                       const val = row.values[ci];
                       if (val === undefined) return <td key={ci} style={{ padding: '6px 8px' }} />;
@@ -421,7 +425,7 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                   <div style={{ flex: 1, height: 6, background: t.bg2, borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${seg.pay}%`, background: seg.color, borderRadius: 3 }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: seg.color }}>%{seg.pay}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: seg.color }}>{fmtPercent(seg.pay, 0)}</span>
                 </div>
               </div>
             </div>
@@ -479,7 +483,7 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                     <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', color: t.tx }}>{fmtTL(f.ltv)}</td>
                     <td style={{ padding: '8px 10px' }}>
                       <div style={{ fontSize: 11, color: t.tx }}>{f.sonSatis}</div>
-                      <div style={{ fontSize: 9, color: t.tx3 }}>{f.sonSatisGun} gün önce</div>
+                      <div style={{ fontSize: 9, color: t.tx3 }}>{fmtRelativeDays(f.sonSatisGun)}</div>
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 11, color: t.tx2 }}>{f.sonSatisUzman}</td>
                     <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', fontWeight: 700, color: t.gn }}>+{f.buyume}%</td>
@@ -503,12 +507,12 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
-                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>Firma Adı</th>
-                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'right' }}>Son Aktivite</th>
-                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>Son Satış</th>
-                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>Son Satış Uzmanı</th>
-                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'center' }}>Risk Skoru</th>
-                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'center' }}>Aksiyon</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>{tTerm('Firma Adı')}</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'right' }}>{tTerm('Son Aktivite')}</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>{tTerm('Son Satış')}</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left' }}>{tTerm('Son Satış Uzmanı')}</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'center' }}>{tTerm('Risk Skoru')}</th>
+                  <th style={{ padding: '7px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'center' }}>{tTerm('Aksiyon')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -518,10 +522,10 @@ export const SalesCustomerSegment = ({ t, l, lang, panels, onAddPanel, onPinTo }
                     onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
                   >
                     <td style={{ padding: '8px 10px', fontSize: 11, fontWeight: 500, color: t.tx }}>{r.firma}</td>
-                    <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', color: r.sonAktivite >= 90 ? t.rd : t.tx, fontWeight: r.sonAktivite >= 90 ? 700 : 400 }}>{r.sonAktivite} gün</td>
+                    <td style={{ padding: '8px 10px', fontSize: 11, textAlign: 'right', color: r.sonAktivite >= 90 ? t.rd : t.tx, fontWeight: r.sonAktivite >= 90 ? 700 : 400 }}>{r.sonAktivite} {i18n.t('common.daysLower')}</td>
                     <td style={{ padding: '8px 10px' }}>
                       <div style={{ fontSize: 11, color: r.sonSatisGun >= 180 ? '#DC2626' : r.sonSatisGun >= 90 ? '#D97706' : t.tx }}>{r.sonSatis}</div>
-                      <div style={{ fontSize: 9, color: t.tx3 }}>{r.sonSatisGun} gün önce</div>
+                      <div style={{ fontSize: 9, color: t.tx3 }}>{fmtRelativeDays(r.sonSatisGun)}</div>
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 11, color: t.tx2 }}>{r.sonSatisUzman}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'center' }}>{riskBadge(r.risk)}</td>

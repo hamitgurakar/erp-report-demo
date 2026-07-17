@@ -12,6 +12,7 @@ import { FilterBar, type FilterOption } from '../../ui/FilterBar';
 import { Icon } from '../../ui/Icon';
 import { type ColDef } from '../../ui/ColumnManager';
 import { ColumnPresetDropdown } from '../../ui/ColumnPresetDropdown';
+import { tTerm } from '../../../i18n/terms';
 
 const BRAND_COLS: ColDef[] = [
   { key: 'marka', label: 'Marka' },
@@ -176,7 +177,7 @@ export const CategoryBrand = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {BRAND_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => (
                   <th key={col.key} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: col.key === 'marka' ? 'left' : 'right', whiteSpace: 'nowrap' }}>
-                    {col.label}
+                    {tTerm(col.label)}
                   </th>
                 ))}
               </tr>

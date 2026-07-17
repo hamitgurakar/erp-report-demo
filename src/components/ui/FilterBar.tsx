@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Theme, LangStrings } from '../../types';
 import { Icon } from './Icon';
+import { tTerm } from '../../i18n/terms';
 
 export interface FilterOption {
   key: string;
@@ -39,7 +40,7 @@ export const FilterBar = ({ t, l, filters, onApply }: FilterBarProps) => {
               color: t.tx, fontSize: 12, cursor: 'pointer', outline: 'none',
             }}
           >
-            <span style={{ color: t.tx2 }}>{f.label}:</span>
+            <span style={{ color: t.tx2 }}>{tTerm(f.label)}:</span>
             <span style={{ fontWeight: 500, color: values[f.key] !== l.filtreTumu ? t.pr : t.tx }}>
               {values[f.key]}
             </span>

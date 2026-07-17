@@ -7,6 +7,9 @@ import type { Theme, LangStrings, Lang, Panel } from '../../types';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { tTerm } from '../../i18n/terms';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -118,6 +121,7 @@ const barColor = (pct: number) =>
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const SalesTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const [selectedQ, setSelectedQ] = useState('Q4 2025');
   const [qDropdown, setQDropdown] = useState(false);
   const [toast, setToast] = useState(false);
@@ -174,8 +178,8 @@ export const SalesTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
         {summaryCards.map((card) => (
           <div key={card.title} style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, padding: '16px 18px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: t.tx2 }}>{card.title}</span>
-              <span style={{ fontSize: 9, fontWeight: 700, color: card.badgeColor, background: card.badgeBg, padding: '2px 8px', borderRadius: 4 }}>{card.badge}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: t.tx2 }}>{tTerm(card.title)}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: card.badgeColor, background: card.badgeBg, padding: '2px 8px', borderRadius: 4 }}>{i18n.tBadge(card.badge)}</span>
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, color: t.tx, marginBottom: 4 }}>{card.gercek}</div>
             <div style={{ fontSize: 10, color: t.tx3, marginBottom: 8 }}>{lang === 'tr' ? 'Hedef:' : 'Target:'} {card.hedef}</div>
@@ -208,7 +212,7 @@ export const SalesTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
               <tr style={{ background: t.bg2, borderBottom: `1px solid ${t.bd}` }}>
                 <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'left', position: 'sticky', left: 0, background: t.bg2, zIndex: 2, minWidth: 160, whiteSpace: 'nowrap' }}>Metrik</th>
                 {MONTHS.map((m) => (
-                  <th key={m} style={{ padding: '8px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'right', whiteSpace: 'nowrap', minWidth: 85 }}>{m}</th>
+                  <th key={m} style={{ padding: '8px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: 'right', whiteSpace: 'nowrap', minWidth: 85 }}>{fmtMonth(m)}</th>
                 ))}
                 <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 700, color: t.tx, textAlign: 'right', whiteSpace: 'nowrap', minWidth: 100, background: '#F0F9FF' }}>Yıl Toplam</th>
               </tr>
@@ -278,7 +282,7 @@ export const SalesTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
             <thead>
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {['Çeyrek', 'Order', 'AOV', 'Ort. Dolar', 'Revenue USD', 'Revenue TL'].map((h) => (
-                  <th key={h} style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: h === 'Çeyrek' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: h === 'Çeyrek' ? 'left' : 'right', whiteSpace: 'nowrap' }}>{tTerm(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -347,7 +351,7 @@ export const SalesTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
             <thead>
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {[lang === 'tr' ? 'Yıl' : 'Year', lang === 'tr' ? 'Hedef' : 'Target', lang === 'tr' ? 'Gerçekleşen' : 'Actual', lang === 'tr' ? 'Sapma %' : 'Variance %', lang === 'tr' ? 'Durum' : 'Status'].map((h, i) => (
-                  <th key={i} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: i === 0 ? 'left' : i === 4 ? 'center' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={i} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: i === 0 ? 'left' : i === 4 ? 'center' : 'right', whiteSpace: 'nowrap' }}>{tTerm(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -364,7 +368,7 @@ export const SalesTargets = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
                       {r.sapma > 0 ? '+' : ''}{r.sapma}%
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: badgeColor, background: badgeBg, padding: '3px 10px', borderRadius: 4 }}>{r.badge}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: badgeColor, background: badgeBg, padding: '3px 10px', borderRadius: 4 }}>{i18n.tBadge(r.badge)}</span>
                     </td>
                   </tr>
                 );

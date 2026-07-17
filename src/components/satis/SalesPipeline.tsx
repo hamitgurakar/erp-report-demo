@@ -9,6 +9,9 @@ import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { tTerm } from '../../i18n/terms';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -26,7 +29,7 @@ const funnelStages = [
   { name: 'Teklif Öncesi Follow-up', value: 1200000, color: '#A5B4FC' },
   { name: 'Teklif Bekliyor', value: 850000, color: '#818CF8' },
   { name: 'Fiyatlama Bekliyor', value: 420000, color: '#6366F1' },
-  { name: 'Contract Send', value: 310000, color: '#4F46E5' },
+  { name: 'Sözleşme Gönderildi', value: 310000, color: '#4F46E5' },
   { name: 'Follow-up', value: 210000, color: '#4338CA' },
   { name: 'Closed Won', value: 145000, color: '#3730A3' },
 ];
@@ -160,6 +163,7 @@ const FILTER_CHIPS: FilterChip[] = [
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [dealSort, setDealSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'deger', dir: 'desc' });
@@ -275,7 +279,7 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           appearance: 'none', WebkitAppearance: 'none',
         }}
       >
-        {options.map((o) => <option key={o} value={o}>{o === 'Tümü' ? `${label}: Tümü` : o}</option>)}
+        {options.map((o) => <option key={o} value={o}>{o === 'Tümü' ? `${tTerm(label)}: ${tTerm('Tümü')}` : o}</option>)}
       </select>
       <Icon name="chevDown" size={10} color={t.tx3} />
     </div>
@@ -310,7 +314,7 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
               return (
                 <div key={s.name}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }}>
-                    <span style={{ fontSize: 10, color: t.tx2, width: 130, textAlign: 'right', flexShrink: 0, lineHeight: 1.2 }}>{s.name}</span>
+                    <span style={{ fontSize: 10, color: t.tx2, width: 130, textAlign: 'right', flexShrink: 0, lineHeight: 1.2 }}>{tTerm(s.name)}</span>
                     <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
                       <div style={{ width: `${barPct}%`, height: 28, background: s.color, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'width 0.3s' }}>
                         <span style={{ fontSize: 10, fontWeight: 600, color: i >= 4 ? '#fff' : '#1E293B' }}>{fmtTL(s.value)}</span>
@@ -327,7 +331,7 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
               );
             })}
             <div style={{ marginTop: 8, padding: '8px 12px', background: t.bg2, borderRadius: 6, textAlign: 'center' }}>
-              <span style={{ fontSize: 11, color: t.tx2 }}>İletişime Geçildi → Closed Won Conversion: </span>
+              <span style={{ fontSize: 11, color: t.tx2 }}>{tTerm('İletişime Geçildi → Closed Won Conversion')}: </span>
               <span style={{ fontSize: 12, fontWeight: 700, color: t.pr }}>%8,1</span>
             </div>
           </div>
@@ -337,7 +341,7 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={winRateData} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} domain={[0, 40]} tickFormatter={(v) => `${v}%`} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(value: number, name: string) => [`${value}%`, name]} />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
@@ -356,7 +360,7 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={pipelineSnapshot} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(value: number, name: string) => [`${value}K ₺`, name]} />
@@ -380,11 +384,11 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={stageDurationData} margin={{ top: 15, right: 20, bottom: 30, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="stage" tick={{ fontSize: 9, fill: t.tx2, angle: -25, textAnchor: 'end' }} axisLine={false} tickLine={false} interval={0} height={50} />
+              <XAxis dataKey="stage" tickFormatter={tTerm} tick={{ fontSize: 9, fill: t.tx2, angle: -25, textAnchor: 'end' }} axisLine={false} tickLine={false} interval={0} height={50} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} formatter={(value: number) => [`${value} gün`, '']} />
-              <ReferenceLine y={avgStageDuration} stroke={t.tx3} strokeDasharray="5 3" label={{ value: `Ort. ${avgStageDuration.toFixed(1)} gün`, fontSize: 10, fill: t.tx3, position: 'insideTopRight' }} />
-              <Bar dataKey="gun" name="Gün" radius={[4, 4, 0, 0]}>
+              <ReferenceLine y={avgStageDuration} stroke={t.tx3} strokeDasharray="5 3" label={{ value: `${tTerm('Ort.')} ${avgStageDuration.toFixed(1)} ${tTerm('gün')}`, fontSize: 10, fill: t.tx3, position: 'insideTopRight' }} />
+              <Bar dataKey="gun" name={i18n.t('common.days')} radius={[4, 4, 0, 0]}>
                 {stageDurationData.map((d, i) => (
                   <Cell key={i} fill={d.gun === 14 ? '#EF4444' : d.gun === 12 ? '#F59E0B' : '#6366F1'} opacity={d.gun >= 12 ? 0.9 : 0.75} />
                 ))}
@@ -409,7 +413,7 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
             <thead>
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {['Müşteri', 'Proje Adı', 'Stage', 'Değer', 'Stage Gün', 'Probability', 'Owner', 'Durum'].map((h) => (
-                  <th key={h} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: h === 'Değer' || h === 'Stage Gün' || h === 'Probability' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '8px 14px', fontSize: 11, fontWeight: 600, color: t.tx2, textAlign: h === 'Değer' || h === 'Stage Gün' || h === 'Probability' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{tTerm(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -424,7 +428,7 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                   <td style={{ padding: '9px 14px', fontSize: 12, color: t.tx2 }}>{row.deal}</td>
                   <td style={{ padding: '9px 14px' }}>{stageBadge(row.stage)}</td>
                   <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', fontWeight: 500, color: t.tx }}>{fmtTL(row.deger)}</td>
-                  <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.gun > avgRiskDays * 2 ? t.rd : t.tx, fontWeight: row.gun > avgRiskDays * 2 ? 700 : 400 }}>{row.gun} gün</td>
+                  <td style={{ padding: '9px 14px', fontSize: 12, textAlign: 'right', color: row.gun > avgRiskDays * 2 ? t.rd : t.tx, fontWeight: row.gun > avgRiskDays * 2 ? 700 : 400 }}>{row.gun} {i18n.t('common.daysLower')}</td>
                   <td style={{ padding: '9px 14px', width: 100 }}>{probBar(row.probability)}</td>
                   <td style={{ padding: '9px 14px', fontSize: 12, color: t.tx2 }}>{row.owner}</td>
                   <td style={{ padding: '9px 14px' }}>{durumBadge(row.durum === 'ontrack' ? 'On Track' : 'At Risk')}</td>
@@ -464,9 +468,9 @@ export const SalesPipeline = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
                 <button onClick={() => { setDealSearch(''); setDealPage(0); }} style={{ position: 'absolute', right: 6, background: 'none', border: 'none', cursor: 'pointer', color: t.tx3, fontSize: 14, lineHeight: 1 }}>×</button>
               )}
             </div>
-            <FilterDD label="Durum" value={fStatus} options={STATUS_OPTIONS} onChange={setFStatus} />
-            <FilterDD label="Uzman" value={fOwner} options={OWNER_OPTIONS} onChange={setFOwner} />
-            <FilterDD label="Amaç" value={fAmac} options={AMAC_OPTIONS} onChange={setFAmac} />
+            <FilterDD label={tTerm('Durum')} value={fStatus} options={STATUS_OPTIONS} onChange={setFStatus} />
+            <FilterDD label={tTerm('Uzman')} value={fOwner} options={OWNER_OPTIONS} onChange={setFOwner} />
+            <FilterDD label={tTerm('Amaç')} value={fAmac} options={AMAC_OPTIONS} onChange={setFAmac} />
             <FilterDD label="Kanal" value={fKanal} options={KANAL_OPTIONS} onChange={setFKanal} />
             {activeDropdownCount > 0 && (
               <button onClick={clearAllFilters} style={{ fontSize: 10, color: t.rd, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>

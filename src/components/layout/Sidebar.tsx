@@ -1,5 +1,7 @@
 import type { Theme, LangStrings, Panel, DeptReport } from '../../types';
 import { Icon } from '../ui/Icon';
+import { isComingSoon } from '../../constants/data';
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface SidebarProps {
   t: Theme;
@@ -25,6 +27,7 @@ export const Sidebar = ({
   activeRep, onSelectRep,
   panels, view, onSelectPanel,
 }: SidebarProps) => {
+  const i18n = useTranslation();
   if (!open) return null;
 
   return (
@@ -33,7 +36,7 @@ export const Sidebar = ({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: `1px solid ${t.bd}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.pr, fontWeight: 600, fontSize: 13 }}>
           <Icon name="layout" size={17} color={t.pr} />
-          {l.raporMerkezi}
+          {i18n.t('sidebar.raporMerkezi')}
         </div>
         <button
           onClick={onClose}
@@ -48,7 +51,7 @@ export const Sidebar = ({
         {favs.length > 0 && (
           <>
             <div style={{ padding: '6px 14px 4px', fontSize: 10, fontWeight: 600, color: t.tx3, letterSpacing: 0.8, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Icon name="starF" size={11} color={t.am} />{l.favRaporlar}
+              <Icon name="starF" size={11} color={t.am} />{i18n.t('sidebar.favRaporlar')}
             </div>
             {favs.map((k) => {
               const [dId, rIdx] = k.split('__');
@@ -74,7 +77,7 @@ export const Sidebar = ({
 
         {/* Custom panels */}
         <div style={{ padding: '4px 14px 4px', fontSize: 10, fontWeight: 600, color: t.tx3, letterSpacing: 0.8, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <Icon name="folder" size={11} color={t.pu} />{l.ozelRaporlar}
+          <Icon name="folder" size={11} color={t.pu} />{i18n.t('sidebar.ozelRaporlar')}
         </div>
         {panels.map((p, i) => {
           const isActive = view === `panel:${p.name}`;
@@ -94,7 +97,7 @@ export const Sidebar = ({
         })}
 
         <div style={{ height: 1, background: t.bd, margin: '8px 14px' }} />
-        <div style={{ padding: '4px 14px 6px', fontSize: 10, fontWeight: 600, color: t.tx3, letterSpacing: 0.8, textTransform: 'uppercase' }}>{l.raporlar}</div>
+        <div style={{ padding: '4px 14px 6px', fontSize: 10, fontWeight: 600, color: t.tx3, letterSpacing: 0.8, textTransform: 'uppercase' }}>{i18n.t('sidebar.raporlar')}</div>
 
         {/* Department reports */}
         {deptReports.map((dept) => {
@@ -115,23 +118,28 @@ export const Sidebar = ({
               </div>
               {isExpanded && dept.reports.map((rep, ri) => {
                 const k = `${dept.id}__${ri}`;
+                const soon = isComingSoon(k);
                 const isActive = activeRep === k && view === 'report';
                 const isFav = favs.includes(k);
                 return (
                   <div
                     key={k}
-                    onClick={() => onSelectRep(k)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 14px 5px 44px', fontSize: 12, cursor: 'pointer', color: isActive ? t.pr : t.tx2, background: isActive ? t.prL : 'transparent', fontWeight: isActive ? 500 : 400 }}
-                    onMouseOver={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = t.bg3; }}
-                    onMouseOut={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                    onClick={soon ? undefined : () => onSelectRep(k)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 14px 5px 44px', fontSize: 12, cursor: soon ? 'not-allowed' : 'pointer', color: isActive ? t.pr : t.tx2, background: isActive ? t.prL : 'transparent', fontWeight: isActive ? 500 : 400, opacity: soon ? 0.55 : 1 }}
+                    onMouseOver={(e) => { if (!soon && !isActive) (e.currentTarget as HTMLElement).style.background = t.bg3; }}
+                    onMouseOut={(e) => { if (!soon && !isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
                     <span style={{ flex: 1 }}>{rep}</span>
-                    <span
-                      onClick={(e) => { e.stopPropagation(); onToggleFav(k); }}
-                      style={{ cursor: 'pointer', display: 'flex' }}
-                    >
-                      <Icon name={isFav ? 'starF' : 'star'} size={12} color={isFav ? t.am : t.tx3} />
-                    </span>
+                    {soon ? (
+                      <span style={{ fontSize: 11, color: '#64748B', background: '#F1F5F9', borderRadius: 10, padding: '2px 8px', flexShrink: 0 }}>{i18n.t('sidebar.yakinda')}</span>
+                    ) : (
+                      <span
+                        onClick={(e) => { e.stopPropagation(); onToggleFav(k); }}
+                        style={{ cursor: 'pointer', display: 'flex' }}
+                      >
+                        <Icon name={isFav ? 'starF' : 'star'} size={12} color={isFav ? t.am : t.tx3} />
+                      </span>
+                    )}
                   </div>
                 );
               })}

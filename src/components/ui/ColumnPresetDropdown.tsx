@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import type { Theme, LangStrings } from '../../types';
 import type { ColDef } from './ColumnManager';
 import { Icon } from './Icon';
+import { tTerm } from '../../i18n/terms';
 
 export interface ColumnPreset {
   id: string;
@@ -246,7 +247,7 @@ export const ColumnPresetDropdown = ({ t, l, tableType, allColumns, visibleKeys,
                   >
                     <div onClick={() => selectPreset(p.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
                       <RadioDot active={p.id === activeId} color={t.pr} />
-                      <span style={{ fontSize: 13, color: t.tx, fontWeight: p.id === activeId ? 600 : 400 }}>{p.name}</span>
+                      <span style={{ fontSize: 13, color: t.tx, fontWeight: p.id === activeId ? 600 : 400 }}>{tTerm(p.name)}</span>
                     </div>
                     {/* Pencil — opens modal pre-loaded with this preset */}
                     <button
@@ -279,7 +280,7 @@ export const ColumnPresetDropdown = ({ t, l, tableType, allColumns, visibleKeys,
                     onMouseOut={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
                   >
                     <RadioDot active={false} color={t.pr} />
-                    <span style={{ fontSize: 13, color: t.tx }}>{p.name}</span>
+                    <span style={{ fontSize: 13, color: t.tx }}>{tTerm(p.name)}</span>
                   </div>
                 ))}
               </>
@@ -354,7 +355,7 @@ export const ColumnPresetDropdown = ({ t, l, tableType, allColumns, visibleKeys,
                       }}>
                         {draft.includes(col.key) && <Icon name="check" size={10} color="#fff" />}
                       </div>
-                      {col.label}
+                      {tTerm(col.label)}
                     </div>
                   ))}
                 </div>
@@ -383,7 +384,7 @@ export const ColumnPresetDropdown = ({ t, l, tableType, allColumns, visibleKeys,
                       }}
                     >
                       <Icon name="gripV" size={14} color={t.tx3} />
-                      <span style={{ flex: 1 }}>{col.label}</span>
+                      <span style={{ flex: 1 }}>{tTerm(col.label)}</span>
                       <button
                         onClick={() => setDraft((prev) => prev.filter((k) => k !== col.key))}
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: t.tx3, display: 'flex', padding: 2 }}

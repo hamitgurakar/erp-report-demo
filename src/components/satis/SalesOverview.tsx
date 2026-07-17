@@ -8,6 +8,8 @@ import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { fmtMonth } from '../../utils/format';
 
 interface Props {
   t: Theme;
@@ -83,6 +85,7 @@ const fmtK = (v: number) => `${(v / 1000).toLocaleString('tr-TR')}K`;
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const SalesOverview = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const totalDonut = revenueDonut.reduce((s, d) => s + d.value, 0);
   const [bkMode, setBkMode] = useState('TL');
@@ -112,10 +115,10 @@ export const SalesOverview = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
 
       {/* Row 3 — 4 KPIs (Tahsilat) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }}>
-        <KPICard id="satis-gelecek-tahsilat" title={l.satisGelecekTahsilat ?? 'Gelecek Tahsilatlar'} value="1.840.000 ₺" trendValue="+8,2%" sparkTrend="up" color="gn" unit="K ₺" info={lang === 'tr' ? 'Önümüzdeki 30 gün beklenen' : 'Expected next 30 days'} {...kp} />
-        <KPICard id="satis-ort-tahsilat" title={l.satisOrtTahsilat ?? 'Ortalama Tahsilat Süresi'} value="38 Gün" trendValue="-2 gün" sparkTrend="down" color="gn" unit="gün" {...kp} />
-        <KPICard id="satis-gecikme-tahsilat" title={l.satisGecikmeTahsilat ?? 'Gecikmedeki Tahsilatlar'} value="425.000 ₺" trendValue="+12,5%" sparkTrend="up" color="rd" unit="K ₺" {...kp} />
-        <KPICard id="satis-gecikme-sirket" title={l.satisGecikmeSirket ?? 'Gecikmedeki Tahsilat - Şirketler'} value="18" trendValue="+3" sparkTrend="up" color="rd" unit="adet" info={lang === 'tr' ? 'Vadesi geçmiş şirket sayısı' : 'Overdue company count'} {...kp} />
+        <KPICard id="satis-gelecek-tahsilat" title={i18n.t('kpi.gelecekTahsilat')} value="1.840.000 ₺" trendValue="+8,2%" sparkTrend="up" color="gn" unit="K ₺" info={lang === 'tr' ? 'Önümüzdeki 30 gün beklenen' : 'Expected next 30 days'} {...kp} />
+        <KPICard id="satis-ort-tahsilat" title={i18n.t('kpi.ortTahsilat')} value={`38 ${i18n.t('common.days')}`} trendValue={`-2 ${i18n.t('common.daysLower')}`} sparkTrend="down" color="gn" unit={i18n.t('common.daysLower')} {...kp} />
+        <KPICard id="satis-gecikme-tahsilat" title={i18n.t('kpi.gecikmeTahsilat')} value="425.000 ₺" trendValue="+12,5%" sparkTrend="up" color="rd" unit="K ₺" {...kp} />
+        <KPICard id="satis-gecikme-sirket" title={i18n.t('kpi.gecikmeSirket')} value="18" trendValue="+3" sparkTrend="up" color="rd" unit={i18n.t('common.adet')} info={lang === 'tr' ? 'Vadesi geçmiş şirket sayısı' : 'Overdue company count'} {...kp} />
       </div>
 
       {/* Row 4 — 3 KPIs (Gecikme, kırmızı sol border ile vurgulu) */}
@@ -140,7 +143,7 @@ export const SalesOverview = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={monthlyRevenue} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}K`} />
               <Tooltip
                 contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }}

@@ -18,6 +18,8 @@ import { ExpandableTable } from '../../ui/ExpandableTable';
 import { Spark } from '../../ui/Spark';
 import { Icon } from '../../ui/Icon';
 import { mkSpk } from '../../../constants/data';
+import { tTerm } from '../../../i18n/terms';
+import { fmtMonth } from '../../../utils/format';
 
 interface Props {
   t: Theme;
@@ -206,7 +208,7 @@ export const CategoryPerformance = ({ t, l, lang, panels, onAddPanel, onPinTo }:
                   label={{ value: lang === 'tr' ? 'Ciro (K ₺)' : 'Revenue (K ₺)', position: 'insideBottom', offset: -10, fontSize: 10, fill: t.tx3 }}
                 />
                 <YAxis
-                  type="number" dataKey="brutMarj" name="Marj %"
+                  type="number" dataKey="brutMarj" name={tTerm('Marj %')}
                   tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false}
                   label={{ value: 'Marj %', angle: -90, position: 'insideLeft', fontSize: 10, fill: t.tx3 }}
                 />
@@ -258,7 +260,7 @@ export const CategoryPerformance = ({ t, l, lang, panels, onAddPanel, onPinTo }:
           <ResponsiveContainer width="100%" height={220}>
             <ComposedChart data={catRevMarjTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} domain={[25, 40]} tickFormatter={(v) => `${v}%`} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
@@ -387,7 +389,7 @@ export const CategoryPerformance = ({ t, l, lang, panels, onAddPanel, onPinTo }:
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={catMonthlyTrend} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />

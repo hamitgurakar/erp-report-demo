@@ -9,6 +9,8 @@ import { KPICard } from '../kpi/KPICard';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
+import { useTranslation } from '../../i18n/LanguageContext';
+import { tTerm } from '../../i18n/terms';
 
 interface Props {
   t: Theme;
@@ -108,6 +110,7 @@ const hedefBarColor = (pct: number, t: Theme) =>
 // ── Component ───────────────────────────────────────────────────────────────────
 
 export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props) => {
+  const i18n = useTranslation();
   const kp = { t, l, lang, panels, onAddPanel, onPinTo };
   const [selectedFirma] = useState('Koç Holding');
   const avgDeal = REPS.reduce((s, r) => s + r.kapananDeal, 0) / REPS.length;
@@ -132,7 +135,7 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
         <KPICard id="comm-yanit" title={l.commYanit ?? 'Yanıt Alma Oranı'} value="%22,8" trendValue="+3,4pp" sparkTrend="up" color="gn" unit="%" {...kp} />
         <KPICard id="comm-aktivite" title={l.commAktivite ?? 'Aktivite Skoru (Ekip)'} value="6,8/10" trendValue="+0,4" sparkTrend="up" color="tl" unit="" {...kp} />
-        <KPICard id="comm-kapama" title={l.commKapama ?? 'Ort. Satış Kapanma Süresi'} value="32 Gün" trendValue="-4 gün" sparkTrend="down" color="gn" unit="gün" {...kp} />
+        <KPICard id="comm-kapama" title={l.commKapama ?? 'Ort. Satış Kapanma Süresi'} value={`32 ${i18n.t('common.days')}`} trendValue={`-4 ${i18n.t('common.daysLower')}`} sparkTrend="down" color="gn" unit={i18n.t('common.daysLower')} {...kp} />
       </div>
 
       {/* ── Section 2: UZMAN PERFORMANS TABLOSU ──────────────────────────────── */}
@@ -151,7 +154,7 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
             <thead>
               <tr style={{ borderBottom: `1px solid ${t.bd}`, background: t.bg2 }}>
                 {['Uzman', 'E-posta', 'Açılma %', 'Telefon', 'Ort. Süre', 'Yanıt %', 'Kapama Gün', 'Aktivite', 'Deal', 'Toplam Ciro'].map((h, i) => (
-                  <th key={i} style={{ padding: '8px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: i === 0 ? 'left' : 'right', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={i} style={{ padding: '8px 10px', fontSize: 10, fontWeight: 600, color: t.tx2, textAlign: i === 0 ? 'left' : 'right', whiteSpace: 'nowrap' }}>{tTerm(h)}</th>
                 ))}
               </tr>
             </thead>
@@ -169,7 +172,7 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
                   <td style={cellStyle(telefonColor(r.telefon))}>{r.telefon}</td>
                   <td style={cellStyle(gorSuresiColor(r.gorSuresi))}>{r.gorSuresi} dk</td>
                   <td style={cellStyle(yanitColor(r.yanitOrani))}>%{r.yanitOrani}</td>
-                  <td style={cellStyle(kapamaColor(r.kapamaSuresi))}>{r.kapamaSuresi} gün</td>
+                  <td style={cellStyle(kapamaColor(r.kapamaSuresi))}>{r.kapamaSuresi} {i18n.t('common.daysLower')}</td>
                   <td style={cellStyle(aktiviteColor(r.aktivite))}>{r.aktivite}/10</td>
                   <td style={cellStyle(r.kapananDeal >= avgDeal ? GN : RD)}>{r.kapananDeal}</td>
                   <td style={{ padding: '8px 10px', width: 120 }}>
@@ -201,8 +204,8 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
               <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} width={70} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="email" name="E-posta" stackId="a" fill="#818CF8" />
-              <Bar dataKey="telefon" name="Telefon" stackId="a" fill="#0D9488" />
+              <Bar dataKey="email" name={tTerm('E-posta')} stackId="a" fill="#818CF8" />
+              <Bar dataKey="telefon" name={tTerm('Telefon')} stackId="a" fill="#0D9488" />
               <Bar dataKey="meeting" name="Meeting" stackId="a" fill="#D97706" radius={[0, 3, 3, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -217,8 +220,8 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
               <YAxis tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, fontSize: 12 }} />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
-              <Area type="monotone" dataKey="email" name="E-posta" stackId="1" stroke="#818CF8" fill="#818CF8" fillOpacity={0.4} />
-              <Area type="monotone" dataKey="telefon" name="Telefon" stackId="1" stroke="#0D9488" fill="#0D9488" fillOpacity={0.4} />
+              <Area type="monotone" dataKey="email" name={tTerm('E-posta')} stackId="1" stroke="#818CF8" fill="#818CF8" fillOpacity={0.4} />
+              <Area type="monotone" dataKey="telefon" name={tTerm('Telefon')} stackId="1" stroke="#0D9488" fill="#0D9488" fillOpacity={0.4} />
               <Area type="monotone" dataKey="meeting" name="Meeting" stackId="1" stroke="#D97706" fill="#D97706" fillOpacity={0.4} />
             </AreaChart>
           </ResponsiveContainer>
@@ -234,7 +237,7 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
           <ResponsiveContainer width="100%" height={260}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 10, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={t.bd} />
-              <XAxis type="number" dataKey="x" name="Haftalık İletişim" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} label={{ value: 'Haftalık İletişim', position: 'insideBottom', offset: -5, fontSize: 9, fill: t.tx3 }} />
+              <XAxis type="number" dataKey="x" name={tTerm('Haftalık İletişim')} tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} label={{ value: 'Haftalık İletişim', position: 'insideBottom', offset: -5, fontSize: 9, fill: t.tx3 }} />
               <YAxis type="number" dataKey="y" name="Kapanan Deal (K ₺)" tick={{ fontSize: 10, fill: t.tx2 }} axisLine={false} tickLine={false} label={{ value: 'Deal (K ₺)', angle: -90, position: 'insideLeft', fontSize: 9, fill: t.tx3 }} />
               <ZAxis range={[60, 60]} />
               <Tooltip
@@ -242,7 +245,7 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
                   active && payload?.[0] ? (
                     <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '6px 10px', fontSize: 11 }}>
                       <div style={{ fontWeight: 600 }}>{payload[0].payload.name}</div>
-                      <div style={{ color: t.tx2 }}>İletişim: {payload[0].payload.x}/hafta</div>
+                      <div style={{ color: t.tx2 }}>{tTerm('İletişim')}: {payload[0].payload.x}/{tTerm('hafta')}</div>
                       <div style={{ color: t.tx2 }}>Deal: {payload[0].payload.y}K ₺</div>
                     </div>
                   ) : null
@@ -306,7 +309,7 @@ export const SalesCommunication = ({ t, l, lang, panels, onAddPanel, onPinTo }: 
             <div style={{ fontSize: 28, fontWeight: 800, color: card.skorColor, marginBottom: 8 }}>
               {card.skor}<span style={{ fontSize: 14, fontWeight: 500, color: t.tx3 }}>/10</span>
             </div>
-            <div style={{ fontSize: 10, color: t.tx3, marginBottom: 4 }}>Key Topics</div>
+            <div style={{ fontSize: 10, color: t.tx3, marginBottom: 4 }}>{tTerm('Öne Çıkan Konular')}</div>
             <div style={{ fontSize: 11, color: t.tx2, marginBottom: 10, lineHeight: 1.4 }}>{card.topics}</div>
             <div style={{ background: t.bg2, borderRadius: 6, padding: '8px 10px' }}>
               <div style={{ fontSize: 9, fontWeight: 600, color: t.pr, marginBottom: 2 }}>AI Öneri</div>

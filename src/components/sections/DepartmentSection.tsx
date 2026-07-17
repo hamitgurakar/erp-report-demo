@@ -1,5 +1,7 @@
 import type { Theme, LangStrings, Lang } from '../../types';
 import { mkSpk } from '../../constants/data';
+import { totalSpend } from '../../constants/procurementData';
+import { fmtCompactTRY } from '../../utils/format';
 import { SectionHeader } from '../ui/SectionHeader';
 import { Spark } from '../ui/Spark';
 import { Icon } from '../ui/Icon';
@@ -21,10 +23,12 @@ interface DepartmentSectionProps {
 }
 
 export const DepartmentSection = ({ t, l, lang }: DepartmentSectionProps) => {
+  // Satın Alma kartı: Satın Alma modülü verisiyle hizalı (aylık ort. = yıllık toplam / 12).
+  const monthlyProcurement = totalSpend / 12;
   const cards: DeptCard[] = [
     { title: l.b2bGelir, value: '1.8M ₺', trend: '+14%', accent: t.gn, sparkTrend: 'up', icon: 'trendUp', unit: 'K ₺' },
     { title: l.b2cGelir, value: '720K ₺', trend: '+8%', accent: t.am, sparkTrend: 'up', icon: 'user', unit: 'K ₺' },
-    { title: l.satinAlma, value: '980K ₺', trend: '+6%', accent: t.pu, sparkTrend: 'up', icon: 'shoppingBag', unit: 'K ₺' },
+    { title: l.satinAlma, value: fmtCompactTRY(monthlyProcurement), trend: '+6%', accent: t.pu, sparkTrend: 'up', icon: 'shoppingBag', unit: 'K ₺' },
     { title: l.operasyon, value: '94.2%', trend: 'SLA', accent: t.co, sparkTrend: 'flat', icon: 'package', unit: '%' },
     { title: l.musteriDestek, value: '4.2h', trend: lang === 'en' ? 'Avg.' : 'Ort.', accent: t.pk, sparkTrend: 'down', icon: 'headphones', unit: lang === 'en' ? 'hrs' : 'saat' },
     { title: l.finans, value: '+245K ₺', trend: lang === 'en' ? 'Cash' : 'Nakit', accent: t.tl, sparkTrend: 'up', icon: 'calculator', unit: 'K ₺' },

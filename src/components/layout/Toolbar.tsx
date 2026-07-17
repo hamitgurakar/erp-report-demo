@@ -3,12 +3,7 @@ import type { Theme, LangStrings } from '../../types';
 import { Icon } from '../ui/Icon';
 import { DatePicker } from '../panels/DatePicker';
 import type { Lang } from '../../types';
-
-const ACCOUNT_LABELS: Record<string, string> = {
-  total: 'Muhiku Total',
-  b2c: 'Muhiku B2C',
-  b2b: 'Muhiku B2B',
-};
+import { useTranslation } from '../../i18n/LanguageContext';
 
 interface ToolbarProps {
   t: Theme;
@@ -33,6 +28,13 @@ export const Toolbar = ({
 }: ToolbarProps) => {
   const [showAcct, setShowAcct] = useState(false);
   const [showDP, setShowDP] = useState(false);
+  const i18n = useTranslation();
+
+  const ACCOUNT_LABELS: Record<string, string> = {
+    total: i18n.t('common.muhikuTotal'),
+    b2c: i18n.t('common.muhikuB2C'),
+    b2b: i18n.t('common.muhikuB2B'),
+  };
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', padding: '10px 24px', borderBottom: `1px solid ${t.bd}`, background: t.bg, gap: 10, flexShrink: 0, zIndex: 10 }}>
