@@ -41,7 +41,11 @@ export const en: Dict = {
         'Project Pricing', 'Cost', 'Profitability', 'Payables', 'Stock & Replenishment',
       ],
       operasyon: ['SLA Tracking', 'Shipment Report', 'Efficiency'],
-      muhasebe: ['Receivables Aging', 'Payables Aging', 'BA-BS'],
+      muhasebe: [
+        'Income & Profitability', 'Cash & Liquidity', 'Receivables', 'Payables',
+        'Tax & Compliance', 'Leverage & Capital', 'Valuation', 'Shareholder Returns',
+        'Financial Scorecard', 'CFO Cockpit',
+      ],
       pazarlama: ['Campaign ROI', 'Channel Attribution'],
       destek: ['Ticket Analysis', 'SLA Performance', 'Team Report'],
     },

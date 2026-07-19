@@ -111,6 +111,8 @@ export const IMPLEMENTED_REPORTS = new Set<string>([
   'satis__6', 'satis__7', 'satis__8', 'satis__9', 'satis__10',
   'kategori__0', 'kategori__1', 'kategori__2', 'kategori__3', 'kategori__4',
   'satin-alma__0', 'satin-alma__1', 'satin-alma__2', 'satin-alma__3', 'satin-alma__4', 'satin-alma__5', 'satin-alma__6', 'satin-alma__7', 'satin-alma__8',
+  'muhasebe__0', 'muhasebe__1', 'muhasebe__2', 'muhasebe__3', 'muhasebe__4',
+  'muhasebe__5', 'muhasebe__6', 'muhasebe__7', 'muhasebe__8', 'muhasebe__9',
 ]);
 
 export const isComingSoon = (repKey: string): boolean => !IMPLEMENTED_REPORTS.has(repKey);

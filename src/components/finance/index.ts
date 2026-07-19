@@ -1,0 +1,17 @@
+// Finans Suite paylaşılan bileşenleri (P0). Sayfa prompt'ları (P1–P10) buradan import eder.
+export { KPICard } from './KPICard';
+export { KPIBand } from './KPIBand';
+export { ChartCard } from './ChartCard';
+export { AIAlertPanel } from './AIAlertPanel';
+export type { FinAlert, AlertSeverity } from './AIAlertPanel';
+export { StatusBadge } from './StatusBadge';
+export type { BadgeTone } from './StatusBadge';
+export { ReportPageLayout } from './ReportPageLayout';
+export { SourceBadge } from './SourceBadge';
+export { CurrencyToggle } from './CurrencyToggle';
+export { ChangePct } from './ChangePct';
+export { InfoTip } from './InfoTip';
+export { MiniChartPopover } from './MiniChartPopover';
+export type { MiniPoint } from './MiniChartPopover';
+export { Dropdown } from './Dropdown';
+export type { DropdownOption } from './Dropdown';

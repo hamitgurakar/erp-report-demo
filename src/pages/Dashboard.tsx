@@ -36,6 +36,16 @@ import { SalesForecasting } from '../components/satis/SalesForecasting';
 import { SalesTargets } from '../components/satis/SalesTargets';
 import { ManagementTargets } from '../components/yonetim/ManagementTargets';
 import { FinancialData } from './finance/FinancialData';
+import { IncomeProfitability } from './finance/IncomeProfitability';
+import { CashLiquidity } from './finance/CashLiquidity';
+import { Receivables } from './finance/Receivables';
+import { Payables as FinPayables } from './finance/Payables';
+import { TaxCompliance } from './finance/TaxCompliance';
+import { Leverage } from './finance/Leverage';
+import { Valuation } from './finance/Valuation';
+import { ShareholderReturns } from './finance/ShareholderReturns';
+import { Scorecard } from './finance/Scorecard';
+import { CfoCockpit } from './finance/CfoCockpit';
 import { ChatAssistant } from '../components/chat/ChatAssistant';
 import { Icon } from '../components/ui/Icon';
 
@@ -72,6 +82,16 @@ export default function Dashboard() {
     'kategori__2': db.l.katStok,
     'kategori__3': db.l.katMarka,
     'kategori__4': db.l.katABC,
+    'muhasebe__0': db.l.mhFin0,
+    'muhasebe__1': db.l.mhFin1,
+    'muhasebe__2': db.l.mhFin2,
+    'muhasebe__3': db.l.mhFin3,
+    'muhasebe__4': db.l.mhFin4,
+    'muhasebe__5': db.l.mhFin5,
+    'muhasebe__6': db.l.mhFin6,
+    'muhasebe__7': db.l.mhFin7,
+    'muhasebe__8': db.l.mhFin8,
+    'muhasebe__9': db.l.mhFin9,
   };
   const toolbarTitle = db.isPanel
     ? (db.activePanelName ?? '')
@@ -123,7 +143,7 @@ export default function Dashboard() {
             onChangeAcct={db.setAcct}
             dateRange={db.dateRange}
             setDateRange={db.setDateRange}
-            hideAccount={db.activeRep === 'yonetim__4'}
+            hideAccount={db.activeRep === 'yonetim__4' || db.activeRep.startsWith('muhasebe__')}
           />
 
           <div style={{ padding: '5px 24px', fontSize: 11, color: db.t.tx3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -195,6 +215,26 @@ export default function Dashboard() {
               <StockReplenishment {...kp} />
             ) : db.activeRep === 'satin-alma__6' ? (
               <Profitability {...kp} />
+            ) : db.activeRep === 'muhasebe__0' ? (
+              <IncomeProfitability {...kp} />
+            ) : db.activeRep === 'muhasebe__1' ? (
+              <CashLiquidity {...kp} />
+            ) : db.activeRep === 'muhasebe__2' ? (
+              <Receivables {...kp} />
+            ) : db.activeRep === 'muhasebe__3' ? (
+              <FinPayables {...kp} />
+            ) : db.activeRep === 'muhasebe__4' ? (
+              <TaxCompliance {...kp} />
+            ) : db.activeRep === 'muhasebe__5' ? (
+              <Leverage {...kp} />
+            ) : db.activeRep === 'muhasebe__6' ? (
+              <Valuation {...kp} />
+            ) : db.activeRep === 'muhasebe__7' ? (
+              <ShareholderReturns {...kp} />
+            ) : db.activeRep === 'muhasebe__8' ? (
+              <Scorecard {...kp} />
+            ) : db.activeRep === 'muhasebe__9' ? (
+              <CfoCockpit {...kp} />
             ) : (
               <>
                 <GeneralSection

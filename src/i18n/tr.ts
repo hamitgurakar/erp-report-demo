@@ -41,7 +41,11 @@ export const tr = {
         'Proje Fiyatlama', 'Maliyet', 'Karlılık', 'Borçluluk', 'Stok & İkmal',
       ],
       operasyon: ['SLA Takibi', 'Sevkiyat Raporu', 'Verimlilik'],
-      muhasebe: ['Alacak Yaşlandırma', 'Borç Yaşlandırma', 'BA-BS'],
+      muhasebe: [
+        'Gelir & Karlılık', 'Nakit & Likidite', 'Alacak Yönetimi', 'Borç Yönetimi',
+        'Vergi & Uyum', 'Borçluluk & Sermaye', 'Değerleme', 'Ortak Getirisi',
+        'Finansal Skorkart', 'CFO Kokpiti',
+      ],
       pazarlama: ['Kampanya ROI', 'Kanal Attribution'],
       destek: ['Ticket Analizi', 'SLA Performansı', 'Ekip Raporu'],
     },
