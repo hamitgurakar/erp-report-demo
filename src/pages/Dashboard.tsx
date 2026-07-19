@@ -45,7 +45,7 @@ import { Leverage } from './finance/leverage/Leverage';
 import { Valuation } from './finance/valuation/Valuation';
 import { ShareholderReturns } from './finance/shareholder-returns/ShareholderReturns';
 import { Scorecard } from './finance/scorecard/Scorecard';
-import { CfoCockpit } from './finance/CfoCockpit';
+import { CfoCockpit } from './finance/cfo-cockpit/CfoCockpit';
 import { ChatAssistant } from '../components/chat/ChatAssistant';
 import { Icon } from '../components/ui/Icon';
 
