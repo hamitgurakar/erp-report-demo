@@ -39,7 +39,7 @@ import { FinancialData } from './finance/FinancialData';
 import { IncomeProfitability } from './finance/income-profitability/IncomeProfitability';
 import { CashLiquidity } from './finance/cash-liquidity/CashLiquidity';
 import { Receivables } from './finance/receivables/Receivables';
-import { Payables as FinPayables } from './finance/Payables';
+import { Payables as FinPayables } from './finance/payables/Payables';
 import { TaxCompliance } from './finance/TaxCompliance';
 import { Leverage } from './finance/Leverage';
 import { Valuation } from './finance/Valuation';
