@@ -46,23 +46,41 @@ export const FinancialData = ({ t, lang }: Props) => {
   const [stores, setStores] = useState<Record<StoreKey, Store>>(() => ({
     income: clone(incomeRaw), balance: clone(balanceRaw), cashflow: clone(cashflowRaw), expense: clone(expenseRaw),
   }));
-  const [draft, setDraft] = useState<{ tab: StoreKey; data: Store } | null>(null);
+  const [draftStores, setDraftStores] = useState<Partial<Record<StoreKey, Store>>>({});
   const [editedCells, setEditedCells] = useState<Set<string>>(new Set());
-  const [audit, setAudit] = useState<AuditEntry[]>([]);
+  const [audit, setAudit] = useState<AuditEntry[]>(() => [{
+    id: 'demo-1', ts: new Date(2026, 6, 19, 14, 32).getTime(), user: 'Ahmet Üreme', tab: 'balance',
+    itemKey: 'inventory', itemLabel: LINE_LABELS.inventory.tr, periodId: '2026/Q2', periodLabel: '2026/Ç2',
+    oldValue: 151893, newValue: 155000, sourceNote: 'ERP→düzenlendi',
+  }]);
   const [tree, setTree] = useState(() => clone(EXPENSE_TREE));
+  const [draftTree, setDraftTree] = useState<typeof EXPENSE_TREE | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [events, setEvents] = useState<DividendEvent[]>(() => clone(dividendEventsSeed));
-  const [inflation, setInflation] = useState<InflationMethod>('nominal');
+  const [draftDivs, setDraftDivs] = useState<DividendEvent[] | null>(null);
+  const [settings, setSettings] = useState<{ inflation: InflationMethod; startDate: string }>({ inflation: 'nominal', startDate: '2020-01-01' });
+  const [settingsSnap, setSettingsSnap] = useState<{ inflation: InflationMethod; startDate: string } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [chart, setChart] = useState<{ label: string; isMargin: boolean; perShare: boolean; values: Record<string, number | null> } | null>(null);
 
-  const periodsFor = periodType === 'annual' ? PERIODS_ANNUAL : PERIODS_QUARTER;
-  const dispPeriods = order === 'newestLeft' ? [...periodsFor].reverse() : periodsFor;
-  const periodById = (id: string) => periodsFor.find((p) => p.id === id)!;
+  const inflation = settings.inflation;
+  const activeEvents = draftDivs ?? events;
+  const activeTree = draftTree ?? tree;
 
-  const activeStore = (s: StoreKey): Store => (draft && draft.tab === s ? draft.data : stores[s]);
-  const editing = (s: TabKey) => draft?.tab === s;
+  // Rapor başlangıç tarihine göre dönem üretimi (ilk dönem startDate'ten itibaren)
+  const periodStart = (p: FinancialPeriod): string => p.type === 'annual'
+    ? `${p.label}-01-01`
+    : `${p.label.split('/')[0]}-${String((Number(p.label.split('/')[1].replace('Q', '')) - 1) * 3 + 1).padStart(2, '0')}-01`;
+  const allPeriods = periodType === 'annual' ? PERIODS_ANNUAL : PERIODS_QUARTER;
+  const periodsFor = allPeriods.filter((p) => periodStart(p) >= settings.startDate);
+  const dispPeriods = order === 'newestLeft' ? [...periodsFor].reverse() : periodsFor;
+  const periodById = (id: string) => (periodsFor.find((p) => p.id === id) ?? allPeriods.find((p) => p.id === id))!;
+
+  const activeStore = (s: StoreKey): Store => draftStores[s] ?? stores[s];
+  const isEditing = (tb: TabKey): boolean =>
+    tb === 'dividends' ? draftDivs !== null : tb === 'meta' ? settingsSnap !== null : !!draftStores[tb as StoreKey];
 
   // ── Değer biçimlendirme (dönem kuruna göre USD) ────────────────────────────
   const money = (tryVal: number | null, p: FinancialPeriod, perShare = false): string => {
@@ -98,8 +116,8 @@ export const FinancialData = ({ t, lang }: Props) => {
         revenue: incRaw.revenue ?? null,
         netIncome: netIncomeFromRaw(incRaw),
         shares: TOTAL_SHARES,
-        divDeclared: divSumInPeriod(events, p, 'beyan'),
-        divPaid: divSumInPeriod(events, p, 'odeme'),
+        divDeclared: divSumInPeriod(activeEvents, p, 'beyan'),
+        divPaid: divSumInPeriod(activeEvents, p, 'odeme'),
       };
       for (const row of rows) resolved[row.key] = row.compute ? row.compute(ctx) : (raw[row.key] ?? null);
       out[p.id] = resolved;
@@ -107,55 +125,93 @@ export const FinancialData = ({ t, lang }: Props) => {
     return out;
   };
 
-  // ── Edit / Kaydet / Vazgeç ─────────────────────────────────────────────────
-  const startEdit = (s: StoreKey) => setDraft({ tab: s, data: clone(stores[s]) });
-  const cancelEdit = () => setDraft(null);
+  // ── Edit / Kaydet / Vazgeç (sekme bazlı taslak — sekmeler birbirini ezmez) ──
+  const ROWS_BY: Record<StoreKey, RowSpec[]> = { income: INCOME_ROWS, balance: BALANCE_ROWS, cashflow: CASHFLOW_ROWS, expense: [] };
+  let seq = 0;
+  const mkEntry = (tabId: string, key: string, pid: string, pl: string, ov: number | null, nv: number | null, note?: string): AuditEntry =>
+    ({ id: `A${Date.now()}-${seq++}`, ts: Date.now(), user: USER, tab: tabId, itemKey: key, itemLabel: lbl(key), periodId: pid, periodLabel: pl, oldValue: ov, newValue: nv, sourceNote: note });
+
+  const startEditTab = (tb: TabKey) => {
+    if (tb === 'dividends') setDraftDivs(clone(events));
+    else if (tb === 'meta') setSettingsSnap(clone(settings));
+    else { setDraftStores((d) => ({ ...d, [tb]: clone(stores[tb as StoreKey]) })); if (tb === 'expense') setDraftTree(clone(tree)); }
+  };
+  const cancelEditTab = (tb: TabKey) => {
+    if (tb === 'dividends') setDraftDivs(null);
+    else if (tb === 'meta') { if (settingsSnap) setSettings(settingsSnap); setSettingsSnap(null); }
+    else { setDraftStores((d) => { const n = { ...d }; delete n[tb as StoreKey]; return n; }); if (tb === 'expense') setDraftTree(null); }
+  };
   const editCell = (s: StoreKey, pid: string, key: string, raw: string) => {
     const v = raw.trim() === '' ? null : Number(raw.replace(/[^\d.-]/g, ''));
-    setDraft((d) => d ? { ...d, data: { ...d.data, [pid]: { ...d.data[pid], [key]: Number.isNaN(v as number) ? null : v } } } : d);
+    setDraftStores((d) => ({ ...d, [s]: { ...(d[s] ?? {}), [pid]: { ...(d[s]?.[pid] ?? {}), [key]: Number.isNaN(v as number) ? null : v } } }));
   };
-  let seq = 0;
-  const saveEdit = (s: StoreKey, rows: RowSpec[]) => {
-    if (!draft || draft.tab !== s) return;
+
+  const saveDatasetTab = (s: StoreKey, rows: RowSpec[]) => {
+    const dd = draftStores[s]; if (!dd) return;
     const entries: AuditEntry[] = [];
     const newEdited = new Set(editedCells);
     const rowBySrc: Record<string, FinSource> = {};
     rows.forEach((r) => { rowBySrc[r.key] = r.source; });
     for (const p of periodsFor) {
-      const before = stores[s][p.id] || {};
-      const after = draft.data[p.id] || {};
+      const before = stores[s][p.id] || {}, after = dd[p.id] || {};
       for (const key of Object.keys(after)) {
         const ov = before[key] ?? null, nv = after[key] ?? null;
         if (ov !== nv) {
-          const src = rowBySrc[key];
-          const wasSourced = src === 'erp' || src === 'parasut';
+          const src = rowBySrc[key]; const wasSourced = src === 'erp' || src === 'parasut';
           if (wasSourced) newEdited.add(`${s}:${p.id}:${key}`);
-          entries.push({
-            id: `A${Date.now()}-${seq++}`, ts: Date.now(), user: USER, tab: s,
-            itemKey: key, itemLabel: lbl(key), periodId: p.id, periodLabel: pLabel(p),
-            oldValue: ov, newValue: nv,
-            sourceNote: wasSourced ? `${(f(`source.${src}`))}→${f('editedTag')}` : undefined,
-          });
+          entries.push(mkEntry(s, key, p.id, pLabel(p), ov, nv, wasSourced ? `${f(`source.${src}`)}→${f('editedTag')}` : undefined));
         }
       }
     }
-    if (entries.length) { setStores((st) => ({ ...st, [s]: draft.data })); setAudit((a) => [...entries, ...a]); setEditedCells(newEdited); }
-    setDraft(null);
+    setStores((st) => ({ ...st, [s]: dd }));
+    if (s === 'expense' && draftTree) { setTree(draftTree); setDraftTree(null); }
+    if (entries.length) setAudit((a) => [...entries, ...a]);
+    if (newEdited.size !== editedCells.size) setEditedCells(newEdited);
+    setDraftStores((d) => { const n = { ...d }; delete n[s]; return n; });
+  };
+  const saveDivsTab = () => {
+    if (!draftDivs) return;
+    const entries: AuditEntry[] = [];
+    for (const e of draftDivs) {
+      const old = events.find((x) => x.id === e.id);
+      if (old && old.amountTRY !== e.amountTRY) {
+        const pn = PARTNERS.find((p) => p.id === e.partnerId)?.name ?? e.partnerId;
+        entries.push(mkEntry('dividends', 'cfDiv', e.date, pn, old.amountTRY, e.amountTRY, e.date));
+      }
+    }
+    setEvents(draftDivs); if (entries.length) setAudit((a) => [...entries, ...a]); setDraftDivs(null);
+  };
+  const saveSettingsTab = () => {
+    if (!settingsSnap) return;
+    const entries: AuditEntry[] = [];
+    const base = (key: string, label: string, note: string): AuditEntry =>
+      ({ id: `A${Date.now()}-${seq++}`, ts: Date.now(), user: USER, tab: 'meta', itemKey: key, itemLabel: label, periodId: '—', periodLabel: '—', oldValue: null, newValue: null, sourceNote: note });
+    if (settingsSnap.inflation !== settings.inflation) entries.push(base('inflation', f('meta.inflation'), `${f(`meta.${settingsSnap.inflation}`)} → ${f(`meta.${settings.inflation}`)}`));
+    if (settingsSnap.startDate !== settings.startDate) entries.push(base('reportStart', f('meta.reportStart'), `${settingsSnap.startDate} → ${settings.startDate}`));
+    if (entries.length) setAudit((a) => [...entries, ...a]);
+    setSettingsSnap(null);
+  };
+  const doSave = (tb: TabKey) => {
+    if (tb === 'dividends') saveDivsTab();
+    else if (tb === 'meta') saveSettingsTab();
+    else if (tb === 'expense') saveDatasetTab('expense', activeTree.flatMap((c) => c.items.map((it) => ({ key: it.key, source: it.source } as RowSpec))));
+    else saveDatasetTab(tb as StoreKey, ROWS_BY[tb as StoreKey]);
   };
 
   const toggleGroup = (id: string) => setCollapsed((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
 
-  // ── "i" tooltip ────────────────────────────────────────────────────────────
+  // ── "i" tooltip — position:fixed ile overflow kırpması olmadan her zaman üstte ─
   const InfoTip = ({ termKey }: { termKey: string }) => {
-    const [show, setShow] = useState(false);
+    const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
     const txt = finTerm(termKey, lang);
     if (!txt) return null;
     return (
-      <span className="fin-i" style={{ position: 'relative', display: 'inline-flex', marginLeft: 5, opacity: 0.28, transition: 'opacity 0.12s' }}
-        onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      <span className="fin-i" style={{ display: 'inline-flex', marginLeft: 5, opacity: 0.28, transition: 'opacity 0.12s' }}
+        onMouseEnter={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setPos({ x: r.left, y: r.top }); }}
+        onMouseLeave={() => setPos(null)}>
         <Icon name="info" size={12} color={t.tx3} />
-        {show && (
-          <span style={{ position: 'absolute', bottom: 20, left: -8, width: 250, background: t.tx, color: t.bg, borderRadius: 8, padding: '9px 12px', fontSize: 11, lineHeight: 1.45, boxShadow: '0 6px 18px rgba(0,0,0,0.25)', zIndex: 80, fontWeight: 400, whiteSpace: 'normal' }}>
+        {pos && (
+          <span style={{ position: 'fixed', left: Math.min(pos.x - 8, window.innerWidth - 270), top: pos.y - 8, transform: 'translateY(-100%)', width: 250, background: t.tx, color: t.bg, borderRadius: 8, padding: '9px 12px', fontSize: 11, lineHeight: 1.45, boxShadow: '0 6px 18px rgba(0,0,0,0.3)', zIndex: 9999, fontWeight: 400, whiteSpace: 'normal', pointerEvents: 'none' }}>
             {txt}
           </span>
         )}
@@ -193,7 +249,7 @@ export const FinancialData = ({ t, lang }: Props) => {
   const renderGrid = (statement: StoreKey, rows: RowSpec[], pctBase: 'revenue' | 'totalAssets') => {
     const resolved = resolveStatement(statement, rows);
     const incomeResolved = statement === 'income' ? resolved : resolveStatement('income', INCOME_ROWS);
-    const isEditing = editing(statement);
+    const editingThis = isEditing(statement);
     const chronoIdx = (pid: string) => periodsFor.findIndex((p) => p.id === pid);
     const baseVal = (pid: string): number | null =>
       pctBase === 'totalAssets' ? (resolved[pid]?.totalAssets ?? null) : (incomeResolved[pid]?.revenue ?? null);
@@ -209,15 +265,7 @@ export const FinancialData = ({ t, lang }: Props) => {
     return (
       <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
         <div style={{ padding: '11px 16px', borderBottom: `1px solid ${t.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: t.tx }}>{f(`tabs.${statement}`)}{view === 'pct' ? ` · ${pctViewLabel}` : ''}</span>
-          {isEditing ? (
-            <span style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => saveEdit(statement, rows)} style={btnPrimary}>{f('save')}</button>
-              <button onClick={cancelEdit} style={btnGhost}>{f('cancel')}</button>
-            </span>
-          ) : (
-            <button onClick={() => startEdit(statement)} style={btnGhost}><Icon name="fileText" size={13} color={t.tx2} /> {f('edit')}</button>
-          )}
+          <span style={{ fontSize: 14, fontWeight: 600, color: t.tx }}>{f(`tabs.${statement}`)}{view === 'pct' ? ` · ${pctViewLabel}` : ''}{editingThis ? ` · ${f('edit')}` : ''}</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -256,7 +304,7 @@ export const FinancialData = ({ t, lang }: Props) => {
                       const val = resolved[p.id]?.[row.key] ?? null;
                       const prevId = periodsFor[chronoIdx(p.id) - 1]?.id;
                       const prev = prevId ? resolved[prevId]?.[row.key] ?? null : null;
-                      const canEdit = isEditing && !row.compute && row.source !== 'computed';
+                      const canEdit = editingThis && !row.compute && row.source !== 'computed';
                       const isEdited = editedCells.has(`${statement}:${p.id}:${row.key}`);
                       return (
                         <td key={p.id} style={{ padding: '7px 12px', textAlign: 'right', borderBottom: `1px solid ${t.bd}`, whiteSpace: 'nowrap' }}>
@@ -303,13 +351,13 @@ export const FinancialData = ({ t, lang }: Props) => {
   const renderExpense = () => {
     const store = activeStore('expense');
     const incomeResolved = resolveStatement('income', INCOME_ROWS);
-    const isEditing = editing('expense');
+    const editingThis = isEditing('expense');
     const chronoIdx = (pid: string) => periodsFor.findIndex((p) => p.id === pid);
     const catTotal = (catId: string, pid: string) => {
-      const cat = tree.find((c) => c.id === catId)!;
+      const cat = activeTree.find((c) => c.id === catId)!;
       return cat.items.reduce((s, it) => s + (store[pid]?.[it.key] ?? 0), 0);
     };
-    const grand = (pid: string) => tree.reduce((s, c) => s + catTotal(c.id, pid), 0);
+    const grand = (pid: string) => activeTree.reduce((s, c) => s + catTotal(c.id, pid), 0);
     const cellVal = (key: string, pid: string) => store[pid]?.[key] ?? null;
     const catValues = (catId: string) => Object.fromEntries(periodsFor.map((p) => [p.id, catTotal(catId, p.id)]));
     const itemValues = (key: string) => Object.fromEntries(periodsFor.map((p) => [p.id, cellVal(key, p.id)]));
@@ -330,10 +378,7 @@ export const FinancialData = ({ t, lang }: Props) => {
     return (
       <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
         <div style={{ padding: '11px 16px', borderBottom: `1px solid ${t.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: t.tx }}>{f('tabs.expense')}{view === 'pct' ? ` · ${f('viewPctRevenue')}` : ''}</span>
-          {isEditing
-            ? <span style={{ display: 'flex', gap: 8 }}><button onClick={() => saveEdit('expense', tree.flatMap((c) => c.items.map((it) => ({ key: it.key, source: it.source } as RowSpec))))} style={btnPrimary}>{f('save')}</button><button onClick={cancelEdit} style={btnGhost}>{f('cancel')}</button></span>
-            : <button onClick={() => startEdit('expense')} style={btnGhost}><Icon name="fileText" size={13} color={t.tx2} /> {f('edit')}</button>}
+          <span style={{ fontSize: 14, fontWeight: 600, color: t.tx }}>{f('tabs.expense')}{view === 'pct' ? ` · ${f('viewPctRevenue')}` : ''}{editingThis ? ` · ${f('edit')}` : ''}</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -341,10 +386,10 @@ export const FinancialData = ({ t, lang }: Props) => {
               <th style={{ ...stickyMetric, ...periodTh, textAlign: 'left', minWidth: 240, left: 0 }}>{f('metricCol')}</th>
               <th style={{ ...stickySource, ...periodTh, textAlign: 'left', minWidth: 90, left: 240 }}>{f('sourceCol')}</th>
               {dispPeriods.map((p) => <th key={p.id} style={periodTh}>{pLabel(p)}</th>)}
-              {isEditing && <th style={periodTh} />}
+              {editingThis && <th style={periodTh} />}
             </tr></thead>
             <tbody>
-              {tree.map((cat) => {
+              {activeTree.map((cat) => {
                 const open = !collapsed.includes(cat.id);
                 return (
                   <Fragment key={cat.id}>
@@ -358,7 +403,7 @@ export const FinancialData = ({ t, lang }: Props) => {
                       </td>
                       <td style={{ ...stickySource, background: t.bg2 }} />
                       {dispPeriods.map((p) => { const v = catTotal(cat.id, p.id); const pid2 = periodsFor[chronoIdx(p.id) - 1]?.id; return <td key={p.id} style={{ padding: '7px 12px', textAlign: 'right', borderBottom: `1px solid ${t.bd}` }}>{cell(v, pid2 ? catTotal(cat.id, pid2) : null, p.id, true)}</td>; })}
-                      {isEditing && <td style={{ borderBottom: `1px solid ${t.bd}` }} />}
+                      {editingThis && <td style={{ borderBottom: `1px solid ${t.bd}` }} />}
                     </tr>
                     {open && cat.items.map((it) => (
                       <tr key={it.key} className="fin-row">
@@ -366,7 +411,7 @@ export const FinancialData = ({ t, lang }: Props) => {
                         <td style={{ ...stickySource, background: t.cd }}><SourceBadge s={it.source} /></td>
                         {dispPeriods.map((p) => {
                           const v = cellVal(it.key, p.id); const pid2 = periodsFor[chronoIdx(p.id) - 1]?.id;
-                          const canEdit = isEditing && it.source !== 'computed';
+                          const canEdit = editingThis && it.source !== 'computed';
                           return (
                             <td key={p.id} style={{ padding: '7px 12px', textAlign: 'right', borderBottom: `1px solid ${t.bd}` }}>
                               {canEdit
@@ -375,15 +420,15 @@ export const FinancialData = ({ t, lang }: Props) => {
                             </td>
                           );
                         })}
-                        {isEditing && <td style={{ textAlign: 'center', borderBottom: `1px solid ${t.bd}` }}><button onClick={() => setTree((tr2) => tr2.map((c) => c.id === cat.id ? { ...c, items: c.items.filter((x) => x.key !== it.key) } : c))} style={{ width: 22, height: 22, borderRadius: 5, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer', color: t.tx3 }}><Icon name="x" size={11} /></button></td>}
+                        {editingThis && <td style={{ textAlign: 'center', borderBottom: `1px solid ${t.bd}` }}><button onClick={() => setDraftTree((tr2) => (tr2 ?? tree).map((c) => c.id === cat.id ? { ...c, items: c.items.filter((x) => x.key !== it.key) } : c))} style={{ width: 22, height: 22, borderRadius: 5, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer', color: t.tx3 }}><Icon name="x" size={11} /></button></td>}
                       </tr>
                     ))}
-                    {open && isEditing && (
+                    {open && editingThis && (
                       <tr><td colSpan={dispPeriods.length + 3} style={{ padding: '6px 12px 6px 32px', borderBottom: `1px solid ${t.bd}` }}>
                         {addingTo === cat.id ? (
                           <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                             <input autoFocus value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={f('expense.namePlaceholder')} style={{ padding: '4px 9px', borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg, color: t.tx, fontSize: 12 }} />
-                            <button onClick={() => { const nm = newName.trim(); if (nm) { const key = `custom-${cat.id}-${Date.now()}`; setTree((tr2) => tr2.map((c) => c.id === cat.id ? { ...c, items: [...c.items, { key, source: 'manual' }] } : c)); LINE_LABELS[key] = { tr: nm, en: nm }; } setNewName(''); setAddingTo(null); }} style={btnPrimary}>{f('expense.addConfirm')}</button>
+                            <button onClick={() => { const nm = newName.trim(); if (nm) { const key = `custom-${cat.id}-${Date.now()}`; setDraftTree((tr2) => (tr2 ?? tree).map((c) => c.id === cat.id ? { ...c, items: [...c.items, { key, source: 'manual' }] } : c)); LINE_LABELS[key] = { tr: nm, en: nm }; } setNewName(''); setAddingTo(null); }} style={btnPrimary}>{f('expense.addConfirm')}</button>
                             <button onClick={() => { setAddingTo(null); setNewName(''); }} style={btnGhost}>{f('expense.cancel')}</button>
                           </span>
                         ) : (
@@ -398,7 +443,7 @@ export const FinancialData = ({ t, lang }: Props) => {
                 <td style={{ ...stickyMetric, background: t.bg3, fontWeight: 700, color: t.tx }}><span style={{ display: 'inline-flex', alignItems: 'center' }}>{f('totals.totalOpex')}<InfoTip termKey="totalOpex" />{chartBtn(f('totals.totalOpex'), grandValues())}</span></td>
                 <td style={{ ...stickySource, background: t.bg3 }} />
                 {dispPeriods.map((p) => { const v = grand(p.id); const pid2 = periodsFor[chronoIdx(p.id) - 1]?.id; return <td key={p.id} style={{ padding: '7px 12px', textAlign: 'right', borderBottom: `1px solid ${t.bd}`, fontWeight: 700, color: t.pr }}>{cell(v, pid2 ? grand(pid2) : null, p.id, true)}</td>; })}
-                {isEditing && <td style={{ borderBottom: `1px solid ${t.bd}` }} />}
+                {editingThis && <td style={{ borderBottom: `1px solid ${t.bd}` }} />}
               </tr>
             </tbody>
           </table>
@@ -411,12 +456,24 @@ export const FinancialData = ({ t, lang }: Props) => {
   // ORTAK GETİRİSİ (Temettü)
   // ═══════════════════════════════════════════════════════════════════════════
   const renderDividends = () => {
-    const declaredOf = (pid: PartnerId) => events.filter((e) => e.type === 'beyan' && e.partnerId === pid).reduce((s, e) => s + e.amountTRY, 0);
-    const paidOf = (pid: PartnerId) => events.filter((e) => e.type === 'odeme' && e.partnerId === pid).reduce((s, e) => s + e.amountTRY, 0);
+    const editingThis = isEditing('dividends');
+    const evs = activeEvents;
+    const declaredOf = (pid: PartnerId) => evs.filter((e) => e.type === 'beyan' && e.partnerId === pid).reduce((s, e) => s + e.amountTRY, 0);
+    const paidOf = (pid: PartnerId) => evs.filter((e) => e.type === 'odeme' && e.partnerId === pid).reduce((s, e) => s + e.amountTRY, 0);
     // distribution gruplama
-    const distIds = [...new Set(events.filter((e) => e.type === 'beyan').map((e) => e.distributionId!))];
+    const distIds = [...new Set(evs.filter((e) => e.type === 'beyan').map((e) => e.distributionId!))];
     const usd = (tryVal: number, rate: number) => `$${fmtNumber(Math.round(tryVal / rate))}`;
     const disp = (tryVal: number, rate: number) => currency === 'USD' ? usd(tryVal, rate) : `${fmtNumber(tryVal)} ₺`;
+    const editOdeme = (did: string, pid: PartnerId, date: string, rate: number, raw: string) => {
+      const d = raw.trim() === '' ? 0 : Number(raw.replace(/[^\d.-]/g, ''));
+      const tryVal = currency === 'USD' ? Math.round(d * rate) : d;
+      setDraftDivs((prev) => {
+        const base = prev ?? clone(events);
+        const idx = base.findIndex((x) => x.type === 'odeme' && x.distributionId === did && x.partnerId === pid);
+        if (idx >= 0) { const n = [...base]; n[idx] = { ...n[idx], amountTRY: Number.isNaN(tryVal) ? 0 : tryVal }; return n; }
+        return [...base, { id: `${did}-${pid}-o`, partnerId: pid, type: 'odeme', date, amountTRY: Number.isNaN(tryVal) ? 0 : tryVal, fxRate: rate, distributionId: did }];
+      });
+    };
 
     return (
       <div>
@@ -453,13 +510,13 @@ export const FinancialData = ({ t, lang }: Props) => {
               </tr></thead>
               <tbody>
                 {distIds.map((did) => {
-                  const beyanRows = events.filter((e) => e.type === 'beyan' && e.distributionId === did);
+                  const beyanRows = evs.filter((e) => e.type === 'beyan' && e.distributionId === did);
                   const date = beyanRows[0]?.date, rate = beyanRows[0]?.fxRate ?? 1;
                   return (
                     <Fragment key={did}>
                       <tr style={{ background: t.bg2 }}><td colSpan={7} style={{ padding: '6px 12px', fontSize: 11, fontWeight: 700, color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{f('dividends.distribution')} · {date}</td></tr>
                       {beyanRows.map((e) => {
-                        const paid = events.filter((x) => x.type === 'odeme' && x.distributionId === did && x.partnerId === e.partnerId).reduce((s, x) => s + x.amountTRY, 0);
+                        const paid = evs.filter((x) => x.type === 'odeme' && x.distributionId === did && x.partnerId === e.partnerId).reduce((s, x) => s + x.amountTRY, 0);
                         const bal = e.amountTRY - paid;
                         const pName = PARTNERS.find((p) => p.id === e.partnerId)?.name ?? e.partnerId;
                         return (
@@ -469,7 +526,11 @@ export const FinancialData = ({ t, lang }: Props) => {
                             <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{disp(e.amountTRY, rate)}</td>
                             <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{fmtNumber(rate, 2)}</td>
                             <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{usd(e.amountTRY, rate)}</td>
-                            <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{disp(paid, rate)}</td>
+                            <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx, borderBottom: `1px solid ${t.bd}` }}>
+                              {editingThis
+                                ? <input value={currency === 'USD' ? String(Math.round(paid / rate)) : String(paid)} onChange={(ev) => editOdeme(did, e.partnerId, e.date, rate, ev.target.value)} style={{ width: 100, textAlign: 'right', padding: '3px 7px', borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg, color: t.tx, fontSize: 12 }} />
+                                : disp(paid, rate)}
+                            </td>
                             <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', fontWeight: 600, color: bal > 0 ? t.am : t.gn, borderBottom: `1px solid ${t.bd}` }}>{disp(bal, rate)}</td>
                           </tr>
                         );
@@ -489,18 +550,27 @@ export const FinancialData = ({ t, lang }: Props) => {
   // META / AYARLAR
   // ═══════════════════════════════════════════════════════════════════════════
   const renderMeta = () => {
-    const latest = periodsFor[periodsFor.length - 1];
+    const latest = periodsFor[periodsFor.length - 1] ?? allPeriods[allPeriods.length - 1];
     const marketCap = latest.sharePrice * TOTAL_SHARES;
+    const editingThis = isEditing('meta');
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, padding: 18 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: t.tx, marginBottom: 14 }}>{f('tabs.meta')}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: t.tx, marginBottom: 14 }}>{f('tabs.meta')}{editingThis ? ` · ${f('edit')}` : ''}</div>
+          {/* Rapor Başlangıç Tarihi */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: t.tx, marginBottom: 6, display: 'inline-flex', alignItems: 'center' }}>{f('meta.reportStart')}</div>
+            {editingThis
+              ? <input type="date" value={settings.startDate} onChange={(e) => setSettings((s) => ({ ...s, startDate: e.target.value }))} style={{ display: 'block', padding: '6px 10px', borderRadius: 7, border: `1px solid ${t.bd}`, background: t.bg, color: t.tx, fontSize: 13 }} />
+              : <div style={{ fontSize: 13, color: t.tx }}>{settings.startDate}</div>}
+            <div style={{ fontSize: 10.5, color: t.tx3, marginTop: 3, lineHeight: 1.4 }}>{f('meta.reportStartNote')}</div>
+          </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12.5, fontWeight: 600, color: t.tx, marginBottom: 6 }}>{f('meta.inflation')}</div>
             <div style={{ display: 'flex', gap: 18 }}>
               {(['nominal', 'ias29'] as InflationMethod[]).map((opt) => (
-                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: t.tx, cursor: 'pointer' }}>
-                  <input type="radio" checked={inflation === opt} onChange={() => setInflation(opt)} style={{ accentColor: t.pr }} />{f(`meta.${opt}`)}
+                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: editingThis ? t.tx : t.tx2, cursor: editingThis ? 'pointer' : 'default' }}>
+                  <input type="radio" disabled={!editingThis} checked={settings.inflation === opt} onChange={() => setSettings((s) => ({ ...s, inflation: opt }))} style={{ accentColor: t.pr }} />{f(`meta.${opt}`)}
                 </label>
               ))}
             </div>
@@ -551,22 +621,16 @@ export const FinancialData = ({ t, lang }: Props) => {
     );
   };
 
-  // ── Değişiklik geçmişi paneli ──────────────────────────────────────────────
-  const tabAudit = audit.filter((a) => a.tab === tab);
-  const fmtTs = (ts: number) => new Date(ts).toLocaleString(loc, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const fmtLog = (v: number | null) => v === null ? '—' : `${fmtNumber(v)} ₺`;
-
-  const showHistory = tab !== 'dividends' && tab !== 'meta';
-
   const showControls = tab === 'income' || tab === 'balance' || tab === 'cashflow' || tab === 'expense';
   const pctLabel = tab === 'balance' ? f('viewPctAssets') : f('viewPctRevenue');
+  const editingTab = isEditing(tab);
 
   return (
     <div style={{ paddingTop: 6 }}>
       <style>{`.fin-row:hover .fin-i{opacity:1 !important}.fin-row:hover .fin-chart{opacity:0.75 !important}.fin-chart:hover{opacity:1 !important}`}</style>
 
-      {/* ── ÜST BAR: kontroller + para birimi ─────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+      {/* ── ÜST BAR: kontroller + para birimi (solda) · Düzenle + Geçmiş (sağda) ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
         {showControls && (
           <>
             <ControlGroup label={f('period')} t={t}><Dropdown t={t} opts={[{ v: 'annual', label: f('annual') }, { v: 'quarter', label: f('quarterly') }]} value={periodType} onChange={setPeriodType} /></ControlGroup>
@@ -574,58 +638,53 @@ export const FinancialData = ({ t, lang }: Props) => {
             <ControlGroup label={f('order')} t={t}><Dropdown t={t} opts={[{ v: 'newestLeft', label: f('newestLeft') }, { v: 'newestRight', label: f('newestRight') }]} value={order} onChange={setOrder} /></ControlGroup>
           </>
         )}
+        <ControlGroup label={f('currency')} t={t}>
+          <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: `1px solid ${t.bd}` }}>
+            {(['TRY', 'USD'] as FinCurrency[]).map((c) => (
+              <button key={c} onClick={() => setCurrency(c)} style={{ padding: '7px 16px', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', background: currency === c ? t.pr : t.cd, color: currency === c ? '#fff' : t.tx2 }}>{c === 'TRY' ? '₺ TRY' : '$ USD'}</button>
+            ))}
+          </div>
+        </ControlGroup>
+
         <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: `1px solid ${t.bd}` }}>
-          {(['TRY', 'USD'] as FinCurrency[]).map((c) => (
-            <button key={c} onClick={() => setCurrency(c)} style={{ padding: '7px 16px', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', background: currency === c ? t.pr : t.cd, color: currency === c ? '#fff' : t.tx2 }}>{c === 'TRY' ? '₺ TRY' : '$ USD'}</button>
-          ))}
+
+        {/* Sağ üst: Düzenle / Kaydet+Vazgeç + Değişiklik Geçmişi */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {editingTab ? (
+            <>
+              <button onClick={() => doSave(tab)} style={btnPrimary}>{f('save')}</button>
+              <button onClick={() => cancelEditTab(tab)} style={btnGhost}>{f('cancel')}</button>
+            </>
+          ) : (
+            <button onClick={() => startEditTab(tab)} style={btnGhost}><Icon name="fileText" size={13} color={t.tx2} /> {f('edit')}</button>
+          )}
+          <button onClick={() => setHistoryOpen(true)} style={btnGhost}><Icon name="refresh" size={13} color={t.tx2} /> {f('history')}</button>
         </div>
       </div>
 
       {/* ── TAB ŞERİDİ ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, borderBottom: `1px solid ${t.bd}`, flexWrap: 'wrap' }}>
         {(['income', 'balance', 'cashflow', 'expense', 'dividends', 'meta'] as TabKey[]).map((tb) => (
-          <button key={tb} onClick={() => { setTab(tb); if (draft) setDraft(null); }} style={{ padding: '9px 16px', fontSize: 13, fontWeight: tab === tb ? 600 : 500, border: 'none', borderBottom: `2px solid ${tab === tb ? t.pr : 'transparent'}`, background: 'transparent', color: tab === tb ? t.pr : t.tx2, cursor: 'pointer', marginBottom: -1 }}>{f(`tabs.${tb}`)}</button>
+          <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 16px', fontSize: 13, fontWeight: tab === tb ? 600 : 500, border: 'none', borderBottom: `2px solid ${tab === tb ? t.pr : 'transparent'}`, background: 'transparent', color: tab === tb ? t.pr : t.tx2, cursor: 'pointer', marginBottom: -1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            {f(`tabs.${tb}`)}
+            {isEditing(tb) && <span style={{ width: 6, height: 6, borderRadius: 3, background: t.am }} title={f('edit')} />}
+          </button>
         ))}
       </div>
 
-      {/* ── İÇERİK + GEÇMİŞ ─────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: showHistory ? '1fr 320px' : '1fr', gap: 14, alignItems: 'start', marginBottom: 24 }}>
-        <div style={{ minWidth: 0 }}>
-          {tab === 'income' && renderGrid('income', INCOME_ROWS, 'revenue')}
-          {tab === 'balance' && renderGrid('balance', BALANCE_ROWS, 'totalAssets')}
-          {tab === 'cashflow' && renderGrid('cashflow', CASHFLOW_ROWS, 'revenue')}
-          {tab === 'expense' && renderExpense()}
-          {tab === 'dividends' && renderDividends()}
-          {tab === 'meta' && renderMeta()}
-        </div>
-
-        {showHistory && (
-          <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden', position: 'sticky', top: 8 }}>
-            <div style={{ padding: '12px 14px', borderBottom: `1px solid ${t.bd}`, display: 'flex', alignItems: 'center', gap: 7 }}>
-              <Icon name="fileText" size={13} color={t.tx2} /><span style={{ fontSize: 13, fontWeight: 600, color: t.tx }}>{f('history')}</span>
-            </div>
-            <div style={{ maxHeight: 560, overflowY: 'auto' }}>
-              {tabAudit.length === 0 ? (
-                <div style={{ padding: 16, fontSize: 12, color: t.tx3, lineHeight: 1.5 }}>{f('noHistory')}</div>
-              ) : tabAudit.map((a) => (
-                <div key={a.id} style={{ padding: '10px 14px', borderBottom: `1px solid ${t.bd}` }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 600, color: t.tx, marginBottom: 3 }}>
-                    {f(`tabs.${a.tab}`)} › {a.itemLabel} ({a.periodLabel})
-                  </div>
-                  <div style={{ fontSize: 11, marginBottom: 4 }}>
-                    <span style={{ color: t.rd }}>{fmtLog(a.oldValue)}</span><span style={{ color: t.tx3 }}> → </span><span style={{ color: t.gn }}>{fmtLog(a.newValue)}</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: t.tx3 }}>{a.user} · {fmtTs(a.ts)}{a.sourceNote ? ` · ${a.sourceNote}` : ''}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* ── İÇERİK (tek kolon; geçmiş artık pop-up) ─────────────────────────── */}
+      <div style={{ minWidth: 0, marginBottom: 24 }}>
+        {tab === 'income' && renderGrid('income', INCOME_ROWS, 'revenue')}
+        {tab === 'balance' && renderGrid('balance', BALANCE_ROWS, 'totalAssets')}
+        {tab === 'cashflow' && renderGrid('cashflow', CASHFLOW_ROWS, 'revenue')}
+        {tab === 'expense' && renderExpense()}
+        {tab === 'dividends' && renderDividends()}
+        {tab === 'meta' && renderMeta()}
       </div>
 
       {modalOpen && <DividendModal t={t} f={f} onClose={() => setModalOpen(false)} onSave={(ev) => { setEvents((e) => [...e, ...ev]); setModalOpen(false); }} />}
       {chart && <MetricChart t={t} lang={lang} currency={currency} periods={periodsFor} data={chart} onClose={() => setChart(null)} />}
+      {historyOpen && <HistoryModal t={t} f={f} lang={lang} audit={audit} currentTab={tab} onClose={() => setHistoryOpen(false)} />}
     </div>
   );
 };
@@ -781,6 +840,48 @@ const MetricChart = ({ t, lang, currency, periods, data, onClose }: {
             </BarChart>
           )}
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+// ── Değişiklik Geçmişi pop-up (sekme filtreli) ──────────────────────────────
+const HistoryModal = ({ t, f, lang, audit, currentTab, onClose }: {
+  t: Theme; f: (k: string) => string; lang: Lang; audit: AuditEntry[]; currentTab: string; onClose: () => void;
+}) => {
+  const [filter, setFilter] = useState<string>(currentTab);
+  const loc = lang === 'en' ? 'en-US' : 'tr-TR';
+  const fmtTs = (ts: number) => new Date(ts).toLocaleString(loc, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const fmtLog = (v: number | null) => v === null ? null : `${fmtNumber(v)} ₺`;
+  const rows = audit.filter((a) => filter === 'all' || a.tab === filter);
+  const opts = [{ v: 'all', label: f('historyAll') }, ...(['income', 'balance', 'cashflow', 'expense', 'dividends', 'meta'].map((tb) => ({ v: tb, label: f(`tabs.${tb}`) })))];
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: t.cd, borderRadius: 14, width: 640, maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: `1px solid ${t.bd}`, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: t.tx }}>{f('history')}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Dropdown t={t} opts={opts} value={filter} onChange={setFilter} />
+            <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${t.bd}`, background: 'transparent', cursor: 'pointer', color: t.tx3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={14} /></button>
+          </div>
+        </div>
+        <div style={{ overflowY: 'auto', padding: '4px 0' }}>
+          {rows.length === 0 ? (
+            <div style={{ padding: 20, fontSize: 12.5, color: t.tx3 }}>{f('noHistory')}</div>
+          ) : rows.map((a) => {
+            const ov = fmtLog(a.oldValue), nv = fmtLog(a.newValue);
+            return (
+              <div key={a.id} style={{ padding: '11px 20px', borderBottom: `1px solid ${t.bd}` }}>
+                <div style={{ fontSize: 12.5, color: t.tx, lineHeight: 1.5 }}>
+                  <span style={{ fontWeight: 600 }}>{f(`tabs.${a.tab}`)} › {a.itemLabel}</span>
+                  {a.periodLabel && a.periodLabel !== '—' ? <span style={{ color: t.tx3 }}> ({a.periodLabel})</span> : null}
+                  {ov && nv ? <>: <span style={{ color: t.rd }}>{ov}</span> <span style={{ color: t.tx3 }}>→</span> <span style={{ color: t.gn }}>{nv}</span></> : a.sourceNote ? <>: <span style={{ color: t.tx2 }}>{a.sourceNote}</span></> : null}
+                </div>
+                <div style={{ fontSize: 11, color: t.tx3, marginTop: 2 }}>{a.user} · {fmtTs(a.ts)}{ov && nv && a.sourceNote ? ` · ${a.sourceNote}` : ''}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
