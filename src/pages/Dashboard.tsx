@@ -43,7 +43,7 @@ import { Payables as FinPayables } from './finance/payables/Payables';
 import { TaxCompliance } from './finance/tax-compliance/TaxCompliance';
 import { Leverage } from './finance/leverage/Leverage';
 import { Valuation } from './finance/valuation/Valuation';
-import { ShareholderReturns } from './finance/ShareholderReturns';
+import { ShareholderReturns } from './finance/shareholder-returns/ShareholderReturns';
 import { Scorecard } from './finance/Scorecard';
 import { CfoCockpit } from './finance/CfoCockpit';
 import { ChatAssistant } from '../components/chat/ChatAssistant';
