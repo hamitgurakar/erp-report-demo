@@ -41,7 +41,7 @@ import { CashLiquidity } from './finance/cash-liquidity/CashLiquidity';
 import { Receivables } from './finance/receivables/Receivables';
 import { Payables as FinPayables } from './finance/payables/Payables';
 import { TaxCompliance } from './finance/tax-compliance/TaxCompliance';
-import { Leverage } from './finance/Leverage';
+import { Leverage } from './finance/leverage/Leverage';
 import { Valuation } from './finance/Valuation';
 import { ShareholderReturns } from './finance/ShareholderReturns';
 import { Scorecard } from './finance/Scorecard';
