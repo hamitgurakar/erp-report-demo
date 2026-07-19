@@ -11,10 +11,9 @@ import {
 import { bankAccounts, weeklyCashForecast } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, SourceBadge, InfoTip,
-  ChangePct, StatusBadge, Dropdown, Waterfall, type FinAlert,
+  ChangePct, StatusBadge, Dropdown, Waterfall, Gauge, type FinAlert,
 } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
-import type { Theme } from '../../../types';
 import type { FinancePageProps } from '../_Placeholder';
 
 const BAL_SRC = Object.fromEntries(BALANCE_ROWS.map((r) => [r.key, r.source])) as Record<string, FinSource>;
@@ -361,28 +360,5 @@ export const CashLiquidity = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
         <AIAlertPanel t={t} lang={lang} alerts={alerts} />
       </div>
     </ReportPageLayout>
-  );
-};
-
-// ── Yarım daire gauge (eşik bantlı) ──
-interface GaugeProps { t: Theme; value: number; min: number; max: number; bands: { to: number; color: string }[]; label: string; display: string }
-const Gauge = ({ t, value, min, max, bands, label, display }: GaugeProps) => {
-  const W = 170, cx = 85, cy = 96, r = 66, sw = 13;
-  const frac = (v: number) => Math.max(0, Math.min(1, (v - min) / (max - min)));
-  const ang = (f: number) => Math.PI * (1 - f);
-  const pt = (f: number) => [cx + r * Math.cos(ang(f)), cy - r * Math.sin(ang(f))];
-  let from = min;
-  const segs = bands.map((b) => { const seg = { f0: frac(from), f1: frac(b.to), color: b.color }; from = b.to; return seg; });
-  const arc = (f0: number, f1: number) => { const [x0, y0] = pt(f0); const [x1, y1] = pt(f1); return `M ${x0} ${y0} A ${r} ${r} 0 0 0 ${x1} ${y1}`; };
-  const vf = frac(value);
-  const [nx, ny] = pt(vf);
-  return (
-    <svg width={W} height={120} viewBox={`0 0 ${W} 120`}>
-      {segs.map((s, i) => <path key={i} d={arc(s.f0, s.f1)} stroke={s.color} strokeWidth={sw} fill="none" opacity={0.85} />)}
-      <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={t.tx} strokeWidth={2.5} strokeLinecap="round" />
-      <circle cx={cx} cy={cy} r={4} fill={t.tx} />
-      <text x={cx} y={cy - 18} textAnchor="middle" fontSize={19} fontWeight={700} fill={t.tx}>{display}</text>
-      <text x={cx} y={116} textAnchor="middle" fontSize={11} fill={t.tx2}>{label}</text>
-    </svg>
   );
 };

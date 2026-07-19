@@ -17,3 +17,5 @@ export { Dropdown } from './Dropdown';
 export type { DropdownOption } from './Dropdown';
 export { Waterfall } from './Waterfall';
 export type { WFStep } from './Waterfall';
+export { Gauge } from './Gauge';
+export type { GaugeBand } from './Gauge';
