@@ -42,7 +42,7 @@ import { Receivables } from './finance/receivables/Receivables';
 import { Payables as FinPayables } from './finance/payables/Payables';
 import { TaxCompliance } from './finance/tax-compliance/TaxCompliance';
 import { Leverage } from './finance/leverage/Leverage';
-import { Valuation } from './finance/Valuation';
+import { Valuation } from './finance/valuation/Valuation';
 import { ShareholderReturns } from './finance/ShareholderReturns';
 import { Scorecard } from './finance/Scorecard';
 import { CfoCockpit } from './finance/CfoCockpit';
