@@ -18,6 +18,7 @@ interface ToolbarProps {
   onChangeAcct: (v: string) => void;
   dateRange: string;
   setDateRange: (v: string) => void;
+  hideAccount?: boolean;
 }
 
 export const Toolbar = ({
@@ -25,6 +26,7 @@ export const Toolbar = ({
   title, showDelete, onDelete,
   acct, onChangeAcct,
   dateRange, setDateRange,
+  hideAccount,
 }: ToolbarProps) => {
   const [showAcct, setShowAcct] = useState(false);
   const [showDP, setShowDP] = useState(false);
@@ -60,7 +62,8 @@ export const Toolbar = ({
 
       <div style={{ flex: 1 }} />
 
-      {/* Account selector */}
+      {/* Account selector (Finans departmanında gizli — brief §10: B2C/B2B toggle kaldırılır) */}
+      {!hideAccount && (
       <div style={{ position: 'relative' }}>
         <button
           onClick={() => setShowAcct(!showAcct)}
@@ -84,6 +87,7 @@ export const Toolbar = ({
           </div>
         )}
       </div>
+      )}
 
       <button style={{ width: 30, height: 30, borderRadius: 7, border: `1px solid ${t.bd}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.tx2 }}>
         <Icon name="refresh" size={14} />

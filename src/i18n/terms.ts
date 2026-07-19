@@ -225,6 +225,65 @@ export const TERMS_EN: Record<string, string> = {
   'B2B Net Kâr Marjı': 'B2B Net Margin',
 };
 
+// ── Finans metrik tanımları (Katman A "i" tooltip — brief §9) ──────────────
+// Anahtar = StatementLine.labelKey. Değer = {tr,en} kısa tanım (ne + nasıl hesaplanır).
+export const FIN_TERMS: Record<string, { tr: string; en: string }> = {
+  revenue: { tr: 'Hasılat: Dönem net satış geliri (iade ve iskonto sonrası).', en: 'Revenue: Net sales for the period (after returns and discounts).' },
+  cogs: { tr: 'SMM: Satılan malın maliyeti — alış, kargo ve gümrük dahil doğrudan maliyetler.', en: 'COGS: Cost of goods sold — direct costs incl. purchase, freight, customs.' },
+  grossProfit: { tr: 'Brüt Kâr: Hasılat − SMM.', en: 'Gross Profit: Revenue − COGS.' },
+  opex: { tr: 'Faaliyet Giderleri: Pazarlama, G&A ve operasyon giderleri.', en: 'Operating Expenses: Marketing, G&A and operations costs.' },
+  ebit: { tr: 'Esas Faaliyet Kârı: Brüt Kâr − Faaliyet Giderleri.', en: 'Operating Income: Gross Profit − Operating Expenses.' },
+  da: { tr: 'Amortisman: Maddi/maddi olmayan varlıkların dönemsel itfa payı.', en: 'D&A: Periodic depreciation & amortization of assets.' },
+  favok: { tr: 'FAVÖK: Faiz, vergi ve amortisman öncesi kâr. = Esas Faaliyet Kârı + Amortisman.', en: 'EBITDA: Earnings before interest, tax, depreciation. = Operating Income + D&A.' },
+  ebitda: { tr: 'FAVÖK: Faiz, vergi ve amortisman öncesi kâr. = Esas Faaliyet Kârı + Amortisman.', en: 'EBITDA: Earnings before interest, tax, D&A. = Operating Income + D&A.' },
+  nonOp: { tr: 'Faaliyet Dışı Gelir/Gider: Esas faaliyet dışı kalemler (tek seferlik vb.).', en: 'Non-operating Income/Expense: Items outside core operations.' },
+  netFin: { tr: 'Finansman Giderleri (net): Faiz + kur farkı − finansman geliri.', en: 'Net Financial Expenses: Interest + FX loss − financial income.' },
+  pretax: { tr: 'Vergi Öncesi Kâr: Esas Faaliyet Kârı + faaliyet dışı − net finansman gideri.', en: 'Pre-tax Profit: EBIT + non-operating − net financial expense.' },
+  tax: { tr: 'Vergi: Dönem kurumlar vergisi karşılığı.', en: 'Tax: Corporate tax charge for the period.' },
+  netIncome: { tr: 'Net Kâr: Vergi Öncesi Kâr − Vergi.', en: 'Net Income: Pre-tax Profit − Tax.' },
+  brutMarj: { tr: 'Brüt Kâr Marjı: Brüt Kâr / Hasılat.', en: 'Gross Margin: Gross Profit / Revenue.' },
+  grossMargin: { tr: 'Brüt Kâr Marjı: Brüt Kâr / Hasılat.', en: 'Gross Margin: Gross Profit / Revenue.' },
+  ebitdaMargin: { tr: 'FAVÖK Marjı: FAVÖK / Hasılat.', en: 'EBITDA Margin: EBITDA / Revenue.' },
+  netMarj: { tr: 'Net Kâr Marjı: Net Kâr / Hasılat.', en: 'Net Margin: Net Income / Revenue.' },
+  netMargin: { tr: 'Net Kâr Marjı: Net Kâr / Hasılat.', en: 'Net Margin: Net Income / Revenue.' },
+  effTax: { tr: 'Efektif Vergi Oranı: Vergi / Vergi Öncesi Kâr.', en: 'Effective Tax Rate: Tax / Pre-tax Profit.' },
+  eps: { tr: 'Hisse Başına Kâr: Net Kâr / 20.000.000 hisse.', en: 'EPS: Net Income / 20,000,000 shares.' },
+  dps: { tr: 'Hisse Başına Temettü: Dönemde beyan edilen temettü / hisse sayısı.', en: 'Dividend per Share: Declared dividend / share count.' },
+  payout: { tr: 'Temettü Dağıtım Oranı: Dağıtılan temettü / Net Kâr.', en: 'Payout Ratio: Distributed dividend / Net Income.' },
+  currentAssets: { tr: 'Dönen Varlıklar: Bir yıl içinde nakde dönebilecek varlıklar.', en: 'Current Assets: Assets convertible to cash within a year.' },
+  nonCurrentAssets: { tr: 'Duran Varlıklar: Uzun vadeli kullanılan varlıklar.', en: 'Non-current Assets: Long-term operating assets.' },
+  totalAssets: { tr: 'Toplam Varlıklar: Dönen + Duran Varlıklar.', en: 'Total Assets: Current + Non-current Assets.' },
+  currentLiab: { tr: 'Kısa Vadeli Yükümlülükler: Bir yıl içinde ödenecek borçlar.', en: 'Current Liabilities: Obligations due within a year.' },
+  nonCurrentLiab: { tr: 'Uzun Vadeli Yükümlülükler: Bir yıldan uzun vadeli borçlar.', en: 'Non-current Liabilities: Obligations due beyond a year.' },
+  totalLiab: { tr: 'Toplam Yükümlülükler: KV + UV yükümlülükler.', en: 'Total Liabilities: Current + Non-current liabilities.' },
+  equity: { tr: 'Özkaynaklar: Ödenmiş sermaye + geçmiş yıllar kârları + dönem net kârı.', en: 'Equity: Paid-in capital + retained earnings + period net income.' },
+  totalResources: { tr: 'Toplam Kaynaklar: Toplam Yükümlülükler + Özkaynaklar (= Toplam Varlıklar).', en: 'Total Resources: Total Liabilities + Equity (= Total Assets).' },
+  retained: { tr: 'Geçmiş Yıllar Kârları: Dağıtılmamış birikmiş kârlar.', en: 'Retained Earnings: Accumulated undistributed profits.' },
+  netIsletmeSermayesi: { tr: 'Net İşletme Sermayesi: Dönen Varlıklar − Kısa Vadeli Yükümlülükler.', en: 'Net Working Capital: Current Assets − Current Liabilities.' },
+  netWorkingCapital: { tr: 'Net İşletme Sermayesi: Dönen Varlıklar − Kısa Vadeli Yükümlülükler.', en: 'Net Working Capital: Current Assets − Current Liabilities.' },
+  totalDebt: { tr: 'Toplam Borç: Kısa + uzun vadeli finansal borçlar.', en: 'Total Debt: Short-term + long-term financial debt.' },
+  netBorc: { tr: 'Net Borç: Toplam finansal borç − nakit ve benzerleri.', en: 'Net Debt: Total financial debt − cash & equivalents.' },
+  netDebt: { tr: 'Net Borç: Toplam finansal borç − nakit ve benzerleri.', en: 'Net Debt: Total financial debt − cash & equivalents.' },
+  hisseBasinaDefterDegeri: { tr: 'Hisse Başına Defter Değeri: Özkaynak / hisse sayısı.', en: 'Book Value per Share: Equity / share count.' },
+  bvps: { tr: 'Hisse Başına Defter Değeri: Özkaynak / hisse sayısı.', en: 'Book Value per Share: Equity / share count.' },
+  operatingCF: { tr: 'İşletme Nakit Akışı: Net kâr + amortisman + işletme sermayesi değişimi.', en: 'Operating Cash Flow: Net income + D&A + working-capital change.' },
+  capex: { tr: 'Yatırım Harcaması (CapEx): Duran varlık yatırımları.', en: 'Capital Expenditure: Investment in fixed assets.' },
+  fcf: { tr: 'Serbest Nakit Akışı: İşletme nakit akışı − yatırım harcaması (CapEx).', en: 'Free Cash Flow: Operating cash flow − CapEx.' },
+  fcfMarj: { tr: 'FCF Marjı: Serbest Nakit Akışı / Hasılat.', en: 'FCF Margin: Free Cash Flow / Revenue.' },
+  fcfMargin: { tr: 'FCF Marjı: Serbest Nakit Akışı / Hasılat.', en: 'FCF Margin: Free Cash Flow / Revenue.' },
+  fcfPerShare: { tr: 'Hisse Başına FCF: Serbest Nakit Akışı / hisse sayısı.', en: 'FCF per Share: Free Cash Flow / share count.' },
+  beginCash: { tr: 'Dönem Başı Nakit: Dönem başındaki nakit mevcudu.', en: 'Beginning Cash: Cash at the start of the period.' },
+  endCash: { tr: 'Dönem Sonu Nakit: Dönem Başı Nakit + Net Nakit Değişimi.', en: 'Ending Cash: Beginning Cash + Net Change in Cash.' },
+  netChange: { tr: 'Net Nakit Değişimi: İşletme + Yatırım + Finansman nakit akışları.', en: 'Net Change in Cash: Operating + Investing + Financing flows.' },
+  totalOpex: { tr: 'Toplam OPEX: Tüm gider kategorilerinin toplamı.', en: 'Total OPEX: Sum of all expense categories.' },
+  personnel: { tr: 'Personel Giderleri: Maaş, SGK, tazminat, yan hak ve mesai.', en: 'Personnel Expenses: Salaries, social security, severance, benefits, overtime.' },
+  marketing: { tr: 'Pazarlama & Reklam: Dijital ve dış mecra reklam harcamaları.', en: 'Marketing & Advertising: Digital and outdoor advertising spend.' },
+  ga: { tr: 'Genel Yönetim (G&A): Kira, ofis, danışmanlık, yazılım, muhasebe/hukuk.', en: 'General & Admin: Rent, office, consulting, software, accounting/legal.' },
+  operations: { tr: 'Operasyon: Kargo, depo, paketleme ve ödeme komisyonları.', en: 'Operations: Shipping, warehouse, packaging and payment fees.' },
+  expFinancing: { tr: 'Finansman Giderleri: Kredi faizi, çek/senet ve kur farkı.', en: 'Financing Expenses: Loan interest, cheque/note and FX loss.' },
+  taxLegal: { tr: 'Vergi & Yasal: KDV, kurumlar vergisi, stopaj ve SGK işveren.', en: 'Tax & Legal: VAT, corporate tax, withholding and employer SSI.' },
+};
+
 let currentLang: Lang = 'tr';
 
 export const setTermsLang = (lang: Lang) => {
@@ -233,3 +292,9 @@ export const setTermsLang = (lang: Lang) => {
 
 export const tTerm = (value: string): string =>
   currentLang === 'en' ? (TERMS_EN[value] ?? value) : value;
+
+/** Finans "i" tooltip tanımı — aktif dile göre; yoksa null. */
+export const finTerm = (key: string, lang: Lang): string | null => {
+  const d = FIN_TERMS[key];
+  return d ? (lang === 'en' ? d.en : d.tr) : null;
+};

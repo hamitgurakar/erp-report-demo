@@ -35,6 +35,7 @@ import { SalesCommunication } from '../components/satis/SalesCommunication';
 import { SalesForecasting } from '../components/satis/SalesForecasting';
 import { SalesTargets } from '../components/satis/SalesTargets';
 import { ManagementTargets } from '../components/yonetim/ManagementTargets';
+import { FinancialData } from './finance/FinancialData';
 import { ChatAssistant } from '../components/chat/ChatAssistant';
 import { Icon } from '../components/ui/Icon';
 
@@ -54,6 +55,7 @@ export default function Dashboard() {
 
   const repTitles: Record<string, string> = {
     'yonetim__3': db.l.yonetimHedefler,
+    'yonetim__4': db.l.finansalVeriler,
     'satis__0': db.l.satisOzeti,
     'satis__1': db.l.satisRaporu,
     'satis__2': db.l.pipelineAnalizi,
@@ -121,6 +123,7 @@ export default function Dashboard() {
             onChangeAcct={db.setAcct}
             dateRange={db.dateRange}
             setDateRange={db.setDateRange}
+            hideAccount={db.activeRep === 'yonetim__4'}
           />
 
           <div style={{ padding: '5px 24px', fontSize: 11, color: db.t.tx3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -140,6 +143,8 @@ export default function Dashboard() {
               />
             ) : db.activeRep === 'yonetim__3' ? (
               <ManagementTargets {...kp} />
+            ) : db.activeRep === 'yonetim__4' ? (
+              <FinancialData {...kp} />
             ) : db.activeRep === 'satis__0' ? (
               <SalesOverview {...kp} />
             ) : db.activeRep === 'satis__1' ? (

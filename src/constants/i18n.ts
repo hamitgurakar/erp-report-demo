@@ -608,6 +608,7 @@ const tr: LangStrings = {
   tgtArsiv: 'GEÇMİŞ ÇEYREK ARŞİVİ',
   // Management Targets
   yonetimHedefler: 'Toplam Hedefler 🎯',
+  finansalVeriler: 'Finansal Veriler',
   mgtOzet: 'TOPLAM HEDEF ÖZET KARTLARI',
   mgtB2CB2B: 'B2C + B2B YAN YANA KARŞILAŞTIRMA',
   mgtMatris: 'AYLIK DETAY MATRİSİ (B2C + B2B BİRLEŞİK)',
@@ -1227,6 +1228,7 @@ const en: LangStrings = {
   tgtArsiv: 'HISTORICAL ARCHIVE',
   // Management Targets
   yonetimHedefler: 'Total Targets 🎯',
+  finansalVeriler: 'Financial Data',
   mgtOzet: 'TOTAL TARGET SUMMARY',
   mgtB2CB2B: 'B2C + B2B SIDE-BY-SIDE COMPARISON',
   mgtMatris: 'MONTHLY DETAIL MATRIX (B2C + B2B COMBINED)',
