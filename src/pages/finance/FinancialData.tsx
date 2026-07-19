@@ -1,4 +1,7 @@
 import { useState, Fragment, type CSSProperties, type ReactNode } from 'react';
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
 import type { Theme, LangStrings, Lang } from '../../types';
 import { Icon } from '../../components/ui/Icon';
 import { useTranslation } from '../../i18n/LanguageContext';
@@ -52,6 +55,7 @@ export const FinancialData = ({ t, lang }: Props) => {
   const [events, setEvents] = useState<DividendEvent[]>(() => clone(dividendEventsSeed));
   const [inflation, setInflation] = useState<InflationMethod>('nominal');
   const [modalOpen, setModalOpen] = useState(false);
+  const [chart, setChart] = useState<{ label: string; isMargin: boolean; perShare: boolean; values: Record<string, number | null> } | null>(null);
 
   const periodsFor = periodType === 'annual' ? PERIODS_ANNUAL : PERIODS_QUARTER;
   const dispPeriods = order === 'newestLeft' ? [...periodsFor].reverse() : periodsFor;
@@ -193,7 +197,8 @@ export const FinancialData = ({ t, lang }: Props) => {
     const chronoIdx = (pid: string) => periodsFor.findIndex((p) => p.id === pid);
     const baseVal = (pid: string): number | null =>
       pctBase === 'totalAssets' ? (resolved[pid]?.totalAssets ?? null) : (incomeResolved[pid]?.revenue ?? null);
-    const visibleRows = rows.filter((r) => r.isGroupHeader || !r.group || !collapsed.includes(r.group));
+    const visibleRows = rows.filter((r) => (r.isGroupHeader || !r.group || !collapsed.includes(r.group)) && (!r.iasOnly || inflation === 'ias29'));
+    const valuesOf = (key: string): Record<string, number | null> => Object.fromEntries(periodsFor.map((p) => [p.id, resolved[p.id]?.[key] ?? null]));
     const pctViewLabel = pctBase === 'totalAssets' ? f('viewPctAssets') : f('viewPctRevenue');
 
     // Bilanço denge uyarısı (dönem bazında)
@@ -238,6 +243,10 @@ export const FinancialData = ({ t, lang }: Props) => {
                         )}
                         {lbl(row.key)}
                         <InfoTip termKey={row.key} />
+                        <span className="fin-chart" onClick={(e) => { e.stopPropagation(); setChart({ label: lbl(row.key), isMargin: !!row.isMargin, perShare: PER_SHARE.has(row.key), values: valuesOf(row.key) }); }}
+                          style={{ cursor: 'pointer', display: 'inline-flex', marginLeft: 4, opacity: 0.22, transition: 'opacity 0.12s' }}>
+                          <Icon name="barChart3" size={12} color={t.tx3} />
+                        </span>
                       </span>
                     </td>
                     <td style={{ ...stickySource, background: row.isSubtotal ? t.bg2 : t.cd }}>
@@ -302,6 +311,15 @@ export const FinancialData = ({ t, lang }: Props) => {
     };
     const grand = (pid: string) => tree.reduce((s, c) => s + catTotal(c.id, pid), 0);
     const cellVal = (key: string, pid: string) => store[pid]?.[key] ?? null;
+    const catValues = (catId: string) => Object.fromEntries(periodsFor.map((p) => [p.id, catTotal(catId, p.id)]));
+    const itemValues = (key: string) => Object.fromEntries(periodsFor.map((p) => [p.id, cellVal(key, p.id)]));
+    const grandValues = () => Object.fromEntries(periodsFor.map((p) => [p.id, grand(p.id)]));
+    const chartBtn = (label: string, values: Record<string, number | null>) => (
+      <span className="fin-chart" onClick={(e) => { e.stopPropagation(); setChart({ label, isMargin: false, perShare: false, values }); }}
+        style={{ cursor: 'pointer', display: 'inline-flex', marginLeft: 4, opacity: 0.22, transition: 'opacity 0.12s' }}>
+        <Icon name="barChart3" size={12} color={t.tx3} />
+      </span>
+    );
 
     const cell = (val: number | null, prev: number | null, pid: string, sub = false) => {
       if (view === 'yoy') { const c = changeEl(val, prev, false); return c ?? <span style={{ color: t.tx3 }}>—</span>; }
@@ -335,7 +353,7 @@ export const FinancialData = ({ t, lang }: Props) => {
                         <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 12.5, fontWeight: 700, color: t.tx }}>
                           <button onClick={() => toggleGroup(cat.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginRight: 4, display: 'inline-flex' }}>
                             <Icon name={open ? 'chevDown' : 'chevRight'} size={13} color={t.tx3} />
-                          </button>{lbl(cat.id)}<InfoTip termKey={cat.id} />
+                          </button>{lbl(cat.id)}<InfoTip termKey={cat.id} />{chartBtn(lbl(cat.id), catValues(cat.id))}
                         </span>
                       </td>
                       <td style={{ ...stickySource, background: t.bg2 }} />
@@ -344,7 +362,7 @@ export const FinancialData = ({ t, lang }: Props) => {
                     </tr>
                     {open && cat.items.map((it) => (
                       <tr key={it.key} className="fin-row">
-                        <td style={{ ...stickyMetric, background: t.cd, paddingLeft: 32, fontSize: 12, color: t.tx2 }}>{lbl(it.key)}</td>
+                        <td style={{ ...stickyMetric, background: t.cd, paddingLeft: 32, fontSize: 12, color: t.tx2 }}><span style={{ display: 'inline-flex', alignItems: 'center' }}>{lbl(it.key)}{chartBtn(lbl(it.key), itemValues(it.key))}</span></td>
                         <td style={{ ...stickySource, background: t.cd }}><SourceBadge s={it.source} /></td>
                         {dispPeriods.map((p) => {
                           const v = cellVal(it.key, p.id); const pid2 = periodsFor[chronoIdx(p.id) - 1]?.id;
@@ -377,7 +395,7 @@ export const FinancialData = ({ t, lang }: Props) => {
                 );
               })}
               <tr className="fin-row" style={{ background: t.bg3 }}>
-                <td style={{ ...stickyMetric, background: t.bg3, fontWeight: 700, color: t.tx }}><span style={{ display: 'inline-flex', alignItems: 'center' }}>{f('totals.totalOpex')}<InfoTip termKey="totalOpex" /></span></td>
+                <td style={{ ...stickyMetric, background: t.bg3, fontWeight: 700, color: t.tx }}><span style={{ display: 'inline-flex', alignItems: 'center' }}>{f('totals.totalOpex')}<InfoTip termKey="totalOpex" />{chartBtn(f('totals.totalOpex'), grandValues())}</span></td>
                 <td style={{ ...stickySource, background: t.bg3 }} />
                 {dispPeriods.map((p) => { const v = grand(p.id); const pid2 = periodsFor[chronoIdx(p.id) - 1]?.id; return <td key={p.id} style={{ padding: '7px 12px', textAlign: 'right', borderBottom: `1px solid ${t.bd}`, fontWeight: 700, color: t.pr }}>{cell(v, pid2 ? grand(pid2) : null, p.id, true)}</td>; })}
                 {isEditing && <td style={{ borderBottom: `1px solid ${t.bd}` }} />}
@@ -540,29 +558,20 @@ export const FinancialData = ({ t, lang }: Props) => {
 
   const showHistory = tab !== 'dividends' && tab !== 'meta';
 
-  // ── Kontrol çubuğu segment butonu ──────────────────────────────────────────
-  const Seg = <T extends string>({ opts, value, onChange }: { opts: { v: T; label: string }[]; value: T; onChange: (v: T) => void }) => (
-    <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: `1px solid ${t.bd}` }}>
-      {opts.map((o) => (
-        <button key={o.v} onClick={() => onChange(o.v)} style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: value === o.v ? t.pr : t.cd, color: value === o.v ? '#fff' : t.tx2, whiteSpace: 'nowrap' }}>{o.label}</button>
-      ))}
-    </div>
-  );
-
   const showControls = tab === 'income' || tab === 'balance' || tab === 'cashflow' || tab === 'expense';
   const pctLabel = tab === 'balance' ? f('viewPctAssets') : f('viewPctRevenue');
 
   return (
     <div style={{ paddingTop: 6 }}>
-      <style>{`.fin-row:hover .fin-i{opacity:1 !important}`}</style>
+      <style>{`.fin-row:hover .fin-i{opacity:1 !important}.fin-row:hover .fin-chart{opacity:0.75 !important}.fin-chart:hover{opacity:1 !important}`}</style>
 
       {/* ── ÜST BAR: kontroller + para birimi ─────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
         {showControls && (
           <>
-            <ControlGroup label={f('period')} t={t}><Seg opts={[{ v: 'annual', label: f('annual') }, { v: 'quarter', label: f('quarterly') }]} value={periodType} onChange={setPeriodType} /></ControlGroup>
-            <ControlGroup label={f('view')} t={t}><Seg opts={[{ v: 'absolute', label: f('viewAbsolute') }, { v: 'yoy', label: f('viewYoY') }, { v: 'pct', label: pctLabel }]} value={view} onChange={setView} /></ControlGroup>
-            <ControlGroup label={f('order')} t={t}><Seg opts={[{ v: 'newestLeft', label: f('newestLeft') }, { v: 'newestRight', label: f('newestRight') }]} value={order} onChange={setOrder} /></ControlGroup>
+            <ControlGroup label={f('period')} t={t}><Dropdown t={t} opts={[{ v: 'annual', label: f('annual') }, { v: 'quarter', label: f('quarterly') }]} value={periodType} onChange={setPeriodType} /></ControlGroup>
+            <ControlGroup label={f('view')} t={t}><Dropdown t={t} opts={[{ v: 'absolute', label: f('viewAbsolute') }, { v: 'yoy', label: f('viewYoY') }, { v: 'pct', label: pctLabel }]} value={view} onChange={setView} /></ControlGroup>
+            <ControlGroup label={f('order')} t={t}><Dropdown t={t} opts={[{ v: 'newestLeft', label: f('newestLeft') }, { v: 'newestRight', label: f('newestRight') }]} value={order} onChange={setOrder} /></ControlGroup>
           </>
         )}
         <div style={{ flex: 1 }} />
@@ -616,6 +625,7 @@ export const FinancialData = ({ t, lang }: Props) => {
       </div>
 
       {modalOpen && <DividendModal t={t} f={f} onClose={() => setModalOpen(false)} onSave={(ev) => { setEvents((e) => [...e, ...ev]); setModalOpen(false); }} />}
+      {chart && <MetricChart t={t} lang={lang} currency={currency} periods={periodsFor} data={chart} onClose={() => setChart(null)} />}
     </div>
   );
 };
@@ -630,6 +640,30 @@ const ControlGroup = ({ label, t, children }: { label: string; t: Theme; childre
     {children}
   </div>
 );
+
+// Seeking Alpha tarzı dropdown kontrol
+function Dropdown<T extends string>({ t, opts, value, onChange }: { t: Theme; opts: { v: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  const [open, setOpen] = useState(false);
+  const cur = opts.find((o) => o.v === value);
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen((o) => !o)} onBlur={() => setTimeout(() => setOpen(false), 120)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 150, justifyContent: 'space-between', padding: '7px 12px', borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd, color: t.tx, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+        {cur?.label}<Icon name="chevDown" size={13} color={t.tx3} />
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, padding: 5, minWidth: 180, boxShadow: '0 6px 20px rgba(0,0,0,0.14)', zIndex: 40 }}>
+          {opts.map((o) => (
+            <div key={o.v} onMouseDown={() => { onChange(o.v); setOpen(false); }}
+              style={{ padding: '8px 12px', borderRadius: 6, cursor: 'pointer', background: value === o.v ? t.prL : 'transparent', color: value === o.v ? t.pr : t.tx, fontSize: 13, fontWeight: value === o.v ? 600 : 400 }}>
+              {o.label}{value === o.v && <span style={{ float: 'right' }}>✓</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const Row3 = ({ label, val, strong, color, t }: { label: string; val: string; strong?: boolean; color?: string; t: Theme }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -690,6 +724,63 @@ const DividendModal = ({ t, f, onClose, onSave }: { t: Theme; f: (k: string) => 
           <button onClick={onClose} style={btnGhost}>{f('dividends.modal.cancel')}</button>
           <button onClick={save} disabled={!valid} style={{ ...btnPrimary, opacity: valid ? 1 : 0.5, cursor: valid ? 'pointer' : 'not-allowed' }}>{f('dividends.modal.save')}</button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Metrik mini-grafik pop-up (son 10 periyot; bar=tutar, line=oran) ─────────
+const MetricChart = ({ t, lang, currency, periods, data, onClose }: {
+  t: Theme; lang: Lang; currency: FinCurrency; periods: FinancialPeriod[];
+  data: { label: string; isMargin: boolean; perShare: boolean; values: Record<string, number | null> }; onClose: () => void;
+}) => {
+  const pLabel = (p: FinancialPeriod) => (lang === 'tr' ? p.label.replace('/Q', '/Ç') : p.label);
+  const last10 = periods.slice(-10); // kronolojik
+  const rows = last10.map((p) => {
+    const raw = data.values[p.id];
+    let v: number | null = raw;
+    if (raw !== null && !data.isMargin && currency === 'USD') v = raw / p.fxRate;
+    return { name: pLabel(p), value: v };
+  });
+  const fmtTip = (v: number) => {
+    if (data.isMargin) return `${lang === 'tr' ? '%' : ''}${fmtNumber(v, 1)}${lang === 'en' ? '%' : ''}`;
+    const sym = currency === 'USD' ? '$' : '₺';
+    const num = data.perShare ? fmtNumber(v, currency === 'USD' ? 3 : 2) : fmtNumber(Math.round(v));
+    return currency === 'USD' ? `${sym}${num}` : `${num} ${sym}`;
+  };
+  const tip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) =>
+    active && payload && payload.length ? (
+      <div style={{ background: t.tx, color: t.bg, borderRadius: 8, padding: '6px 10px', fontSize: 12 }}>
+        <div style={{ fontWeight: 700, marginBottom: 2 }}>{label}</div>
+        <div>{fmtTip(payload[0].value)}</div>
+      </div>
+    ) : null;
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: t.cd, borderRadius: 14, padding: 20, width: 620, maxWidth: '100%', border: `1px solid ${t.bd}`, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: t.tx }}>{data.label} <span style={{ fontSize: 12, fontWeight: 500, color: t.tx3 }}>· {currency}</span></span>
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${t.bd}`, background: 'transparent', cursor: 'pointer', color: t.tx3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={14} /></button>
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          {data.isMargin ? (
+            <LineChart data={rows} margin={{ top: 10, right: 16, bottom: 6, left: 6 }}>
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${fmtNumber(v, 0)}`} width={44} />
+              <Tooltip content={tip} />
+              <Line type="monotone" dataKey="value" stroke={t.pr} strokeWidth={2.5} dot={{ r: 3, fill: t.pr }} />
+            </LineChart>
+          ) : (
+            <BarChart data={rows} margin={{ top: 10, right: 16, bottom: 6, left: 6 }}>
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: t.tx2 }} axisLine={false} tickLine={false} tickFormatter={(v) => fmtNumber(Math.round(v / 1000))} width={52} />
+              <Tooltip content={tip} cursor={{ fill: t.hoverBg }} />
+              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                {rows.map((r, i) => <Cell key={i} fill={(r.value ?? 0) < 0 ? t.rd : t.pr} />)}
+              </Bar>
+            </BarChart>
+          )}
+        </ResponsiveContainer>
       </div>
     </div>
   );

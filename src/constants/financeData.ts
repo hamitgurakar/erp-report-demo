@@ -44,17 +44,28 @@ const isAnnual = (id: string) => !id.includes('/');
 export const LINE_LABELS: Record<string, { tr: string; en: string }> = {
   // income
   revenue: { tr: 'Hasılat', en: 'Revenue' },
+  domesticSales: { tr: 'Yurt İçi Satışlar', en: 'Domestic Sales' },
+  foreignSales: { tr: 'Yurt Dışı Satışlar', en: 'Foreign Sales' },
   cogs: { tr: 'SMM', en: 'COGS' },
   grossProfit: { tr: 'Brüt Kâr', en: 'Gross Profit' },
   opex: { tr: 'Faaliyet Giderleri', en: 'Operating Expenses' },
-  ebit: { tr: 'Esas Faaliyet Kârı', en: 'Operating Income' },
+  marketingSales: { tr: 'Pazarlama / Satış / Dağıtım', en: 'Marketing / Selling / Distribution' },
+  generalAdmin: { tr: 'Genel Yönetim', en: 'General & Administrative' },
+  rnd: { tr: 'Ar-Ge', en: 'R&D' },
+  ebit: { tr: 'Esas Faaliyet Kârı (EBIT)', en: 'Operating Income (EBIT)' },
   da: { tr: 'Amortisman', en: 'Depreciation & Amortization' },
   ebitda: { tr: 'FAVÖK', en: 'EBITDA' },
   nonOp: { tr: 'Faaliyet Dışı Gelir/Gider', en: 'Non-operating Income/Expense' },
-  netFin: { tr: 'Finansman Giderleri (net)', en: 'Net Financial Expenses' },
+  interestIncome: { tr: 'Faiz ve Yatırım Geliri', en: 'Interest & Investment Income' },
+  interestExpense: { tr: 'Faiz Gideri', en: 'Interest Expense' },
+  netInterest: { tr: 'Net Faiz', en: 'Net Interest' },
+  netMonetary: { tr: 'Net Parasal Pozisyon Kazanç/(Kayıp)', en: 'Net Monetary Position Gain/(Loss)' },
   pretax: { tr: 'Vergi Öncesi Kâr', en: 'Pre-tax Profit' },
   tax: { tr: 'Vergi', en: 'Tax' },
   netIncome: { tr: 'Net Kâr', en: 'Net Income' },
+  normalizedNet: { tr: 'Normalize Net Kâr', en: 'Normalized Net Income' },
+  revenuePerShare: { tr: 'Hisse Başına Hasılat', en: 'Revenue per Share' },
+  interestPaid: { tr: 'Ödenen Faiz (dipnot)', en: 'Interest Paid (footnote)' },
   grossMargin: { tr: 'Brüt Marj %', en: 'Gross Margin %' },
   ebitdaMargin: { tr: 'FAVÖK Marjı %', en: 'EBITDA Margin %' },
   netMargin: { tr: 'Net Marj %', en: 'Net Margin %' },
@@ -65,17 +76,27 @@ export const LINE_LABELS: Record<string, { tr: string; en: string }> = {
   // balance
   currentAssets: { tr: 'Dönen Varlıklar', en: 'Current Assets' },
   cash: { tr: 'Nakit ve Nakit Benzerleri', en: 'Cash & Equivalents' },
+  stInvest: { tr: 'Kısa Vadeli Finansal Yatırımlar', en: 'Short-term Investments' },
+  totalCashSTInvest: { tr: 'Toplam Nakit & KV Yatırım', en: 'Total Cash & ST Investments' },
   ar: { tr: 'Ticari Alacaklar', en: 'Accounts Receivable' },
   inventory: { tr: 'Stoklar', en: 'Inventory' },
   otherCA: { tr: 'Diğer Dönen Varlıklar', en: 'Other Current Assets' },
   nonCurrentAssets: { tr: 'Duran Varlıklar', en: 'Non-current Assets' },
-  ppe: { tr: 'Maddi Duran Varlıklar', en: 'Property, Plant & Equipment' },
+  grossPPE: { tr: 'Brüt Maddi Duran Varlık', en: 'Gross PP&E' },
+  accumDep: { tr: 'Birikmiş Amortisman (−)', en: 'Accumulated Depreciation (−)' },
+  netPPE: { tr: 'Net Maddi Duran Varlık', en: 'Net PP&E' },
   intangibles: { tr: 'Maddi Olmayan Duran Varlıklar', en: 'Intangible Assets' },
+  goodwill: { tr: 'Şerefiye', en: 'Goodwill' },
+  ltInvest: { tr: 'Uzun Vadeli Finansal Yatırımlar', en: 'Long-term Investments' },
+  deferredTaxAsset: { tr: 'Ertelenmiş Vergi Varlığı', en: 'Deferred Tax Asset' },
   otherNCA: { tr: 'Diğer Duran Varlıklar', en: 'Other Non-current Assets' },
   totalAssets: { tr: 'Toplam Varlıklar', en: 'Total Assets' },
   currentLiab: { tr: 'Kısa Vadeli Yükümlülükler', en: 'Current Liabilities' },
   ap: { tr: 'Ticari Borçlar', en: 'Accounts Payable' },
   stDebt: { tr: 'Finansal Borçlar (KV)', en: 'Short-term Debt' },
+  employeePayables: { tr: 'Çalışanlara Borçlar', en: 'Payables to Employees' },
+  deferredRevenue: { tr: 'Ertelenmiş Gelir', en: 'Deferred Revenue' },
+  currentTaxPayable: { tr: 'Dönem Vergi Borcu', en: 'Current Tax Payable' },
   otherCL: { tr: 'Diğer KV Yükümlülükler', en: 'Other Current Liabilities' },
   nonCurrentLiab: { tr: 'Uzun Vadeli Yükümlülükler', en: 'Non-current Liabilities' },
   ltDebt: { tr: 'Finansal Borçlar (UV)', en: 'Long-term Debt' },
@@ -88,24 +109,40 @@ export const LINE_LABELS: Record<string, { tr: string; en: string }> = {
   totalResources: { tr: 'Toplam Kaynaklar', en: 'Total Resources' },
   netWorkingCapital: { tr: 'Net İşletme Sermayesi', en: 'Net Working Capital' },
   totalDebt: { tr: 'Toplam Borç', en: 'Total Debt' },
+  totalCash: { tr: 'Toplam Nakit', en: 'Total Cash' },
   netDebt: { tr: 'Net Borç', en: 'Net Debt' },
   bvps: { tr: 'Hisse Başına Defter Değeri', en: 'Book Value per Share' },
+  cashPerShare: { tr: 'Hisse Başına Nakit', en: 'Cash per Share' },
+  tangibleBVPS: { tr: 'Hisse Başına Maddi Defter Değeri', en: 'Tangible Book Value per Share' },
   // cashflow
   cfNet: { tr: 'Net Kâr', en: 'Net Income' },
   cfDA: { tr: 'Amortisman', en: 'Depreciation & Amortization' },
+  impairment: { tr: 'Değer Düşüklüğü / Karşılık Düzeltmeleri', en: 'Impairment / Provision Adjustments' },
   cfWC: { tr: 'İşletme Sermayesi Değişimi', en: 'Change in Working Capital' },
+  arChange: { tr: 'Ticari Alacak Değişimi', en: 'Change in Receivables' },
+  invChange: { tr: 'Stok Değişimi', en: 'Change in Inventory' },
+  apChange: { tr: 'Ticari Borç Değişimi', en: 'Change in Payables' },
+  otherWCChange: { tr: 'Diğer İşl. Sermayesi Değişimi', en: 'Other Working Capital Change' },
   operatingCF: { tr: 'İşletme Nakit Akışı', en: 'Operating Cash Flow' },
   capex: { tr: 'Yatırım Harcaması (CapEx)', en: 'Capital Expenditure' },
+  invPurchaseSale: { tr: 'Yatırım Alım/Satım (net)', en: 'Investment Purchase/Sale (net)' },
+  otherInvest: { tr: 'Diğer Yatırım Faaliyetleri', en: 'Other Investing Activities' },
   investingCF: { tr: 'Yatırım Nakit Akışı', en: 'Investing Cash Flow' },
-  cfDebt: { tr: 'Net Kredi Hareketi', en: 'Net Borrowing' },
-  cfDiv: { tr: 'Temettü Ödemesi', en: 'Dividends Paid' },
+  borrowIn: { tr: 'Borçlanma Girişi', en: 'Debt Issued' },
+  debtRepay: { tr: 'Borç Ödemesi', en: 'Debt Repayment' },
+  interestPaidCF: { tr: 'Ödenen Faiz', en: 'Interest Paid' },
+  cfDiv: { tr: 'Ödenen Temettü', en: 'Dividends Paid' },
   financingCF: { tr: 'Finansman Nakit Akışı', en: 'Financing Cash Flow' },
+  fxEffect: { tr: 'Kur Farkı Etkisi (net)', en: 'FX Effect (net)' },
   fcf: { tr: 'Serbest Nakit Akışı', en: 'Free Cash Flow' },
+  leveredFcf: { tr: 'Kaldıraçlı FCF', en: 'Levered FCF' },
+  unleveredFcf: { tr: 'Kaldıraçsız FCF', en: 'Unlevered FCF' },
   netChange: { tr: 'Net Nakit Değişimi', en: 'Net Change in Cash' },
   beginCash: { tr: 'Dönem Başı Nakit', en: 'Beginning Cash' },
   endCash: { tr: 'Dönem Sonu Nakit', en: 'Ending Cash' },
   fcfMargin: { tr: 'FCF Marjı %', en: 'FCF Margin %' },
   fcfPerShare: { tr: 'Hisse Başına FCF', en: 'FCF per Share' },
+  taxPaid: { tr: 'Ödenen Vergi (dipnot)', en: 'Tax Paid (footnote)' },
   // expense categories
   personnel: { tr: 'Personel Giderleri', en: 'Personnel Expenses' },
   marketing: { tr: 'Pazarlama & Reklam', en: 'Marketing & Advertising' },
@@ -141,16 +178,22 @@ const buildIncome = (): Store => {
   const out: Store = {};
   for (const id of Object.keys(REV)) {
     const rev = REV[id];
+    const domesticSales = r1(rev * 0.72);
+    const foreignSales = rev - domesticSales;
     const cogs = -r1(rev * 0.56);
-    const opex = -r1(rev * 0.235);
+    const marketingSales = -r1(rev * 0.12);
+    const generalAdmin = -r1(rev * 0.075);
+    const rnd = -r1(rev * 0.04);
     const da = r1(rev * 0.03);
     const nonOp = r1(rev * 0.006);
-    const netFin = -r1(rev * 0.042);
+    const interestIncome = r1(rev * 0.008);
+    const interestExpense = -r1(rev * 0.05);
+    const netMonetary = r1(rev * 0.015); // IAS 29 mock kazanç
     const gross = rev + cogs;
-    const ebit = gross + opex;
-    const pretax = ebit + nonOp + netFin;
+    const ebit = gross + marketingSales + generalAdmin + rnd;
+    const pretax = ebit + nonOp + interestIncome + interestExpense;
     const tax = -r1(Math.max(0, pretax) * 0.22);
-    out[id] = { revenue: rev, cogs, opex, da, nonOp, netFin, tax };
+    out[id] = { revenue: rev, domesticSales, foreignSales, cogs, marketingSales, generalAdmin, rnd, da, nonOp, interestIncome, interestExpense, tax, netMonetary };
   }
   out['2026/Q2'].nonOp = null; // Manuel boş demo
   return out;
@@ -160,8 +203,8 @@ export const incomeRaw: Store = buildIncome();
 export const netIncomeOf = (id: string): number => {
   const v = incomeRaw[id];
   const gross = (v.revenue ?? 0) + (v.cogs ?? 0);
-  const ebit = gross + (v.opex ?? 0);
-  const pretax = ebit + (v.nonOp ?? 0) + (v.netFin ?? 0);
+  const ebit = gross + (v.marketingSales ?? 0) + (v.generalAdmin ?? 0) + (v.rnd ?? 0);
+  const pretax = ebit + (v.nonOp ?? 0) + (v.interestIncome ?? 0) + (v.interestExpense ?? 0);
   return pretax + (v.tax ?? 0);
 };
 
@@ -169,15 +212,19 @@ const buildBalance = (): Store => {
   const out: Store = {};
   for (const id of Object.keys(REV)) {
     const bs = isAnnual(id) ? REV[id] / 4 : REV[id];
-    const cash = r1(bs * 0.45), ar = r1(bs * 0.62), inventory = r1(bs * 0.85), otherCA = r1(bs * 0.15);
-    const ppe = r1(bs * 1.35), intangibles = r1(bs * 0.55), otherNCA = r1(bs * 0.30);
-    const ap = r1(bs * 0.48), stDebt = r1(bs * 0.30), otherCL = r1(bs * 0.13), ltDebt = r1(bs * 0.40), otherNCL = r1(bs * 0.10);
+    const cash = r1(bs * 0.35), stInvest = r1(bs * 0.10);
+    const ar = r1(bs * 0.62), inventory = r1(bs * 0.85), otherCA = r1(bs * 0.15);
+    const grossPPE = r1(bs * 1.70), accumDep = -r1(bs * 0.35); // netPPE ≈ 1.35
+    const intangibles = r1(bs * 0.35), goodwill = r1(bs * 0.20), ltInvest = r1(bs * 0.15), deferredTaxAsset = r1(bs * 0.08), otherNCA = r1(bs * 0.07);
+    const ap = r1(bs * 0.48), stDebt = r1(bs * 0.30), employeePayables = r1(bs * 0.06), deferredRevenue = r1(bs * 0.05), currentTaxPayable = r1(bs * 0.04), otherCL = r1(bs * 0.13);
+    const ltDebt = r1(bs * 0.40), otherNCL = r1(bs * 0.10);
     const paidCapital = REGISTERED_CAPITAL;
     const periodNet = netIncomeOf(id);
-    const totalAssets = cash + ar + inventory + otherCA + ppe + intangibles + otherNCA;
-    const totalLiab = ap + stDebt + otherCL + ltDebt + otherNCL;
+    const netPPE = grossPPE + accumDep;
+    const totalAssets = cash + stInvest + ar + inventory + otherCA + netPPE + intangibles + goodwill + ltInvest + deferredTaxAsset + otherNCA;
+    const totalLiab = ap + stDebt + employeePayables + deferredRevenue + currentTaxPayable + otherCL + ltDebt + otherNCL;
     const retained = totalAssets - totalLiab - paidCapital - periodNet; // denge plug (raw)
-    out[id] = { cash, ar, inventory, otherCA, ppe, intangibles, otherNCA, ap, stDebt, otherCL, ltDebt, otherNCL, paidCapital, retained, periodNet };
+    out[id] = { cash, stInvest, ar, inventory, otherCA, grossPPE, accumDep, intangibles, goodwill, ltInvest, deferredTaxAsset, otherNCA, ap, stDebt, employeePayables, deferredRevenue, currentTaxPayable, otherCL, ltDebt, otherNCL, paidCapital, retained, periodNet };
   }
   out['2026/Q2'].otherCL = null; // Manuel boş demo
   return out;
@@ -229,13 +276,20 @@ const buildCashflow = (): Store => {
     const id = p.id, rev = REV[id];
     const cfNet = netIncomeOf(id);
     const cfDA = incomeRaw[id].da ?? 0;
-    const cfWC = -r1(rev * 0.05);
-    const capex = -r1(rev * 0.06);
-    const cfDebt = r1(rev * 0.02);
+    const impairment = r1(rev * 0.004);
+    const arChange = -r1(rev * 0.03), invChange = -r1(rev * 0.025), apChange = r1(rev * 0.02), otherWCChange = -r1(rev * 0.015);
+    const cfWC = arChange + invChange + apChange + otherWCChange;
+    const capex = -r1(rev * 0.06), invPurchaseSale = -r1(rev * 0.01), otherInvest = -r1(rev * 0.005);
+    const borrowIn = r1(rev * 0.04), debtRepay = -r1(rev * 0.02), interestPaidCF = -r1(rev * 0.05);
     const cfDivDefault = -divSumInPeriod(dividendEventsSeed, p, 'odeme');
-    const netChange = (cfNet + cfDA + cfWC) + capex + (cfDebt + cfDivDefault);
+    const fxEffect = r1(rev * 0.003);
+    const taxPaid = incomeRaw[id].tax ?? 0;
+    const operating = cfNet + cfDA + impairment + cfWC;
+    const investing = capex + invPurchaseSale + otherInvest;
+    const financing = borrowIn + debtRepay + interestPaidCF + cfDivDefault;
+    const netChange = operating + investing + financing + fxEffect;
     const beginCash = (balanceRaw[id].cash ?? 0) - netChange;
-    out[id] = { cfNet, cfDA, cfWC, capex, cfDebt, beginCash };
+    out[id] = { cfDA, impairment, arChange, invChange, apChange, otherWCChange, capex, invPurchaseSale, otherInvest, borrowIn, debtRepay, interestPaidCF, fxEffect, taxPaid, beginCash };
   }
   return out;
 };
@@ -305,6 +359,8 @@ export interface RowSpec {
   isMargin?: boolean;
   group?: string;
   isGroupHeader?: boolean;
+  iasOnly?: boolean;   // yalnızca IAS 29 seçiliyken görünür
+  memo?: boolean;      // dipnot satırı (soluk)
   compute?: (c: ComputeCtx) => number | null;
 }
 const g = (c: ComputeCtx, k: string) => c.get(k) ?? 0;
@@ -313,40 +369,61 @@ const pct = (num: number, den: number | null): number | null => (den && den !== 
 
 export const INCOME_ROWS: RowSpec[] = [
   { key: 'revenue', source: 'erp' },
+  { key: 'domesticSales', source: 'erp', group: 'revenue' },
+  { key: 'foreignSales', source: 'erp', group: 'revenue' },
   { key: 'cogs', source: 'erp' },
   { key: 'grossProfit', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'revenue') + g(c, 'cogs') },
-  { key: 'opex', source: 'erp' },
+  { key: 'opex', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'opex', compute: (c) => rw(c, 'marketingSales') + rw(c, 'generalAdmin') + rw(c, 'rnd') },
+  { key: 'marketingSales', source: 'erp', group: 'opex' },
+  { key: 'generalAdmin', source: 'erp', group: 'opex' },
+  { key: 'rnd', source: 'manual', group: 'opex' },
   { key: 'ebit', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'grossProfit') + g(c, 'opex') },
   { key: 'da', source: 'erp' },
   { key: 'ebitda', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'ebit') + g(c, 'da') },
   { key: 'nonOp', source: 'manual' },
-  { key: 'netFin', source: 'parasut' },
-  { key: 'pretax', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'ebit') + g(c, 'nonOp') + g(c, 'netFin') },
+  { key: 'interestIncome', source: 'erp' },
+  { key: 'interestExpense', source: 'parasut' },
+  { key: 'netInterest', source: 'computed', compute: (c) => g(c, 'interestIncome') + g(c, 'interestExpense') },
+  { key: 'netMonetary', source: 'computed', iasOnly: true },
+  { key: 'pretax', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'ebit') + g(c, 'nonOp') + g(c, 'netInterest') },
   { key: 'tax', source: 'parasut' },
   { key: 'netIncome', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'pretax') + g(c, 'tax') },
+  { key: 'normalizedNet', source: 'computed', compute: (c) => g(c, 'netIncome') },
   { key: 'grossMargin', source: 'computed', isMargin: true, compute: (c) => pct(g(c, 'grossProfit'), c.revenue) },
   { key: 'ebitdaMargin', source: 'computed', isMargin: true, compute: (c) => pct(g(c, 'ebitda'), c.revenue) },
   { key: 'netMargin', source: 'computed', isMargin: true, compute: (c) => pct(g(c, 'netIncome'), c.revenue) },
   { key: 'effTax', source: 'computed', isMargin: true, compute: (c) => { const p = g(c, 'pretax'); return p ? (-g(c, 'tax') / p) * 100 : null; } },
   { key: 'eps', source: 'computed', compute: (c) => g(c, 'netIncome') / c.shares },
+  { key: 'revenuePerShare', source: 'computed', compute: (c) => (c.revenue ?? 0) / c.shares },
   { key: 'dps', source: 'computed', compute: (c) => c.divDeclared / c.shares },
   { key: 'payout', source: 'computed', isMargin: true, compute: (c) => pct(c.divDeclared, g(c, 'netIncome')) },
+  { key: 'interestPaid', source: 'computed', memo: true, compute: (c) => g(c, 'interestExpense') },
 ];
 
 export const BALANCE_ROWS: RowSpec[] = [
-  { key: 'currentAssets', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'currentAssets', compute: (c) => rw(c, 'cash') + rw(c, 'ar') + rw(c, 'inventory') + rw(c, 'otherCA') },
+  { key: 'currentAssets', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'currentAssets', compute: (c) => rw(c, 'cash') + rw(c, 'stInvest') + rw(c, 'ar') + rw(c, 'inventory') + rw(c, 'otherCA') },
   { key: 'cash', source: 'erp', group: 'currentAssets' },
+  { key: 'stInvest', source: 'parasut', group: 'currentAssets' },
+  { key: 'totalCashSTInvest', source: 'computed', group: 'currentAssets', compute: (c) => rw(c, 'cash') + rw(c, 'stInvest') },
   { key: 'ar', source: 'erp', group: 'currentAssets' },
   { key: 'inventory', source: 'erp', group: 'currentAssets' },
   { key: 'otherCA', source: 'manual', group: 'currentAssets' },
-  { key: 'nonCurrentAssets', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'nonCurrentAssets', compute: (c) => rw(c, 'ppe') + rw(c, 'intangibles') + rw(c, 'otherNCA') },
-  { key: 'ppe', source: 'erp', group: 'nonCurrentAssets' },
+  { key: 'nonCurrentAssets', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'nonCurrentAssets', compute: (c) => rw(c, 'grossPPE') + rw(c, 'accumDep') + rw(c, 'intangibles') + rw(c, 'goodwill') + rw(c, 'ltInvest') + rw(c, 'deferredTaxAsset') + rw(c, 'otherNCA') },
+  { key: 'grossPPE', source: 'erp', group: 'nonCurrentAssets' },
+  { key: 'accumDep', source: 'erp', group: 'nonCurrentAssets' },
+  { key: 'netPPE', source: 'computed', group: 'nonCurrentAssets', compute: (c) => rw(c, 'grossPPE') + rw(c, 'accumDep') },
   { key: 'intangibles', source: 'parasut', group: 'nonCurrentAssets' },
+  { key: 'goodwill', source: 'parasut', group: 'nonCurrentAssets' },
+  { key: 'ltInvest', source: 'parasut', group: 'nonCurrentAssets' },
+  { key: 'deferredTaxAsset', source: 'parasut', group: 'nonCurrentAssets' },
   { key: 'otherNCA', source: 'manual', group: 'nonCurrentAssets' },
   { key: 'totalAssets', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'currentAssets') + g(c, 'nonCurrentAssets') },
-  { key: 'currentLiab', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'currentLiab', compute: (c) => rw(c, 'ap') + rw(c, 'stDebt') + rw(c, 'otherCL') },
+  { key: 'currentLiab', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'currentLiab', compute: (c) => rw(c, 'ap') + rw(c, 'stDebt') + rw(c, 'employeePayables') + rw(c, 'deferredRevenue') + rw(c, 'currentTaxPayable') + rw(c, 'otherCL') },
   { key: 'ap', source: 'erp', group: 'currentLiab' },
   { key: 'stDebt', source: 'parasut', group: 'currentLiab' },
+  { key: 'employeePayables', source: 'erp', group: 'currentLiab' },
+  { key: 'deferredRevenue', source: 'parasut', group: 'currentLiab' },
+  { key: 'currentTaxPayable', source: 'parasut', group: 'currentLiab' },
   { key: 'otherCL', source: 'manual', group: 'currentLiab' },
   { key: 'nonCurrentLiab', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'nonCurrentLiab', compute: (c) => rw(c, 'ltDebt') + rw(c, 'otherNCL') },
   { key: 'ltDebt', source: 'parasut', group: 'nonCurrentLiab' },
@@ -359,26 +436,42 @@ export const BALANCE_ROWS: RowSpec[] = [
   { key: 'totalResources', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'totalLiab') + g(c, 'equity') },
   { key: 'netWorkingCapital', source: 'computed', compute: (c) => g(c, 'currentAssets') - g(c, 'currentLiab') },
   { key: 'totalDebt', source: 'computed', compute: (c) => rw(c, 'stDebt') + rw(c, 'ltDebt') },
-  { key: 'netDebt', source: 'computed', compute: (c) => g(c, 'totalDebt') - rw(c, 'cash') },
+  { key: 'totalCash', source: 'computed', compute: (c) => rw(c, 'cash') + rw(c, 'stInvest') + rw(c, 'ltInvest') },
+  { key: 'netDebt', source: 'computed', compute: (c) => g(c, 'totalDebt') - rw(c, 'cash') - rw(c, 'stInvest') },
   { key: 'bvps', source: 'computed', compute: (c) => g(c, 'equity') / c.shares },
+  { key: 'cashPerShare', source: 'computed', compute: (c) => g(c, 'totalCash') / c.shares },
+  { key: 'tangibleBVPS', source: 'computed', compute: (c) => (g(c, 'equity') - rw(c, 'intangibles') - rw(c, 'goodwill')) / c.shares },
 ];
 
 export const CASHFLOW_ROWS: RowSpec[] = [
   { key: 'cfNet', source: 'computed', compute: (c) => c.netIncome },
   { key: 'cfDA', source: 'erp' },
-  { key: 'cfWC', source: 'manual' },
-  { key: 'operatingCF', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'cfNet') + g(c, 'cfDA') + g(c, 'cfWC') },
+  { key: 'impairment', source: 'manual' },
+  { key: 'cfWC', source: 'computed', isSubtotal: true, isGroupHeader: true, group: 'wc', compute: (c) => rw(c, 'arChange') + rw(c, 'invChange') + rw(c, 'apChange') + rw(c, 'otherWCChange') },
+  { key: 'arChange', source: 'erp', group: 'wc' },
+  { key: 'invChange', source: 'erp', group: 'wc' },
+  { key: 'apChange', source: 'erp', group: 'wc' },
+  { key: 'otherWCChange', source: 'manual', group: 'wc' },
+  { key: 'operatingCF', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'cfNet') + g(c, 'cfDA') + g(c, 'impairment') + g(c, 'cfWC') },
   { key: 'capex', source: 'erp' },
-  { key: 'investingCF', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'capex') },
-  { key: 'cfDebt', source: 'parasut' },
+  { key: 'invPurchaseSale', source: 'parasut' },
+  { key: 'otherInvest', source: 'manual' },
+  { key: 'investingCF', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'capex') + g(c, 'invPurchaseSale') + g(c, 'otherInvest') },
+  { key: 'borrowIn', source: 'parasut' },
+  { key: 'debtRepay', source: 'parasut' },
+  { key: 'interestPaidCF', source: 'parasut' },
   { key: 'cfDiv', source: 'computed', compute: (c) => -c.divPaid },  // temettü dataset'inden türetilir
-  { key: 'financingCF', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'cfDebt') + g(c, 'cfDiv') },
-  { key: 'fcf', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'operatingCF') + g(c, 'capex') },
-  { key: 'netChange', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'operatingCF') + g(c, 'investingCF') + g(c, 'financingCF') },
+  { key: 'financingCF', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'borrowIn') + g(c, 'debtRepay') + g(c, 'interestPaidCF') + g(c, 'cfDiv') },
+  { key: 'fxEffect', source: 'manual' },
+  { key: 'netChange', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'operatingCF') + g(c, 'investingCF') + g(c, 'financingCF') + g(c, 'fxEffect') },
   { key: 'beginCash', source: 'erp' },
   { key: 'endCash', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'beginCash') + g(c, 'netChange') },
+  { key: 'fcf', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'operatingCF') + g(c, 'capex') },
+  { key: 'leveredFcf', source: 'computed', compute: (c) => g(c, 'fcf') },
+  { key: 'unleveredFcf', source: 'computed', compute: (c) => g(c, 'fcf') - g(c, 'interestPaidCF') },
   { key: 'fcfMargin', source: 'computed', isMargin: true, compute: (c) => pct(g(c, 'fcf'), c.revenue) },
   { key: 'fcfPerShare', source: 'computed', compute: (c) => g(c, 'fcf') / c.shares },
+  { key: 'taxPaid', source: 'parasut', memo: true },
 ];
 
 export const FIN_COUNTS = {
