@@ -229,6 +229,16 @@ export const TERMS_EN: Record<string, string> = {
 // Anahtar = StatementLine.labelKey. Değer = {tr,en} kısa tanım (ne + nasıl hesaplanır).
 export const FIN_TERMS: Record<string, { tr: string; en: string }> = {
   revenue: { tr: 'Hasılat: Dönem net satış geliri (iade ve iskonto sonrası).', en: 'Revenue: Net sales for the period (after returns and discounts).' },
+  // ── Gelir & Kârlılık (SAYFA 1) ek metrikler ──
+  revenueGrowth: { tr: 'Hasılat Büyümesi (YoY): (Cari Hasılat − Önceki Yıl Hasılat) / Önceki Yıl Hasılat. Yüksek iyi.', en: 'Revenue Growth (YoY): (Current − Prior-year Revenue) / Prior-year Revenue. Higher is better.' },
+  opexRatio: { tr: 'Faaliyet Gideri Oranı: Faaliyet Giderleri / Hasılat. Düşük iyi (operasyonel kaldıraç).', en: 'OpEx Ratio: Operating Expenses / Revenue. Lower is better (operating leverage).' },
+  revenueQuality: { tr: 'Hasılat Kalite Skoru (0-100): Tekrarlayan/organik hasılat payı ile tahsilat oranının bileşimi. Yüksek iyi.', en: 'Revenue Quality (0-100): Blend of recurring/organic revenue share and collection rate. Higher is better.' },
+  exportRevenue: { tr: 'Yurt Dışı Hasılat Payı: Yurt Dışı Hasılat / Toplam Hasılat. Kur çeşitlendirmesi sağlar.', en: 'Export Revenue %: Foreign Sales / Total Revenue. Provides FX diversification.' },
+  normalizedNet: { tr: 'Normalize Net Kâr: Tek seferlik (faaliyet dışı) kalemler hariç net kâr — kâr kalitesi ölçütü.', en: 'Normalized Net Income: Net income excluding one-off (non-operating) items — an earnings-quality measure.' },
+  normalizedNetMargin: { tr: 'Normalize Net Kâr Marjı: Tek seferlik kalemler hariç Net Kâr / Hasılat.', en: 'Normalized Net Margin: Net income excluding one-offs / Revenue.' },
+  marginBridge: { tr: 'Brüt Marj Köprüsü (PVM): Marj değişimini Fiyat, Hacim, Miks ve Maliyet etkilerine ayrıştırır (puan bazında).', en: 'Margin Bridge (PVM): Decomposes margin change into Price, Volume, Mix and Cost effects (in points).' },
+  segmentMargin: { tr: 'Segment Brüt Marjı: Segmentin brüt kârı / segment hasılatı.', en: 'Segment Gross Margin: Segment gross profit / segment revenue.' },
+  netInterest: { tr: 'Net Faiz: Faiz ve yatırım geliri − faiz gideri.', en: 'Net Interest: Interest & investment income − interest expense.' },
   cogs: { tr: 'SMM: Satılan malın maliyeti — alış, kargo ve gümrük dahil doğrudan maliyetler.', en: 'COGS: Cost of goods sold — direct costs incl. purchase, freight, customs.' },
   grossProfit: { tr: 'Brüt Kâr: Hasılat − SMM.', en: 'Gross Profit: Revenue − COGS.' },
   opex: { tr: 'Faaliyet Giderleri: Pazarlama, G&A ve operasyon giderleri.', en: 'Operating Expenses: Marketing, G&A and operations costs.' },
