@@ -37,7 +37,7 @@ import { SalesTargets } from '../components/satis/SalesTargets';
 import { ManagementTargets } from '../components/yonetim/ManagementTargets';
 import { FinancialData } from './finance/FinancialData';
 import { IncomeProfitability } from './finance/income-profitability/IncomeProfitability';
-import { CashLiquidity } from './finance/CashLiquidity';
+import { CashLiquidity } from './finance/cash-liquidity/CashLiquidity';
 import { Receivables } from './finance/Receivables';
 import { Payables as FinPayables } from './finance/Payables';
 import { TaxCompliance } from './finance/TaxCompliance';

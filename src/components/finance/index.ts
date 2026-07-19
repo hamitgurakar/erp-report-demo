@@ -15,3 +15,5 @@ export { MiniChartPopover } from './MiniChartPopover';
 export type { MiniPoint } from './MiniChartPopover';
 export { Dropdown } from './Dropdown';
 export type { DropdownOption } from './Dropdown';
+export { Waterfall } from './Waterfall';
+export type { WFStep } from './Waterfall';
