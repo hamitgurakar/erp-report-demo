@@ -18,9 +18,10 @@ import {
   incomeRaw, balanceRaw, cashflowRaw, expenseRaw, dividendEventsSeed,
   divSumInPeriod, type RowSpec, type ComputeCtx,
 } from '../../constants/financeData';
+import { LoansTab } from './LoansTab';
 
 interface Props { t: Theme; l: LangStrings; lang: Lang; }
-type TabKey = 'income' | 'balance' | 'cashflow' | 'expense' | 'dividends' | 'meta';
+type TabKey = 'income' | 'balance' | 'cashflow' | 'expense' | 'dividends' | 'loans' | 'meta';
 type StoreKey = 'income' | 'balance' | 'cashflow' | 'expense';
 type Store = Record<string, Record<string, number | null>>;
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -653,21 +654,21 @@ export const FinancialData = ({ t, lang }: Props) => {
 
         {/* Sağ üst: Düzenle / Kaydet+Vazgeç + Değişiklik Geçmişi */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {editingTab ? (
+          {tab !== 'loans' && (editingTab ? (
             <>
               <button onClick={() => doSave(tab)} style={btnPrimary}>{f('save')}</button>
               <button onClick={() => cancelEditTab(tab)} style={btnGhost}>{f('cancel')}</button>
             </>
           ) : (
             <button onClick={() => startEditTab(tab)} style={btnGhost}><Icon name="fileText" size={13} color={t.tx2} /> {f('edit')}</button>
-          )}
+          ))}
           <button onClick={() => setHistoryOpen(true)} style={btnGhost}><Icon name="refresh" size={13} color={t.tx2} /> {f('history')}</button>
         </div>
       </div>
 
       {/* ── TAB ŞERİDİ ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, borderBottom: `1px solid ${t.bd}`, flexWrap: 'wrap' }}>
-        {(['income', 'balance', 'cashflow', 'expense', 'dividends', 'meta'] as TabKey[]).map((tb) => (
+        {(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'meta'] as TabKey[]).map((tb) => (
           <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 16px', fontSize: 13, fontWeight: tab === tb ? 600 : 500, border: 'none', borderBottom: `2px solid ${tab === tb ? t.pr : 'transparent'}`, background: 'transparent', color: tab === tb ? t.pr : t.tx2, cursor: 'pointer', marginBottom: -1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             {f(`tabs.${tb}`)}
             {isEditing(tb) && <span style={{ width: 6, height: 6, borderRadius: 3, background: t.am }} title={f('edit')} />}
@@ -682,6 +683,7 @@ export const FinancialData = ({ t, lang }: Props) => {
         {tab === 'cashflow' && renderGrid('cashflow', CASHFLOW_ROWS, 'revenue')}
         {tab === 'expense' && renderExpense()}
         {tab === 'dividends' && renderDividends()}
+        {tab === 'loans' && <LoansTab t={t} lang={lang} f={f} onAudit={(e) => setAudit((a) => [e, ...a])} />}
         {tab === 'meta' && renderMeta()}
       </div>
 
@@ -857,7 +859,7 @@ const HistoryModal = ({ t, f, lang, audit, currentTab, onClose }: {
   const fmtTs = (ts: number) => new Date(ts).toLocaleString(loc, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const fmtLog = (v: number | null) => v === null ? null : `${fmtNumber(v)} ₺`;
   const rows = audit.filter((a) => filter === 'all' || a.tab === filter);
-  const opts = [{ v: 'all', label: f('historyAll') }, ...(['income', 'balance', 'cashflow', 'expense', 'dividends', 'meta'].map((tb) => ({ v: tb, label: f(`tabs.${tb}`) })))];
+  const opts = [{ v: 'all', label: f('historyAll') }, ...(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'meta'].map((tb) => ({ v: tb, label: f(`tabs.${tb}`) })))];
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: t.cd, borderRadius: 14, width: 640, maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: `1px solid ${t.bd}`, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>

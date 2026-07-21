@@ -627,6 +627,7 @@ export const en: Dict = {
       cashflow: 'Cash Flow',
       expense: 'Expense Tree',
       dividends: 'Shareholder Return',
+      loans: 'Cheques / Loans',
       meta: 'Settings',
     },
     source: { erp: 'ERP', parasut: 'Paraşüt', manual: 'Manual', computed: '' },

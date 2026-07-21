@@ -627,6 +627,7 @@ export const tr = {
       cashflow: 'Nakit Akışı',
       expense: 'Gider Ağacı',
       dividends: 'Ortak Getirisi',
+      loans: 'Çek / Kredi',
       meta: 'Ayarlar',
     },
     source: { erp: 'ERP', parasut: 'Paraşüt', manual: 'Manuel', computed: '' },
