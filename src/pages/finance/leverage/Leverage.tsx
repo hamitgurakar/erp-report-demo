@@ -8,7 +8,10 @@ import {
   PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw, BALANCE_ROWS, INCOME_ROWS,
   netIncomeOf, TOTAL_SHARES, divSumInPeriod, dividendEventsSeed,
 } from '../../../constants/financeData';
-import { debtInventory, waccInputs, fxPosition } from '../../../constants/financeReportsData';
+import { waccInputs, fxPosition } from '../../../constants/financeReportsData';
+import { loansSeed } from '../../../constants/loansData';
+import { generateAmortization, computeEarlyPayoff, addMonths } from '../../../lib/finance/loanEngine';
+import type { ParaBirimi } from '../../../types/loans';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
   StatusBadge, Dropdown, GaugeCard, type FinAlert,
@@ -20,6 +23,15 @@ const RF = 28, ERP = 9.30, BETA = 1.15, KD = 42, TAX = 25, EV = 0.62, DV = 0.38;
 const KE = RF + BETA * ERP;
 const KD_AT = KD * (1 - TAX / 100);
 const WACC = EV * KE + DV * KD_AT;
+
+// Kredi verisi tek kaynak (loansData) → TRY birleştirme
+const USD_TRY = 44.9;
+const toTRY = (v: number, cur: ParaBirimi) => (cur === 'USD' ? v * USD_TRY : v);
+const loanMoney = (v: number, cur: ParaBirimi) => {
+  const a = Math.abs(v);
+  const s = a >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : a >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v.toFixed(0);
+  return cur === 'USD' ? `$${s}` : `${s} ₺`;
+};
 
 const resolveRows = (rows: typeof BALANCE_ROWS, store: Record<string, Record<string, number | null>>, p: FinancialPeriod) => {
   const raw = store[p.id] ?? {};
@@ -56,16 +68,37 @@ export const Leverage = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   const ordered = order === 'newestRight' ? periods : [...periods].reverse();
   const ann = (p: FinancialPeriod) => (p.type === 'annual' ? 1 : 4);
 
-  // ── türetilen metrikler ──
+  // ── Kredi verisinden türev borç (tek kaynak: loansData) ──
+  const loanData = useMemo(() => {
+    const per = loansSeed.map((ln) => {
+      const ep = computeEarlyPayoff(ln, ln.sorguTarihi);
+      const remaining = generateAmortization(ln).filter((r) => r.durum !== 'Ödendi');
+      return { ln, ep, remaining, kalanTRY: toTRY(ep.kalanAnapara, ln.paraBirimi) };
+    });
+    const total = per.reduce((s, x) => s + x.kalanTRY, 0);
+    const st = per.reduce((s, x) => {
+      const cut = addMonths(x.ln.sorguTarihi, 12);
+      const stOrig = x.remaining.filter((r) => r.vadeTarihi <= cut).reduce((a, r) => a + r.anaparaPayi, 0);
+      return s + toTRY(stOrig, x.ln.paraBirimi);
+    }, 0);
+    const ladder: Record<string, number> = {};
+    per.forEach((x) => x.remaining.forEach((r) => { const y = r.vadeTarihi.slice(0, 4); ladder[y] = (ladder[y] ?? 0) + toTRY(r.anaparaPayi, x.ln.paraBirimi); }));
+    const wCost = total ? per.reduce((s, x) => s + x.kalanTRY * (x.ln.faizOraniAylik * 12), 0) / total * 100 : 0;
+    return { per, total, st, lt: total - st, ladder, wCost };
+  }, []);
+
+  // ── türetilen metrikler (borç kısmı kredi verisine dayanır) ──
   const ebitdaAnnual = (p: FinancialPeriod) => (I[p.id].ebitda ?? 0) * ann(p);
-  const netDebtOf = (p: FinancialPeriod) => B[p.id].netDebt ?? 0;
-  const totalDebtOf = (p: FinancialPeriod) => B[p.id].totalDebt ?? 0;
+  const balDebt = (p: FinancialPeriod) => (balanceRaw[p.id].stDebt ?? 0) + (balanceRaw[p.id].ltDebt ?? 0);
+  const debtRatio = (p: FinancialPeriod) => { const b = balDebt(curr); return b ? balDebt(p) / b : 1; }; // dönem şekli
+  const totalDebtOf = (p: FinancialPeriod) => loanData.total * debtRatio(p);
+  const netDebtOf = (p: FinancialPeriod) => totalDebtOf(p) - (balanceRaw[p.id].cash ?? 0) - (balanceRaw[p.id].stInvest ?? 0);
   const ndEbitdaOf = (p: FinancialPeriod) => { const e = ebitdaAnnual(p); return e ? netDebtOf(p) / e : 0; };
   const deOf = (p: FinancialPeriod) => { const eq = B[p.id].equity ?? 0; return eq ? totalDebtOf(p) / eq : 0; };
   const coverageOf = (p: FinancialPeriod) => { const ni = Math.abs(I[p.id].netInterest ?? 0); return ni ? (I[p.id].ebit ?? 0) / ni : 0; };
   const equityRatioOf = (p: FinancialPeriod) => { const ta = B[p.id].totalAssets ?? 0; return ta ? ((B[p.id].equity ?? 0) / ta) * 100 : 0; };
-  const stRatioOf = (p: FinancialPeriod) => { const td = totalDebtOf(p); return td ? ((balanceRaw[p.id].stDebt ?? 0) / td) * 100 : 0; };
-  const costOfDebtOf = (p: FinancialPeriod) => { const td = totalDebtOf(p); return td ? (Math.abs(I[p.id].interestExpense ?? 0) * ann(p) / td) * 100 : 0; };
+  const stRatioOf = (_p: FinancialPeriod) => (loanData.total ? (loanData.st / loanData.total) * 100 : 0);
+  const costOfDebtOf = (_p: FinancialPeriod) => loanData.wCost;
   const fxShortTRY = (p: FinancialPeriod) => {
     const usd = (fxPosition[0].liabilities - fxPosition[0].assets) * p.fxRate;
     const eur = (fxPosition[1].liabilities - fxPosition[1].assets) * p.fxRate * 1.08;
@@ -91,10 +124,8 @@ export const Leverage = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
       trend: { value: 0 }, spark: periods.map((p) => conv(fxShortTRY(p), p)), color: t.rd },
   ];
 
-  // ── Chart 1: Borç vade merdiveni ──
-  const ladderMap: Record<string, number> = {};
-  debtInventory.forEach((d) => { const y = d.maturity.slice(0, 4); ladderMap[y] = (ladderMap[y] ?? 0) + d.remainingPrincipal; });
-  const ladder = Object.keys(ladderMap).sort().map((y) => ({ year: y, principal: conv(ladderMap[y]) }));
+  // ── Chart 1: Borç vade merdiveni (kredi kalan anaparasının yıllara dağılımı) ──
+  const ladder = Object.keys(loanData.ladder).sort().map((y) => ({ year: y, principal: conv(loanData.ladder[y]) }));
 
   // ── Chart 2: Net Borç/EBITDA trend + kovenant ──
   const ndTrend = ordered.map((p) => ({ period: pl(p), nd: ndEbitdaOf(p) }));
@@ -102,8 +133,8 @@ export const Leverage = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   // ── Chart 3: Sermaye yapısı donut ──
   const capStruct = [
     { name: en ? 'Equity' : 'Özkaynak', value: B[curr.id].equity ?? 0, color: t.pr },
-    { name: en ? 'LT Debt' : 'UV Borç', value: balanceRaw[curr.id].ltDebt ?? 0, color: t.tl },
-    { name: en ? 'ST Debt' : 'KV Borç', value: balanceRaw[curr.id].stDebt ?? 0, color: t.am },
+    { name: en ? 'LT Debt' : 'UV Borç', value: loanData.lt, color: t.tl },
+    { name: en ? 'ST Debt' : 'KV Borç', value: loanData.st, color: t.am },
   ];
 
   // ── Chart 5: Döviz pozisyon bar ──
@@ -263,26 +294,29 @@ export const Leverage = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
                 <th style={{ ...th, textAlign: 'center' }}>{en ? 'Rate' : 'Faiz'}</th>
                 <th style={{ ...th, textAlign: 'center' }}>{en ? 'Maturity' : 'Vade'}</th>
                 <th style={th}>{en ? 'Remaining' : 'Kalan Anapara'}</th>
-                <th style={{ ...th, textAlign: 'center' }}>{en ? 'Collateral' : 'Teminat'}</th>
+                <th style={{ ...th, textAlign: 'center' }}>{en ? 'Type' : 'Tür'}</th>
               </tr>
             </thead>
             <tbody>
-              {[...debtInventory].sort((a, b) => a.maturity.localeCompare(b.maturity)).map((d) => (
-                <tr key={d.creditor}>
-                  <td style={{ ...td, textAlign: 'left', fontWeight: 500 }}>{d.creditor}</td>
-                  <td style={{ ...td, fontWeight: 600 }}>{fmtC(conv(d.amount))}</td>
-                  <td style={{ ...td, textAlign: 'center', color: t.tx2 }}>{d.currency}</td>
-                  <td style={{ ...td, textAlign: 'center', color: t.tx2, fontSize: 11.5 }}>{d.rateType[en ? 'en' : 'tr']}</td>
-                  <td style={{ ...td, textAlign: 'center' }}>{d.maturity}</td>
-                  <td style={{ ...td, fontWeight: 600 }}>{fmtC(conv(d.remainingPrincipal))}</td>
-                  <td style={{ ...td, textAlign: 'center' }}><StatusBadge t={t} dot={false} tone="neutral" label={d.collateral[en ? 'en' : 'tr']} /></td>
-                </tr>
-              ))}
+              {[...loanData.per]
+                .map((x) => ({ ...x, maturity: addMonths(x.ln.kullandirimTarihi, x.ln.vadeAy * (x.ln.odemeSikligi === '3 Aylık' ? 3 : 1)) }))
+                .sort((a, b) => a.maturity.localeCompare(b.maturity))
+                .map(({ ln, ep, maturity }) => (
+                  <tr key={ln.id}>
+                    <td style={{ ...td, textAlign: 'left', fontWeight: 500 }}>{ln.banka} <span style={{ color: t.tx3, fontSize: 11 }}>· {ln.krediNo}</span></td>
+                    <td style={{ ...td, fontWeight: 600 }}>{loanMoney(ln.anapara, ln.paraBirimi)}</td>
+                    <td style={{ ...td, textAlign: 'center', color: t.tx2 }}>{ln.paraBirimi}</td>
+                    <td style={{ ...td, textAlign: 'center', color: t.tx2, fontSize: 11.5 }}>%{(ln.faizOraniAylik * 100).toFixed(1)}/{en ? 'mo' : 'ay'}</td>
+                    <td style={{ ...td, textAlign: 'center' }}>{maturity}</td>
+                    <td style={{ ...td, fontWeight: 600 }}>{loanMoney(ep.kalanAnapara, ln.paraBirimi)}</td>
+                    <td style={{ ...td, textAlign: 'center' }}><StatusBadge t={t} dot={false} tone="neutral" label={ln.krediTuru} /></td>
+                  </tr>
+                ))}
               <tr>
-                <td style={{ ...td, textAlign: 'left', fontWeight: 700 }}>{en ? 'Total' : 'Toplam'}</td>
-                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(debtInventory.reduce((s, d) => s + d.amount, 0)))}</td>
+                <td style={{ ...td, textAlign: 'left', fontWeight: 700 }}>{en ? 'Total (TRY-eq.)' : 'Toplam (TL-eş.)'}</td>
+                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(loanData.per.reduce((s, x) => s + toTRY(x.ln.anapara, x.ln.paraBirimi), 0)))}</td>
                 <td style={td} /><td style={td} /><td style={td} />
-                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(debtInventory.reduce((s, d) => s + d.remainingPrincipal, 0)))}</td>
+                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(loanData.total))}</td>
                 <td style={td} />
               </tr>
             </tbody>

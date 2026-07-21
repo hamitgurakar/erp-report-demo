@@ -6,6 +6,7 @@ import {
 import type { FinancialPeriod, FinCurrency, PeriodType, OrderMode } from '../../../types/finance';
 import { PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw } from '../../../constants/financeData';
 import { apInvoices, apAgingBySupplier, ebelgeReconciliation } from '../../../constants/financeReportsData';
+import { checksSeed } from '../../../constants/loansData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
   StatusBadge, Dropdown, type FinAlert,
@@ -344,6 +345,20 @@ export const Payables = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
       <div style={{ marginTop: 16 }}>
         <AIAlertPanel t={t} lang={lang} alerts={alerts} />
       </div>
+
+      {(() => {
+        const verilen = checksSeed.filter((c) => c.yon === 'Verilen' && c.durum !== 'Ödendi');
+        const sum = verilen.reduce((s, c) => s + c.tutar, 0);
+        return (
+          <div style={{ marginTop: 12, fontSize: 11.5, color: t.tx3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <Icon name="externalLink" size={12} color={t.tx3} />
+            {en
+              ? `Issued cheques/notes (${verilen.length} · ${fmtC(conv(sum))}) are part of payables.`
+              : `Verilen çek/senetler (${verilen.length} adet · ${fmtC(conv(sum))}) borç tarafına dahildir.`}
+            <span style={{ color: t.pr, fontWeight: 600, cursor: 'pointer' }} onClick={() => onSelectRep?.('yonetim__4')}>{en ? 'Cheque / Loan register →' : 'Çek / Kredi kaydı →'}</span>
+          </div>
+        );
+      })()}
     </ReportPageLayout>
   );
 };

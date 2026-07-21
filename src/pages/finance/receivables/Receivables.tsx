@@ -6,6 +6,7 @@ import {
 import type { FinancialPeriod, FinCurrency, PeriodType, OrderMode } from '../../../types/finance';
 import { PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw } from '../../../constants/financeData';
 import { arAgingByCustomer, collectionWorklist } from '../../../constants/financeReportsData';
+import { checksSeed } from '../../../constants/loansData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
   StatusBadge, Dropdown, GaugeCard, type FinAlert,
@@ -354,6 +355,20 @@ export const Receivables = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
       <div style={{ marginTop: 16 }}>
         <AIAlertPanel t={t} lang={lang} alerts={alerts} />
       </div>
+
+      {(() => {
+        const alinan = checksSeed.filter((c) => c.yon === 'Alınan' && c.durum !== 'Ödendi');
+        const sum = alinan.reduce((s, c) => s + c.tutar, 0);
+        return (
+          <div style={{ marginTop: 12, fontSize: 11.5, color: t.tx3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <Icon name="externalLink" size={12} color={t.tx3} />
+            {en
+              ? `Received cheques (${alinan.length} · ${fmtC(conv(sum))}) are part of receivables.`
+              : `Alınan çekler (${alinan.length} adet · ${fmtC(conv(sum))}) alacak tarafına dahildir.`}
+            <span style={{ color: t.pr, fontWeight: 600, cursor: 'pointer' }} onClick={() => onSelectRep?.('yonetim__4')}>{en ? 'Cheque / Loan register →' : 'Çek / Kredi kaydı →'}</span>
+          </div>
+        );
+      })()}
     </ReportPageLayout>
   );
 };
