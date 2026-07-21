@@ -1,9 +1,13 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, ReferenceLine, ReferenceArea, Cell,
+} from 'recharts';
 import type { CashPeriodMode, CashCell, CashSource } from '../../../types/cashflow';
 import { buildGrid, applyScenario, variance, gridForecastActual, addDays } from '../../../lib/finance/cashflowEngine';
 import { REF_DATE, totalPosition, openingBalance, scenarios } from '../../../constants/cashflowData';
-import { ReportPageLayout, KPIBand, KPICard, Dropdown } from '../../../components/finance';
+import { ReportPageLayout, KPIBand, KPICard, ChartCard, Dropdown } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
 import type { Theme } from '../../../types';
 import type { FinancePageProps } from '../_Placeholder';
@@ -18,11 +22,13 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   const [scenKey, setScenKey] = useState<'base' | 'best' | 'worst'>('base');
   const [currency, setCurrency] = useState<'TRY' | 'USD'>('TRY');
   const [drill, setDrill] = useState<{ ci: number; x: number; y: number } | null>(null);
+  const [safetyNet, setSafetyNet] = useState(0); // TRY min bakiye eşiği
 
   const scen = scenarios.find((s) => s.key === scenKey)!;
   const sym = currency === 'USD' ? '$' : '₺';
   const conv = (v: number) => (currency === 'USD' ? v / 44.9 : v);
   const fmt = (v: number) => { const c = conv(v); const a = Math.abs(c); const s = a >= 1e6 ? (c / 1e6).toFixed(2) + 'M' : a >= 1e3 ? (c / 1e3).toFixed(0) + 'K' : Math.round(c).toString(); return `${sym}${s}`; };
+  const fmtDisp = (c: number) => { const a = Math.abs(c); const s = a >= 1e6 ? (c / 1e6).toFixed(1) + 'M' : a >= 1e3 ? (c / 1e3).toFixed(0) + 'K' : Math.round(c).toString(); return `${sym}${s}`; }; // zaten dönüştürülmüş değer
   const colLabel = (d: string) => (mode === 'monthly' ? d : `${d.slice(8, 10)}.${d.slice(5, 7)}`);
 
   const range = useMemo(() => (
@@ -51,6 +57,22 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
     const netDonem = firstF >= 0 ? grid.net[firstF] : (grid.net[0] ?? 0);
     return { monthlyBurn, runway, r13End, minBal, varLast, netDonem };
   }, [scen, grid]);
+
+  // ── 13-haftalık rolling forecast (senaryo bazında) ──
+  const CONF_WEEKS = 4; // ilk 4 hafta yüksek güven, sonrası yönsel
+  const roll = useMemo(() => {
+    const wk = (key: 'base' | 'best' | 'worst') => applyScenario(buildGrid('weekly', { from: REF_DATE, to: addDays(REF_DATE, 13 * 7) }, openingBalance), scenarios.find((s) => s.key === key)!);
+    const gb = wk('base'), gbest = wk('best'), gworst = wk('worst');
+    const n = Math.min(13, gb.dates.length);
+    const rows = Array.from({ length: n }, (_, i) => ({
+      week: `H${i + 1}`,
+      giris: conv(gb.totalIncome[i]),
+      cikis: -conv(gb.totalExpense[i]),
+      balBase: conv(gb.balance[i]), balBest: conv(gbest.balance[i]), balWorst: conv(gworst.balance[i]),
+    }));
+    const critIdx = Array.from({ length: n }, (_, i) => gworst.balance[i]).findIndex((b) => b < safetyNet);
+    return { rows, critWeek: critIdx >= 0 ? `H${critIdx + 1}` : null };
+  }, [scen, currency, safetyNet]);
 
   // ── satır tanımları (render sırası) ──
   type RRow = { kind: 'section' | 'line' | 'total' | 'net' | 'balance'; label: string; source?: CashSource; values: number[]; };
@@ -107,6 +129,45 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
         <KPICard t={t} lang={lang} title={L('Varyans % (kümülatif)', 'Variance % (cum.)')} value={`${(kpi.varLast * 100).toFixed(1)}%`} goodDir="down" hint={L('30g ±%5 · 90g ±%15', '30d ±5% · 90d ±15%')} />
         <KPICard t={t} lang={lang} title={L('En düşük 13-hafta bakiye', 'Min 13-week balance')} value={fmt(kpi.minBal)} goodDir="up" sparkColor={kpi.minBal < 0 ? t.rd : t.gn} hint={kpi.minBal < 0 ? '🔴' : ''} />
       </KPIBand>
+
+      {/* 13-haftalık rolling forecast + senaryo */}
+      <div style={{ marginTop: 18 }}>
+        <ChartCard t={t} lang={lang} title={L('13-Haftalık Rolling Forecast', '13-Week Rolling Forecast')}
+          right={(
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ fontSize: 11, color: t.tx3 }}>{L('Safety-net eşiği', 'Safety net')}</span>
+              <input type="number" value={safetyNet} onChange={(e) => setSafetyNet(Number(e.target.value) || 0)} style={{ width: 110, padding: '5px 8px', borderRadius: 7, border: `1px solid ${t.bd}`, background: t.bg, color: t.tx, fontSize: 12 }} />
+            </div>
+          )}
+          why={L('2024 AFP Liquidity Survey: hazinecilerin %71’i 13-haftalık rolling forecast kullanır (her hafta kapanınca kaydırılır); Float/Agicap 13-hafta + senaryo + safety-net eşiği.', '2024 AFP Liquidity Survey: 71% of treasurers run a rolling 13-week forecast; Float/Agicap 13-week + scenario + safety-net threshold.')}>
+          <ResponsiveContainer width="100%" height={310}>
+            <ComposedChart data={roll.rows} margin={{ top: 8, right: 10, bottom: 0, left: -6 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="week" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="l" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={fmtDisp} width={52} />
+              <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={fmtDisp} width={52} />
+              {/* Güven bandı: ilk 4 hafta kesin, sonrası yönsel */}
+              {roll.rows.length > CONF_WEEKS && (
+                <ReferenceArea yAxisId="r" x1={`H${CONF_WEEKS + 1}`} x2={roll.rows[roll.rows.length - 1].week} fill={t.tx3} fillOpacity={0.07}
+                  label={{ value: L('yönsel', 'directional'), position: 'insideTop', fontSize: 10, fill: t.tx3 }} />
+              )}
+              <ReferenceLine yAxisId="r" y={conv(safetyNet)} stroke={t.rd} strokeDasharray="5 3" label={{ value: `${L('Safety-net', 'Safety net')} ${fmtDisp(conv(safetyNet))}`, position: 'insideBottomRight', fontSize: 10, fill: t.rd }} />
+              {roll.critWeek && (
+                <ReferenceLine yAxisId="r" x={roll.critWeek} stroke={t.rd} strokeWidth={1.5} label={{ value: `⚠ ${L('kritik hafta', 'critical week')}`, position: 'top', fontSize: 10, fill: t.rd }} />
+              )}
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => fmtDisp(v)} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar yAxisId="l" dataKey="giris" name={L('Giriş', 'Inflow')} fill={t.gn} radius={[3, 3, 0, 0]} barSize={12} />
+              <Bar yAxisId="l" dataKey="cikis" name={L('Çıkış', 'Outflow')} fill={t.rd} radius={[0, 0, 3, 3]} barSize={12}>
+                {roll.rows.map((_, i) => <Cell key={i} fill={t.rd} />)}
+              </Bar>
+              <Line yAxisId="r" type="monotone" dataKey="balBase" name={L('Bakiye (Baz)', 'Balance (Base)')} stroke={t.pr} strokeWidth={2.5} dot={{ r: 2.5 }} />
+              <Line yAxisId="r" type="monotone" dataKey="balBest" name={L('İyimser', 'Best')} stroke={t.gn} strokeWidth={1.8} strokeDasharray="6 3" dot={false} />
+              <Line yAxisId="r" type="monotone" dataKey="balWorst" name={L('Kötümser', 'Worst')} stroke={t.rd} strokeWidth={1.8} strokeDasharray="6 3" dot={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
 
       {/* Grid */}
       <div style={{ marginTop: 18, background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
