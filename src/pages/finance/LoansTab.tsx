@@ -1,22 +1,31 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  AreaChart, Area, ComposedChart, Bar, Line, PieChart, Pie, BarChart,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
+} from 'recharts';
 import type { Theme, Lang } from '../../types';
 import type { AuditEntry } from '../../types/finance';
 import type {
   Loan, Check, LoanSirket, LoanBanka, KrediTuru, ParaBirimi, OdemeSikligi, OdemeTipi, CheckYon, CheckDurum,
 } from '../../types/loans';
 import { loansSeed, checksSeed } from '../../constants/loansData';
-import { generateAmortization, computeEarlyPayoff, summarize } from '../../lib/finance/loanEngine';
+import { generateAmortization, computeEarlyPayoff, summarize, daysBetween } from '../../lib/finance/loanEngine';
 import { resolveTaxProfile } from '../../constants/taxConfig';
 import { Icon } from '../../components/ui/Icon';
 import { fmtNumber } from '../../utils/format';
+import { KPIBand, KPICard, ChartCard, AIAlertPanel, type FinAlert } from '../../components/finance';
 
 const SIRKETLER: LoanSirket[] = ['Muhiku Limited', 'Muhiku Kurumsal A.Ş.', 'Ahmet Üreme Şahsi'];
 const BANKALAR: LoanBanka[] = ['Ziraat', 'İş Bankası', 'Garanti BBVA', 'Yapı Kredi', 'Halkbank', 'Vakıf Katılım', 'Vakıfbank'];
 const KREDI_TURLERI: KrediTuru[] = ['İşletme', 'Spot', 'Rotatif', 'Taşıt', 'Diğer'];
+const USD_TRY = 44.9; // demo agregasyon kuru (KPI/grafiklerde TRY birleştirme)
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 const todayISO = () => new Date().toISOString().slice(0, 10);
+const addDaysISO = (iso: string, n: number) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
 const money = (v: number, cur: ParaBirimi) => (cur === 'USD' ? `$${fmtNumber(Math.round(v))}` : `${fmtNumber(Math.round(v))} ₺`);
+const cTRY = (v: number) => (Math.abs(v) >= 1e6 ? `${(v / 1e6).toFixed(1)}M ₺` : `${Math.round(v / 1e3)}K ₺`);
+const toTRY = (v: number, cur: ParaBirimi) => (cur === 'USD' ? v * USD_TRY : v);
 
 export const LoansTab = ({ t, lang, f, onAudit }: { t: Theme; lang: Lang; f: (k: string) => string; onAudit: (e: AuditEntry) => void }) => {
   const en = lang === 'en';
@@ -34,14 +43,18 @@ export const LoansTab = ({ t, lang, f, onAudit }: { t: Theme; lang: Lang; f: (k:
   // ── türev özet (motor) ──
   const rows = useMemo(() => loans.map((ln) => ({ loan: ln, sum: summarize(ln), ep: computeEarlyPayoff(ln, ln.sorguTarihi) })), [loans]);
   const selected = rows.find((r) => r.loan.id === selectedId) ?? null;
+  const chartLoan = selected ?? rows[0] ?? null;
 
-  // ── KPI (TRY krediler) ──
-  const tryRows = rows.filter((r) => r.loan.paraBirimi === 'TRY');
-  const usdCount = loans.filter((l) => l.paraBirimi === 'USD').length;
-  const toplamFinansman = tryRows.reduce((s, r) => s + r.loan.anapara, 0);
-  const kalanOdeme = tryRows.reduce((s, r) => s + r.sum.kalanOdemeTutari, 0);
-  const tasarrufPot = tryRows.reduce((s, r) => s + Math.max(0, r.ep.tasarruf), 0);
-  const verilenCek = checks.filter((c) => c.yon === 'Verilen' && c.durum !== 'Ödendi').reduce((s, c) => s + c.tutar, 0);
+  // ── KPI (TRY birleştirilmiş) ──
+  const sumT = (fn: (r: typeof rows[number]) => number) => rows.reduce((s, r) => s + toTRY(fn(r), r.loan.paraBirimi), 0);
+  const toplamFinansman = sumT((r) => r.loan.anapara);
+  const toplamOdeme = sumT((r) => r.sum.krediToplamOdeme);
+  const kalanOdeme = sumT((r) => r.sum.kalanOdemeTutari);
+  const erkenKapama = sumT((r) => r.ep.erkenKapamaTutari);
+  const tasarrufPot = rows.reduce((s, r) => s + Math.max(0, toTRY(r.ep.tasarruf, r.loan.paraBirimi)), 0);
+  const krediBorc = sumT((r) => r.ep.kalanAnapara);
+  const cekBorc = checks.filter((c) => c.yon === 'Verilen' && c.durum !== 'Ödendi').reduce((s, c) => s + c.tutar, 0);
+  const toplamBorc = krediBorc + cekBorc;
 
   const addLoan = (ln: Loan) => { setLoans((x) => [ln, ...x]); setLoanModal(false); setSelectedId(ln.id); log(ln.krediNo, `${ln.banka} · ${ln.krediNo}`, L(`Kredi eklendi: ${money(ln.anapara, ln.paraBirimi)} · ${ln.vadeAy} taksit`, `Loan added: ${money(ln.anapara, ln.paraBirimi)} · ${ln.vadeAy} inst.`)); };
   const addCheck = (c: Check) => { setChecks((x) => [c, ...x]); setCheckModal(false); log(c.cekNo, `${c.odemeTipi} · ${c.cekNo}`, L(`${c.yon} ${c.odemeTipi} eklendi: ${money(c.tutar, 'TRY')}`, `${c.yon} ${c.odemeTipi} added: ${money(c.tutar, 'TRY')}`)); };
@@ -53,18 +66,53 @@ export const LoansTab = ({ t, lang, f, onAudit }: { t: Theme; lang: Lang; f: (k:
     log(loan.krediNo, `${loan.banka} · ${loan.krediNo}`, L(`Ödenen taksit: ${loan.odenenTaksitSayisi} → ${next}`, `Paid installments: ${loan.odenenTaksitSayisi} → ${next}`));
   };
 
-  const th: CSSProperties = { fontSize: 10.5, fontWeight: 600, color: t.tx3, textAlign: 'right', padding: '8px 9px', textTransform: 'uppercase', letterSpacing: 0.3, whiteSpace: 'nowrap' };
+  // ── Grafik 1: amortisman eğrisi (seçili kredi) ──
+  const amortData = useMemo(() => (chartLoan ? generateAmortization(chartLoan.loan).map((r) => ({ k: r.taksitNo.split('/')[0], anapara: r.anaparaPayi, faiz: r.faizPayi })) : []), [chartLoan]);
+
+  // ── Grafik 2: erken kapama tasarruf (kredi bazında) ──
+  const savingData = rows.map((r) => ({ name: r.loan.krediNo.replace(/^[A-Z]+-/, '').slice(-6), tasarruf: Math.round(toTRY(r.ep.tasarruf, r.loan.paraBirimi)), yuzde: +(r.ep.tasarrufYuzdesi * 100).toFixed(1) }));
+
+  // ── Grafik 3: banka bazlı borç donut ──
+  const bankData = BANKALAR.map((b) => ({ name: b, value: Math.round(rows.filter((r) => r.loan.banka === b).reduce((s, r) => s + toTRY(r.ep.kalanAnapara, r.loan.paraBirimi), 0)) })).filter((d) => d.value > 0);
+  const DONUT = [t.pr, t.tl, t.am, t.gn, t.pu, t.co, t.c1];
+
+  // ── Grafik 4: yaklaşan 90 gün (15 günlük 6 bucket, kredi+çek) ──
+  const REF = todayISO();
+  const END = addDaysISO(REF, 90);
+  const upcoming = useMemo(() => {
+    const buckets = Array.from({ length: 6 }, (_, i) => ({ label: `${i * 15 + 1}-${i * 15 + 15}${L('g', 'd')}`, kredi: 0, cek: 0 }));
+    const put = (dateISO: string, amt: number, kind: 'kredi' | 'cek') => {
+      const diff = daysBetween(REF, dateISO);
+      if (diff < 0 || diff > 90) return;
+      const bi = Math.min(5, Math.floor(diff / 15));
+      buckets[bi][kind] += amt;
+    };
+    for (const { loan } of rows) for (const inst of generateAmortization(loan)) if (inst.durum !== 'Ödendi') put(inst.vadeTarihi, toTRY(inst.taksitTutari, loan.paraBirimi), 'kredi');
+    for (const c of checks) if (c.durum === 'Ödenecek') put(c.vade, c.tutar, 'cek');
+    return buckets.map((b) => ({ ...b, kredi: Math.round(b.kredi), cek: Math.round(b.cek) }));
+  }, [rows, checks]);
+
+  // ── AI uyarıları (demo, hesaplanan) ──
+  const fq = rows.filter((r) => r.sum.odenenTaksitSayisi <= r.loan.vadeAy / 4 && r.ep.tasarruf > 0).sort((a, b) => toTRY(b.ep.tasarruf, b.loan.paraBirimi) - toTRY(a.ep.tasarruf, a.loan.paraBirimi))[0];
+  const bestPct = [...rows].sort((a, b) => b.ep.tasarrufYuzdesi - a.ep.tasarrufYuzdesi)[0];
+  const cek30 = checks.filter((c) => c.yon === 'Verilen' && c.durum === 'Ödenecek' && daysBetween(REF, c.vade) >= 0 && daysBetween(REF, c.vade) <= 30).reduce((s, c) => s + c.tutar, 0);
+  const alerts: FinAlert[] = [];
+  if (fq) alerts.push({ severity: 'critical', text: L(`${fq.loan.banka} ${fq.loan.krediNo} kredisinde erken kapama ${money(fq.ep.erkenKapamaTutari, fq.loan.paraBirimi)} ile ${money(fq.ep.tasarruf, fq.loan.paraBirimi)} tasarruf sağlıyor (ilk çeyrek).`, `${fq.loan.banka} ${fq.loan.krediNo}: early payoff at ${money(fq.ep.erkenKapamaTutari, fq.loan.paraBirimi)} yields ${money(fq.ep.tasarruf, fq.loan.paraBirimi)} saving (first quarter).`), linkLabel: L('Detay', 'Detail'), onLink: () => setSelectedId(fq.loan.id) });
+  if (cek30 > 0) alerts.push({ severity: 'warning', text: L(`Önümüzdeki 30 günde ${cTRY(cek30)} verilen çek vadesi yoğunlaşıyor.`, `${cTRY(cek30)} of issued cheques fall due within the next 30 days.`) });
+  if (bestPct) alerts.push({ severity: 'tip', text: L(`${bestPct.loan.banka} kredisi erken kapama tasarrufu %${(bestPct.ep.tasarrufYuzdesi * 100).toFixed(0)} — en yüksek oran.`, `${bestPct.loan.banka} loan has the highest early-payoff saving at ${(bestPct.ep.tasarrufYuzdesi * 100).toFixed(0)}%.`), linkLabel: L('Detay', 'Detail'), onLink: () => setSelectedId(bestPct.loan.id) });
+
   const td: CSSProperties = { fontSize: 12, color: t.tx, textAlign: 'right', padding: '8px 9px', borderTop: `1px solid ${t.bd}`, whiteSpace: 'nowrap' };
   const durumBadge = (d: string) => {
     const tone = d === 'Ödendi' ? { fg: t.gn, bg: t.gnL } : d === 'Gecikti' || d === 'Karşılıksız' ? { fg: t.rd, bg: t.rdL } : { fg: t.am, bg: t.amL };
     const label = d === 'Ödendi' ? L('Ödendi', 'Paid') : d === 'Ödenecek' ? L('Ödenecek', 'Due') : d === 'Gecikti' ? L('Gecikti', 'Overdue') : L('Karşılıksız', 'Bounced');
     return <span style={{ fontSize: 10.5, fontWeight: 600, color: tone.fg, background: tone.bg, borderRadius: 20, padding: '2px 9px', whiteSpace: 'nowrap' }}>{label}</span>;
   };
+  const checksSorted = [...checks].sort((a, b) => a.vade.localeCompare(b.vade));
 
   return (
     <div>
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <button onClick={() => setLoanModal(true)} style={btnP}><Icon name="plus" size={13} color="#fff" /> {L('Kredi Ekle', 'Add Loan')}</button>
         <button onClick={() => setCheckModal(true)} style={btnG(t)}><Icon name="plus" size={13} color={t.tx2} /> {L('Çek / Senet Ekle', 'Add Cheque / Note')}</button>
         <div style={{ flex: 1 }} />
@@ -73,71 +121,128 @@ export const LoansTab = ({ t, lang, f, onAudit }: { t: Theme; lang: Lang; f: (k:
         </button>
       </div>
 
-      {/* KPI şeridi */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
-        {[
-          { lb: L('Toplam Finansman', 'Total Financing'), v: money(toplamFinansman, 'TRY'), sub: usdCount ? `+ ${usdCount} USD ${L('kredi', 'loan')}` : '', c: t.pr },
-          { lb: L('Kalan Ödeme', 'Remaining Payment'), v: money(kalanOdeme, 'TRY'), sub: `${loans.length} ${L('aktif kredi', 'active loans')}`, c: t.am },
-          { lb: L('Tasarruf Potansiyeli', 'Savings Potential'), v: money(tasarrufPot, 'TRY'), sub: L('erken kapama', 'early payoff'), c: t.gn },
-          { lb: L('Verilen Çek (açık)', 'Cheques Payable (open)'), v: money(verilenCek, 'TRY'), sub: `${checks.length} ${L('çek/senet', 'cheques')}`, c: t.co },
-        ].map((k) => (
-          <div key={k.lb} style={{ flex: 1, minWidth: 170, background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontSize: 11.5, color: t.tx2 }}>{k.lb}</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: k.c, marginTop: 3 }}>{k.v}</div>
-            {k.sub && <div style={{ fontSize: 10.5, color: t.tx3, marginTop: 2 }}>{k.sub}</div>}
+      {/* KPI bandı (shared) */}
+      <KPIBand>
+        <KPICard t={t} lang={lang} title={L('Toplam Finansman', 'Total Financing')} value={cTRY(toplamFinansman)} goodDir="down" hint={`${loans.length} ${L('kredi', 'loans')}`} />
+        <KPICard t={t} lang={lang} title={L('Toplam Ödeme', 'Total Payment')} value={cTRY(toplamOdeme)} goodDir="down" />
+        <KPICard t={t} lang={lang} title={L('Kalan Ödeme', 'Remaining Payment')} value={cTRY(kalanOdeme)} goodDir="down" />
+        <KPICard t={t} lang={lang} title={L('Erken Kapama Tutarı', 'Early Payoff Amount')} value={cTRY(erkenKapama)} goodDir="down" hint={L('bugün kapatılırsa', 'if closed today')} />
+        <KPICard t={t} lang={lang} title={L('Tasarruf Potansiyeli', 'Savings Potential')} value={cTRY(tasarrufPot)} goodDir="up" sparkColor={t.gn} hint={L('erken kapama', 'early payoff')} />
+        <KPICard t={t} lang={lang} title={L('Toplam Borç (Kuruma Göre)', 'Total Debt (by entity)')} value={cTRY(toplamBorc)} goodDir="down" hint={`${L('Çek', 'Cheque')} ${cTRY(cekBorc)} · ${L('Kredi', 'Loan')} ${cTRY(krediBorc)}`} />
+      </KPIBand>
+
+      {/* Grafikler */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 18, flexWrap: 'wrap' }}>
+        <ChartCard t={t} lang={lang} span={48} title={`${L('Amortisman Eğrisi', 'Amortization Curve')}${chartLoan ? ` — ${chartLoan.loan.krediNo}` : ''}`}
+          why={L('Bankrate/HSH amortisman tablosu — erken dönemde faiz ağırlığı görselleştirilir.', 'Bankrate/HSH amortization table — visualizes front-loaded interest.')}>
+          <ResponsiveContainer width="100%" height={230}>
+            <AreaChart data={amortData} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
+              <defs>
+                <linearGradient id="lnAna" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t.pr} stopOpacity={0.5} /><stop offset="100%" stopColor={t.pr} stopOpacity={0.05} /></linearGradient>
+                <linearGradient id="lnFaiz" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t.am} stopOpacity={0.5} /><stop offset="100%" stopColor={t.am} stopOpacity={0.05} /></linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="k" tick={{ fontSize: 9, fill: t.tx3 }} axisLine={false} tickLine={false} interval={Math.max(0, Math.floor(amortData.length / 12))} />
+              <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}K`} width={44} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => money(v, chartLoan?.loan.paraBirimi ?? 'TRY')} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Area type="monotone" dataKey="anapara" stackId="1" name={L('Anapara Payı', 'Principal')} stroke={t.pr} fill="url(#lnAna)" strokeWidth={2} />
+              <Area type="monotone" dataKey="faiz" stackId="1" name={L('Faiz Payı', 'Interest')} stroke={t.am} fill="url(#lnFaiz)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        <ChartCard t={t} lang={lang} span={48} title={L('Erken Kapama Tasarrufu', 'Early-Payoff Savings')}
+          why={L('Total Mortgage/HSH prepayment savings calculator — kredi bazında tutar + %.', 'Total Mortgage/HSH prepayment-savings calculator — amount + % per loan.')}>
+          <ResponsiveContainer width="100%" height={230}>
+            <ComposedChart data={savingData} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 9, fill: t.tx3 }} axisLine={false} tickLine={false} interval={0} angle={-25} textAnchor="end" height={44} />
+              <YAxis yAxisId="l" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}K`} width={44} />
+              <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number, n) => (n === 'yuzde' ? `${v}%` : cTRY(v))} />
+              <Bar yAxisId="l" dataKey="tasarruf" name={L('Tasarruf', 'Savings')} fill={t.gn} radius={[3, 3, 0, 0]} barSize={20} />
+              <Line yAxisId="r" type="monotone" dataKey="yuzde" name={L('Tasarruf %', 'Savings %')} stroke={t.pr} strokeWidth={2} dot={{ r: 2.5 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+      <div style={{ display: 'flex', gap: 14, marginTop: 14, flexWrap: 'wrap' }}>
+        <ChartCard t={t} lang={lang} span={40} title={L('Banka Bazlı Borç', 'Debt by Bank')}
+          why={L('Kalan anapara toplamının 7 banka arasında dağılımı.', 'Remaining-principal distribution across the 7 banks.')}>
+          <div style={{ position: 'relative', height: 230 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={bankData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={54} outerRadius={82} paddingAngle={2}>
+                  {bankData.map((_, i) => <Cell key={i} fill={DONUT[i % DONUT.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => cTRY(v)} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ position: 'absolute', top: '38%', left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: t.tx }}>{cTRY(krediBorc)}</div>
+              <div style={{ fontSize: 10, color: t.tx3 }}>{L('kredi borcu', 'loan debt')}</div>
+            </div>
           </div>
-        ))}
+        </ChartCard>
+        <ChartCard t={t} lang={lang} span={56} title={L('Yaklaşan Taksit / Çek (90 gün)', 'Upcoming Instalments / Cheques (90d)')}
+          why={L('Paraşüt vade-bazlı nakit akışı + ReportingGuru payment-forecast (haftalık bucket) deseni.', 'Paraşüt due-date cash-flow + ReportingGuru payment-forecast (weekly bucket) pattern.')}>
+          <ResponsiveContainer width="100%" height={230}>
+            <BarChart data={upcoming} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(v / 1000)}K`} width={44} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => cTRY(v)} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="kredi" name={L('Kredi Taksiti', 'Loan Inst.')} stackId="a" fill={t.pr} radius={[0, 0, 0, 0]} />
+              <Bar dataKey="cek" name={L('Çek/Senet', 'Cheque/Note')} stackId="a" fill={t.co} radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
-      {/* Loan register */}
-      <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '12px 16px', fontSize: 13.5, fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{L('Kredi Kayıtları', 'Loan Register')}</div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr>
-              <th style={{ ...th, textAlign: 'left' }}>{L('Şirket', 'Company')}</th>
-              <th style={{ ...th, textAlign: 'left' }}>{L('Banka', 'Bank')}</th>
-              <th style={{ ...th, textAlign: 'left' }}>{L('Kredi No', 'Loan No')}</th>
-              <th style={th}>{L('Anapara', 'Principal')}</th>
-              <th style={{ ...th, textAlign: 'center' }}>{L('Vade', 'Term')}</th>
-              <th style={{ ...th, textAlign: 'center' }}>{L('Ödenen/Kalan', 'Paid/Left')}</th>
-              <th style={th}>{L('Kalan Ödeme', 'Remaining')}</th>
-              <th style={th}>{L('Erken Kapama', 'Early Payoff')}</th>
-              <th style={th}>{L('Tasarruf', 'Savings')}</th>
-              <th style={th}>%</th>
-              <th style={{ ...th, textAlign: 'center' }}>{L('Aksiyon', 'Action')}</th>
-            </tr></thead>
-            <tbody>
-              {rows.map(({ loan, sum, ep }) => {
-                const cur = loan.paraBirimi;
-                const active = loan.id === selectedId;
-                return (
-                  <tr key={loan.id} style={{ background: active ? t.prL : 'transparent', cursor: 'pointer' }} onClick={() => setSelectedId(active ? null : loan.id)}>
-                    <td style={{ ...td, textAlign: 'left' }}>{loan.sirket}</td>
-                    <td style={{ ...td, textAlign: 'left', color: t.tx2 }}>{loan.banka}</td>
-                    <td style={{ ...td, textAlign: 'left', color: t.tx3, fontSize: 11 }}>{loan.krediNo}</td>
-                    <td style={{ ...td, fontWeight: 600 }}>{money(loan.anapara, cur)}</td>
-                    <td style={{ ...td, textAlign: 'center', color: t.tx2 }}>{loan.vadeAy} {loan.odemeSikligi === '3 Aylık' ? L('çeyrek', 'q') : L('ay', 'mo')}</td>
-                    <td style={{ ...td, textAlign: 'center' }}>{sum.odenenTaksitSayisi}/{sum.kalanTaksitSayisi}</td>
-                    <td style={td}>{money(sum.kalanOdemeTutari, cur)}</td>
-                    <td style={td}>{money(ep.erkenKapamaTutari, cur)}</td>
-                    <td style={{ ...td, color: ep.tasarruf > 0 ? t.gn : t.tx2, fontWeight: 600 }}>{money(ep.tasarruf, cur)}</td>
-                    <td style={{ ...td, color: ep.tasarruf > 0 ? t.gn : t.tx2 }}>{(ep.tasarrufYuzdesi * 100).toFixed(1)}%</td>
-                    <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <span style={{ display: 'inline-flex', gap: 4 }}>
-                        <button title={L('Amortisman Gör', 'View Amortization')} onClick={(e) => { e.stopPropagation(); setSelectedId(loan.id); }} style={iconBtn(t)}><Icon name="barChart3" size={12} /></button>
-                        <button title={L('Erken Kapama Hesapla', 'Compute Early Payoff')} onClick={(e) => { e.stopPropagation(); setSelectedId(loan.id); }} style={iconBtn(t)}><Icon name="calculator" size={12} /></button>
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      {/* AI paneli */}
+      {alerts.length > 0 && <div style={{ marginTop: 16 }}><AIAlertPanel t={t} lang={lang} alerts={alerts} title={L('Kredi & Çek Uyarıları', 'Loan & Cheque Alerts')} /></div>}
+
+      {/* Loan register (virtualized) */}
+      <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden', marginTop: 16, marginBottom: 16 }}>
+        <div style={{ padding: '12px 16px', fontSize: 13.5, fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{L('Kredi Kayıtları', 'Loan Register')} <span style={{ color: t.tx3, fontWeight: 400 }}>· {rows.length}</span></div>
+        <VirtualTable t={t} rowH={37} height={rows.length > 12 ? 460 : rows.length * 37 + 40} colCount={11}
+          header={<tr>
+            {[L('Şirket', 'Company'), L('Banka', 'Bank'), L('Kredi No', 'Loan No')].map((h) => <Th key={h} t={t} left>{h}</Th>)}
+            {[L('Anapara', 'Principal')].map((h) => <Th key={h} t={t}>{h}</Th>)}
+            <Th t={t} center>{L('Vade', 'Term')}</Th><Th t={t} center>{L('Ödenen/Kalan', 'Paid/Left')}</Th>
+            {[L('Kalan Ödeme', 'Remaining'), L('Erken Kapama', 'Early Payoff'), L('Tasarruf', 'Savings'), '%'].map((h) => <Th key={h} t={t}>{h}</Th>)}
+            <Th t={t} center>{L('Aksiyon', 'Action')}</Th>
+          </tr>}
+          rows={rows}
+          renderRow={({ loan, sum, ep }) => {
+            const cur = loan.paraBirimi; const active = loan.id === selectedId;
+            return (
+              <tr key={loan.id} style={{ height: 37, background: active ? t.prL : 'transparent', cursor: 'pointer' }} onClick={() => setSelectedId(active ? null : loan.id)}>
+                <td style={{ ...td, textAlign: 'left' }}>{loan.sirket}</td>
+                <td style={{ ...td, textAlign: 'left', color: t.tx2 }}>{loan.banka}</td>
+                <td style={{ ...td, textAlign: 'left', color: t.tx3, fontSize: 11 }}>{loan.krediNo}</td>
+                <td style={{ ...td, fontWeight: 600 }}>{money(loan.anapara, cur)}</td>
+                <td style={{ ...td, textAlign: 'center', color: t.tx2 }}>{loan.vadeAy} {loan.odemeSikligi === '3 Aylık' ? L('çyr', 'q') : L('ay', 'mo')}</td>
+                <td style={{ ...td, textAlign: 'center' }}>{sum.odenenTaksitSayisi}/{sum.kalanTaksitSayisi}</td>
+                <td style={td}>{money(sum.kalanOdemeTutari, cur)}</td>
+                <td style={td}>{money(ep.erkenKapamaTutari, cur)}</td>
+                <td style={{ ...td, color: ep.tasarruf > 0 ? t.gn : t.tx2, fontWeight: 600 }}>{money(ep.tasarruf, cur)}</td>
+                <td style={{ ...td, color: ep.tasarruf > 0 ? t.gn : t.tx2 }}>{(ep.tasarrufYuzdesi * 100).toFixed(1)}%</td>
+                <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <span style={{ display: 'inline-flex', gap: 4 }}>
+                    <button title={L('Amortisman Gör', 'View Amortization')} onClick={(e) => { e.stopPropagation(); setSelectedId(loan.id); }} style={iconBtn(t)}><Icon name="barChart3" size={12} /></button>
+                    <button title={L('Erken Kapama Hesapla', 'Compute Early Payoff')} onClick={(e) => { e.stopPropagation(); setSelectedId(loan.id); }} style={iconBtn(t)}><Icon name="calculator" size={12} /></button>
+                  </span>
+                </td>
+              </tr>
+            );
+          }}
+        />
       </div>
 
-      {/* Seçili kredi: Erken Kapama kartı + Amortisman tablosu */}
+      {/* Seçili kredi detay */}
       {selected && (
         <div style={{ marginBottom: 16 }}>
           <EarlyPayoffCard t={t} L={L} loan={selected.loan} ep={selected.ep} sum={selected.sum} />
@@ -145,41 +250,30 @@ export const LoansTab = ({ t, lang, f, onAudit }: { t: Theme; lang: Lang; f: (k:
         </div>
       )}
 
-      {/* Check register */}
+      {/* Check register (virtualized; vade artan) */}
       <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', fontSize: 13.5, fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{L('Çek / Senet Kayıtları', 'Cheque / Note Register')}</div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr>
-              <th style={{ ...th, textAlign: 'left' }}>{L('Çek/Senet No', 'No')}</th>
-              <th style={{ ...th, textAlign: 'left' }}>{L('Banka', 'Bank')}</th>
-              <th style={{ ...th, textAlign: 'left' }}>{L('Şirket', 'Company')}</th>
-              <th style={th}>{L('Tutar', 'Amount')}</th>
-              <th style={{ ...th, textAlign: 'center' }}>{L('Vade', 'Due')}</th>
-              <th style={{ ...th, textAlign: 'center' }}>{L('Tip', 'Type')}</th>
-              <th style={{ ...th, textAlign: 'center' }}>{L('Yön', 'Dir.')}</th>
-              <th style={{ ...th, textAlign: 'center' }}>{L('Durum', 'Status')}</th>
-              <th style={{ ...th, textAlign: 'left' }}>{L('Not', 'Note')}</th>
-            </tr></thead>
-            <tbody>
-              {checks.map((c) => (
-                <tr key={c.id}>
-                  <td style={{ ...td, textAlign: 'left', color: t.tx3, fontSize: 11 }}>{c.cekNo}</td>
-                  <td style={{ ...td, textAlign: 'left', color: t.tx2 }}>{c.banka}</td>
-                  <td style={{ ...td, textAlign: 'left' }}>{c.sirket}</td>
-                  <td style={{ ...td, fontWeight: 600 }}>{money(c.tutar, 'TRY')}</td>
-                  <td style={{ ...td, textAlign: 'center', color: t.tx2, fontSize: 11.5 }}>{c.vade}</td>
-                  <td style={{ ...td, textAlign: 'center', color: t.tx2 }}>{c.odemeTipi}</td>
-                  <td style={{ ...td, textAlign: 'center' }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 600, color: c.yon === 'Alınan' ? t.gn : t.co }}>{c.yon === 'Alınan' ? L('Alınan', 'Received') : L('Verilen', 'Issued')}</span>
-                  </td>
-                  <td style={{ ...td, textAlign: 'center' }}>{durumBadge(c.durum)}</td>
-                  <td style={{ ...td, textAlign: 'left', color: t.tx3, fontSize: 11 }}>{c.not ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <div style={{ padding: '12px 16px', fontSize: 13.5, fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{L('Çek / Senet Kayıtları', 'Cheque / Note Register')} <span style={{ color: t.tx3, fontWeight: 400 }}>· {checks.length}</span></div>
+        <VirtualTable t={t} rowH={37} height={checks.length > 12 ? 460 : checks.length * 37 + 40} colCount={9}
+          header={<tr>
+            <Th t={t} left>{L('Çek/Senet No', 'No')}</Th><Th t={t} left>{L('Banka', 'Bank')}</Th><Th t={t} left>{L('Şirket', 'Company')}</Th>
+            <Th t={t}>{L('Tutar', 'Amount')}</Th><Th t={t} center>{L('Vade', 'Due')}</Th><Th t={t} center>{L('Tip', 'Type')}</Th>
+            <Th t={t} center>{L('Yön', 'Dir.')}</Th><Th t={t} center>{L('Durum', 'Status')}</Th><Th t={t} left>{L('Not', 'Note')}</Th>
+          </tr>}
+          rows={checksSorted}
+          renderRow={(c) => (
+            <tr key={c.id} style={{ height: 37 }}>
+              <td style={{ ...td, textAlign: 'left', color: t.tx3, fontSize: 11 }}>{c.cekNo}</td>
+              <td style={{ ...td, textAlign: 'left', color: t.tx2 }}>{c.banka}</td>
+              <td style={{ ...td, textAlign: 'left' }}>{c.sirket}</td>
+              <td style={{ ...td, fontWeight: 600 }}>{money(c.tutar, 'TRY')}</td>
+              <td style={{ ...td, textAlign: 'center', color: t.tx2, fontSize: 11.5 }}>{c.vade}</td>
+              <td style={{ ...td, textAlign: 'center', color: t.tx2 }}>{c.odemeTipi}</td>
+              <td style={{ ...td, textAlign: 'center' }}><span style={{ fontSize: 10.5, fontWeight: 600, color: c.yon === 'Alınan' ? t.gn : t.co }}>{c.yon === 'Alınan' ? L('Alınan', 'Received') : L('Verilen', 'Issued')}</span></td>
+              <td style={{ ...td, textAlign: 'center' }}>{durumBadge(c.durum)}</td>
+              <td style={{ ...td, textAlign: 'left', color: t.tx3, fontSize: 11 }}>{c.not ?? '—'}</td>
+            </tr>
+          )}
+        />
       </div>
 
       {loanModal && <LoanModal t={t} L={L} onClose={() => setLoanModal(false)} onSave={addLoan} />}
@@ -187,6 +281,32 @@ export const LoansTab = ({ t, lang, f, onAudit }: { t: Theme; lang: Lang; f: (k:
     </div>
   );
 };
+
+// ── Basit satır-windowing tablo (1000+ satır için) ──
+function VirtualTable<T>({ t, rows, rowH, height, colCount, header, renderRow }: { t: Theme; rows: T[]; rowH: number; height: number; colCount: number; header: ReactNode; renderRow: (r: T, i: number) => ReactNode }) {
+  const [scrollTop, setScrollTop] = useState(0);
+  const total = rows.length;
+  const visible = Math.ceil(height / rowH) + 6;
+  const start = Math.max(0, Math.floor(scrollTop / rowH) - 3);
+  const end = Math.min(total, start + visible);
+  const padTop = start * rowH;
+  const padBottom = Math.max(0, (total - end) * rowH);
+  return (
+    <div onScroll={(e) => setScrollTop((e.currentTarget as HTMLDivElement).scrollTop)} style={{ maxHeight: height, overflowY: 'auto', overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead style={{ position: 'sticky', top: 0, zIndex: 1, background: t.cd }}>{header}</thead>
+        <tbody>
+          {padTop > 0 && <tr style={{ height: padTop }}><td colSpan={colCount} /></tr>}
+          {rows.slice(start, end).map((r, i) => renderRow(r, start + i))}
+          {padBottom > 0 && <tr style={{ height: padBottom }}><td colSpan={colCount} /></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+const Th = ({ t, children, left, center }: { t: Theme; children: ReactNode; left?: boolean; center?: boolean }) => (
+  <th style={{ fontSize: 10.5, fontWeight: 600, color: t.tx3, textAlign: left ? 'left' : center ? 'center' : 'right', padding: '9px 9px', textTransform: 'uppercase', letterSpacing: 0.3, whiteSpace: 'nowrap', background: t.cd, borderBottom: `1px solid ${t.bd}` }}>{children}</th>
+);
 
 // ── Erken kapama kartı ──
 const EarlyPayoffCard = ({ t, L, loan, ep, sum }: { t: Theme; L: (a: string, b: string) => string; loan: Loan; ep: ReturnType<typeof computeEarlyPayoff>; sum: ReturnType<typeof summarize> }) => {
@@ -298,16 +418,12 @@ const LoanModal = ({ t, L, onClose, onSave }: { t: Theme; L: (a: string, b: stri
     return { draft, sched, sum, toplamFaiz, toplamBsmv, toplamKkdf };
   }, [valid, sirket, banka, krediNo, krediTuru, paraBirimi, P, kullandirimTarihi, n, rMonthly, odemeSikligi]);
 
-  const save = () => {
-    if (!preview) return;
-    onSave({ ...preview.draft, id: `LX${Date.now()}` });
-  };
+  const save = () => { if (!preview) return; onSave({ ...preview.draft, id: `LX${Date.now()}` }); };
   const cur = paraBirimi;
 
   return (
     <Modal t={t} onClose={onClose} width={720} title={L('Kredi Ekle', 'Add Loan')}>
       <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-        {/* Sol: form */}
         <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Row2>
             <FieldS label={L('Şirket', 'Company')} t={t}><Sel t={t} value={sirket} onChange={(v) => setSirket(v as LoanSirket)} opts={SIRKETLER} /></FieldS>
@@ -331,8 +447,6 @@ const LoanModal = ({ t, L, onClose, onSave }: { t: Theme; L: (a: string, b: stri
           </Row2>
           <div style={{ fontSize: 10.5, color: t.tx3 }}>{L('Girişler', 'Inputs')}: <b style={{ color: t.am }}>{L('Manuel', 'Manual')}</b> · {L('Türev alanlar', 'Derived')}: <b style={{ color: t.tx2 }}>{L('Hesaplanan', 'Computed')}</b></div>
         </div>
-
-        {/* Sağ: canlı önizleme */}
         <div style={{ flex: '1 1 300px' }}>
           <div style={{ background: t.bg2, border: `1px solid ${t.bd}`, borderRadius: 10, padding: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: t.tx2, marginBottom: 10 }}>{L('Canlı Önizleme (Hesaplanan)', 'Live Preview (Computed)')}</div>
