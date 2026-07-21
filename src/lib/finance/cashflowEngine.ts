@@ -88,8 +88,9 @@ export const buildGrid = (mode: CashPeriodMode, range: { from: string; to: strin
 /** best/base/worst multiplier uygula; toplam/net/bakiye yeniden hesaplanır. */
 export const applyScenario = (grid: CashGrid, scenario: CashScenario): CashGrid => {
   const m = scenario.multipliers;
+  // Senaryo yalnız forecast (gelecek) hücrelerini ölçekler; geçmiş actual sabit kalır.
   const scaleRows = (rows: CashRow[], mult: number): CashRow[] => rows.map((r) => {
-    const cells = r.cells.map((c) => ({ ...c, amount: round(c.amount * mult), actual: c.actual != null ? round(c.actual * mult) : undefined }));
+    const cells = r.cells.map((c) => (c.isForecast ? { ...c, amount: round(c.amount * mult) } : c));
     return { ...r, cells, total: round(cells.reduce((s, c) => s + shown(c), 0)) };
   });
   const income = scaleRows(grid.income, m.inflow);

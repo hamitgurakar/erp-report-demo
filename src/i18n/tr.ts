@@ -44,7 +44,7 @@ export const tr = {
       muhasebe: [
         'Gelir & Karlılık', 'Nakit & Likidite', 'Alacak Yönetimi', 'Borç Yönetimi',
         'Vergi & Uyum', 'Borçluluk & Sermaye', 'Değerleme', 'Ortak Getirisi',
-        'Finansal Skorkart', 'CFO Kokpiti',
+        'Finansal Skorkart', 'CFO Kokpiti', 'Nakit Akışı',
       ],
       pazarlama: ['Kampanya ROI', 'Kanal Attribution'],
       destek: ['Ticket Analizi', 'SLA Performansı', 'Ekip Raporu'],

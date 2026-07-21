@@ -46,6 +46,7 @@ import { Valuation } from './finance/valuation/Valuation';
 import { ShareholderReturns } from './finance/shareholder-returns/ShareholderReturns';
 import { Scorecard } from './finance/scorecard/Scorecard';
 import { CfoCockpit } from './finance/cfo-cockpit/CfoCockpit';
+import { CashFlowOps } from './finance/cash-flow-ops/CashFlowOps';
 import { ChatAssistant } from '../components/chat/ChatAssistant';
 import { Icon } from '../components/ui/Icon';
 
@@ -92,6 +93,7 @@ export default function Dashboard() {
     'muhasebe__7': db.l.mhFin7,
     'muhasebe__8': db.l.mhFin8,
     'muhasebe__9': db.l.mhFin9,
+    'muhasebe__10': db.l.mhFin10,
   };
   const toolbarTitle = db.isPanel
     ? (db.activePanelName ?? '')
@@ -235,6 +237,8 @@ export default function Dashboard() {
               <Scorecard {...kp} />
             ) : db.activeRep === 'muhasebe__9' ? (
               <CfoCockpit {...kp} />
+            ) : db.activeRep === 'muhasebe__10' ? (
+              <CashFlowOps {...kp} />
             ) : (
               <>
                 <GeneralSection

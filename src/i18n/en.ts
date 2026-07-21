@@ -44,7 +44,7 @@ export const en: Dict = {
       muhasebe: [
         'Income & Profitability', 'Cash & Liquidity', 'Receivables', 'Payables',
         'Tax & Compliance', 'Leverage & Capital', 'Valuation', 'Shareholder Returns',
-        'Financial Scorecard', 'CFO Cockpit',
+        'Financial Scorecard', 'CFO Cockpit', 'Cash Flow (Ops)',
       ],
       pazarlama: ['Campaign ROI', 'Channel Attribution'],
       destek: ['Ticket Analysis', 'SLA Performance', 'Team Report'],
