@@ -79,8 +79,12 @@ const assemble = (dates: string[], mode: CashPeriodMode, lineCells: Record<strin
   return { mode, dates: buckets.map((b) => b.label), isForecast: buckets.map((b) => b.isForecast), income, expense, totalIncome, totalExpense, net, balance, openingBalance: opening };
 };
 
-/** Recurring vb. dış kaynaktan gelen ek nakit akışı (grid satırına eklenir). */
-export interface ExtraFlow { date: string; gridKey: string; amount: number }
+/**
+ * Recurring vb. dış kaynaktan gelen ek nakit akışı (grid satırına eklenir).
+ * `amount` → forecast (planlı); `actual` verilirse → gerçekleşen kanalına eklenir (variance'a girer).
+ * Planlı oluşum: yalnız amount. Ödenmiş (paid) oluşum: planlı tarihte amount + gerçekleşen tarihte actual.
+ */
+export interface ExtraFlow { date: string; gridKey: string; amount: number; actual?: number }
 
 /** Satır×tarih matrisi + Toplam Gelir/Gider, Net, running Bakiye. extra = recurring feed (C0). */
 export const buildGrid = (mode: CashPeriodMode, range: { from: string; to: string }, opening: number = SEED_OPENING, extra: ExtraFlow[] = []): CashGrid => {
@@ -92,8 +96,8 @@ export const buildGrid = (mode: CashPeriodMode, range: { from: string; to: strin
       const i = idx.get(e.date); if (i == null) continue;
       const arr = cells[e.gridKey]; if (!arr) continue;
       const c = arr[i];
-      c.amount = round(c.amount + e.amount);
-      if (c.actual != null) c.actual = round(c.actual + e.amount);
+      if (e.amount) c.amount = round(c.amount + e.amount);            // forecast kanalı
+      if (e.actual != null) c.actual = round((c.actual ?? 0) + e.actual); // gerçekleşen kanalı (paid)
     }
   }
   return assemble(dates, mode, cells, opening);

@@ -628,6 +628,7 @@ export const tr = {
       expense: 'Gider Ağacı',
       dividends: 'Ortak Getirisi',
       loans: 'Çek / Kredi',
+      recurring: 'Planlı İşlemler',
       meta: 'Ayarlar',
     },
     source: { erp: 'ERP', parasut: 'Paraşüt', manual: 'Manuel', computed: '' },

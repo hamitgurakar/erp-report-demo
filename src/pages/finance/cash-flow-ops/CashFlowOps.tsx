@@ -33,7 +33,7 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   const [drill, setDrill] = useState<{ ci: number; x: number; y: number } | null>(null);
   const [safetyNet, setSafetyNet] = useState(0); // TRY min bakiye eşiği
   const [recModal, setRecModal] = useState<{ tip: 'Gider' | 'Gelir'; date?: string } | null>(null);
-  const [occDlg, setOccDlg] = useState<{ series: RecurringSeries; recurrenceId: string; mode: 'edit' | 'cancel' } | null>(null);
+  const [occDlg, setOccDlg] = useState<{ series: RecurringSeries; recurrenceId: string; mode: 'edit' | 'cancel' | 'paid'; defaultTutar?: number; defaultTarih?: string } | null>(null);
   const rec = useRecurring();
 
   const scen = scenarios.find((s) => s.key === scenKey)!;
@@ -49,9 +49,24 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
         : { from: addDays(REF_DATE, -59), to: addDays(REF_DATE, 120) }
   ), [mode]);
 
-  // Recurring feed → grid'e eklenecek dış akışlar (tek kaynak: RecurringContext)
-  const extraAll = useMemo(() => rec.getForecast({ from: addDays(REF_DATE, -60), to: addDays(REF_DATE, 140) })
-    .map((x) => ({ date: x.tarih, gridKey: x.tip === 'Gelir' ? 'muhikuKurumsal' : (RECUR_TO_GRID[x.kategori] ?? 'diger'), amount: x.paraBirimi === 'USD' ? x.tutar * 44.9 : x.tutar })), [rec]);
+  // Recurring feed → grid'e eklenecek dış akışlar (tek kaynak: RecurringContext).
+  // Planlı → forecast (amount); ödenmiş (paid) → planlı tarihte forecast + gerçekleşen tarihte actual → variance.
+  const extraAll = useMemo(() => {
+    const occ = rec.occurrences({ from: addDays(REF_DATE, -60), to: addDays(REF_DATE, 140) });
+    const toTRY = (v: number, cur: string) => (cur === 'USD' ? v * 44.9 : v);
+    const flows: { date: string; gridKey: string; amount: number; actual?: number }[] = [];
+    for (const o of occ) {
+      if (o.durum === 'cancelled' || o.durum === 'skipped') continue;
+      const gridKey = o.tip === 'Gelir' ? 'muhikuKurumsal' : (RECUR_TO_GRID[o.kategori] ?? 'diger');
+      if (o.durum === 'paid') {
+        flows.push({ date: o.tarih, gridKey, amount: toTRY(o.tutar, o.paraBirimi) });
+        flows.push({ date: o.gerceklesenTarih ?? o.tarih, gridKey, amount: 0, actual: toTRY(o.gerceklesenTutar ?? o.tutar, o.paraBirimi) });
+      } else {
+        flows.push({ date: o.tarih, gridKey, amount: toTRY(o.tutar, o.paraBirimi) });
+      }
+    }
+    return flows;
+  }, [rec]);
 
   const grid = useMemo(() => applyScenario(buildGrid(mode, range, openingBalance, extraAll), scen), [mode, range, scen, extraAll]);
 
@@ -65,7 +80,7 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
     const bal13 = g13.balance.slice(0, 13);
     const r13End = bal13[bal13.length - 1] ?? endBal;
     const minBal = Math.min(...bal13);
-    const past = buildGrid('weekly', { from: addDays(REF_DATE, -42), to: addDays(REF_DATE, -1) });
+    const past = buildGrid('weekly', { from: addDays(REF_DATE, -42), to: addDays(REF_DATE, -1) }, openingBalance, extraAll);
     const fa = gridForecastActual(past, 'outflow');
     const v = variance(fa.forecast, fa.actual);
     const varLast = v.length ? v[v.length - 1].cumVariancePct : 0;
@@ -94,7 +109,7 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   const b3 = useMemo(() => {
     const fwd = buildGrid('daily', { from: REF_DATE, to: addDays(REF_DATE, 90) }, openingBalance, extraAll);
     const w = buildGrid('weekly', { from: REF_DATE, to: addDays(REF_DATE, 90) }, openingBalance, extraAll);
-    const past = buildGrid('weekly', { from: addDays(REF_DATE, -42), to: addDays(REF_DATE, -1) });
+    const past = buildGrid('weekly', { from: addDays(REF_DATE, -42), to: addDays(REF_DATE, -1) }, openingBalance, extraAll);
     const m = buildGrid('monthly', { from: addDays(REF_DATE, -60), to: addDays(REF_DATE, 120) }, openingBalance, extraAll);
     const fa = gridForecastActual(past, 'outflow');
     const v = variance(fa.forecast, fa.actual);
@@ -410,7 +425,7 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
 
       {/* Planlı İşlemler (Recurring) */}
       {(() => {
-        const occs = rec.occurrences({ from: addDaysISO(REF_DATE, -14), to: addDaysISO(REF_DATE, 120) });
+        const occs = rec.occurrences({ from: addDays(REF_DATE, -14), to: addDays(REF_DATE, 120) });
         const cd: CSSProperties = { fontSize: 12, color: t.tx, padding: '7px 10px', borderTop: `1px solid ${t.bd}`, whiteSpace: 'nowrap' };
         const th2: CSSProperties = { fontSize: 10.5, fontWeight: 600, color: t.tx3, textAlign: 'left', padding: '8px 10px', textTransform: 'uppercase' };
         const durTone = (d: string) => d === 'paid' ? { fg: t.gn, bg: t.gnL } : d === 'moved' ? { fg: t.pr, bg: t.prL } : d === 'cancelled' || d === 'skipped' ? { fg: t.rd, bg: t.rdL } : { fg: t.am, bg: t.amL };
@@ -446,7 +461,7 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
                             <span style={{ display: 'inline-flex', gap: 4 }}>
                               <button title={L('Taşı/Düzenle', 'Move/Edit')} onClick={() => setOccDlg({ series: s, recurrenceId: o.recurrenceId, mode: 'edit' })} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer', color: t.tx3 }}><Icon name="calendar" size={12} /></button>
                               <button title={L('İptal', 'Cancel')} onClick={() => setOccDlg({ series: s, recurrenceId: o.recurrenceId, mode: 'cancel' })} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer', color: t.tx3 }}><Icon name="x" size={12} /></button>
-                              <button title={L('Ödendi işaretle', 'Mark paid')} onClick={() => rec.markPaidOcc(s, o.recurrenceId, o.tutar, o.tarih)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer', color: t.gn }}><Icon name="check" size={12} /></button>
+                              <button title={L('Ödendi işaretle', 'Mark paid')} onClick={() => setOccDlg({ series: s, recurrenceId: o.recurrenceId, mode: 'paid', defaultTutar: o.tutar, defaultTarih: o.tarih })} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer', color: t.gn }}><Icon name="check" size={12} /></button>
                             </span>
                           )}
                         </td>
@@ -500,7 +515,7 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
       )}
 
       {recModal && <RecurringModal t={t} lang={lang} defaultTip={recModal.tip} prefillDate={recModal.date} onClose={() => setRecModal(null)} />}
-      {occDlg && <OccurrenceDialog t={t} lang={lang} series={occDlg.series} recurrenceId={occDlg.recurrenceId} mode={occDlg.mode} onClose={() => setOccDlg(null)} />}
+      {occDlg && <OccurrenceDialog t={t} lang={lang} series={occDlg.series} recurrenceId={occDlg.recurrenceId} mode={occDlg.mode} defaultTutar={occDlg.defaultTutar} defaultTarih={occDlg.defaultTarih} onClose={() => setOccDlg(null)} />}
     </ReportPageLayout>
   );
 };

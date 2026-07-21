@@ -19,10 +19,14 @@ import {
   divSumInPeriod, type RowSpec, type ComputeCtx,
 } from '../../constants/financeData';
 import { LoansTab } from './LoansTab';
-import { RecurringModal } from '../../components/finance';
+import { RecurringModal, OccurrenceDialog } from '../../components/finance';
+import { useRecurring } from '../../context/RecurringContext';
+import { addDaysISO } from '../../lib/finance/recurringEngine';
+import { REF_DATE } from '../../constants/cashflowData';
+import type { RecurringSeries } from '../../types/recurring';
 
 interface Props { t: Theme; l: LangStrings; lang: Lang; }
-type TabKey = 'income' | 'balance' | 'cashflow' | 'expense' | 'dividends' | 'loans' | 'meta';
+type TabKey = 'income' | 'balance' | 'cashflow' | 'expense' | 'dividends' | 'loans' | 'recurring' | 'meta';
 type StoreKey = 'income' | 'balance' | 'cashflow' | 'expense';
 type Store = Record<string, Record<string, number | null>>;
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -67,7 +71,9 @@ export const FinancialData = ({ t, lang }: Props) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recModal, setRecModal] = useState<'Gider' | 'Gelir' | null>(null);
+  const [occDlg, setOccDlg] = useState<{ series: RecurringSeries; recurrenceId: string; mode: 'edit' | 'cancel' | 'paid'; defaultTutar?: number; defaultTarih?: string } | null>(null);
   const [chart, setChart] = useState<{ label: string; isMargin: boolean; perShare: boolean; values: Record<string, number | null> } | null>(null);
+  const rec = useRecurring();
 
   const inflation = settings.inflation;
   const activeEvents = draftDivs ?? events;
@@ -627,6 +633,139 @@ export const FinancialData = ({ t, lang }: Props) => {
     );
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PLANLI İŞLEMLER (Recurring) — SECTION C.4
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderRecurring = () => {
+    const en = lang === 'en';
+    const L = (tr: string, e: string) => (en ? e : tr);
+
+    const freqLabel = (s: RecurringSeries): string => {
+      const r = s.rrule;
+      if (!r) return L('Tek seferlik', 'One-time');
+      const num = (k: string) => { const m = r.match(new RegExp(`${k}=(-?\\d+)`)); return m ? Number(m[1]) : undefined; };
+      const freq = r.match(/FREQ=(\w+)/)?.[1] ?? '';
+      const iv = num('INTERVAL') ?? 1;
+      if (freq === 'WEEKLY') return iv === 1 ? L('Her hafta', 'Weekly') : L(`Her ${iv} haftada`, `Every ${iv} weeks`);
+      if (freq === 'DAILY') return iv === 1 ? L('Her gün', 'Daily') : L(`Her ${iv} günde`, `Every ${iv} days`);
+      if (freq === 'MONTHLY') {
+        const bmd = num('BYMONTHDAY') ?? Number(s.dtstart.split('-')[2]);
+        const dayPart = bmd === -1 ? L('ayın son günü', 'last day') : L(`ayın ${bmd}. günü`, `day ${bmd}`);
+        return iv === 1 ? L(`Aylık · ${dayPart}`, `Monthly · ${dayPart}`) : L(`Her ${iv} ayda · ${dayPart}`, `Every ${iv} months · ${dayPart}`);
+      }
+      return r;
+    };
+    const bitisLabel = (s: RecurringSeries): string =>
+      s.bitis?.until ? s.bitis.until : s.bitis?.count ? L(`${s.bitis.count} tekrar`, `${s.bitis.count}×`) : (!s.rrule ? '—' : L('Süresiz', 'Never'));
+
+    const occWide = rec.occurrences({ from: addDaysISO(REF_DATE, -30), to: addDaysISO(REF_DATE, 400) });
+    const nextOf = (id: string) => occWide.find((o) => o.seriesId === id && o.tarih >= REF_DATE && o.durum !== 'cancelled' && o.durum !== 'skipped');
+
+    const rows = [...rec.series].map((s) => ({ s, nx: nextOf(s.id) }))
+      .sort((a, b) => (a.nx ? a.nx.tarih : '9999').localeCompare(b.nx ? b.nx.tarih : '9999'));
+
+    const timeline = rec.occurrences({ from: REF_DATE, to: addDaysISO(REF_DATE, 60) });
+    const tlColor = (d: string) => d === 'paid' ? t.gn : d === 'moved' ? t.am : d === 'cancelled' || d === 'skipped' ? t.rd : t.tx3;
+
+    const th: CSSProperties = { fontSize: 10.5, fontWeight: 600, color: t.tx3, textAlign: 'left', padding: '9px 12px', textTransform: 'uppercase', letterSpacing: 0.3, borderBottom: `1px solid ${t.bd}`, whiteSpace: 'nowrap' };
+    const td: CSSProperties = { fontSize: 12, color: t.tx, padding: '9px 12px', borderBottom: `1px solid ${t.bd}`, whiteSpace: 'nowrap' };
+    const money = (v: number, cur: string) => cur === 'USD' ? `$${v.toLocaleString('en-US')}` : `${fmtNumber(v)} ₺`;
+    const actBtn: CSSProperties = { width: 26, height: 26, borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer' };
+
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: t.tx }}>{f('tabs.recurring')}</div>
+            <div style={{ fontSize: 11, color: t.tx3, marginTop: 2 }}>{L('Tek kaynak: Nakit Akışı forecast’i ile ortak. Kredi/çek → Çek / Kredi sekmesi.', 'Single store: shared with the Cash Flow forecast. Loans/cheques → Cheques / Loans tab.')}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setRecModal('Gider')} style={{ ...btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="plus" size={13} color="#fff" />{L('Harcama Ekle', 'Add Expense')}</button>
+            <button onClick={() => setRecModal('Gelir')} style={{ ...btnGhost }}><Icon name="plus" size={13} color={t.tx2} />{L('Tahsilat Ekle', 'Add Income')}</button>
+          </div>
+        </div>
+
+        {/* Yaklaşan oluşumlar mini-timeline (önümüzdeki 60 gün) */}
+        <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, padding: '12px 16px', marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: t.tx2, marginBottom: 10 }}>{L('Yaklaşan Oluşumlar · 60 gün', 'Upcoming Occurrences · 60 days')}</div>
+          {timeline.length === 0 ? <div style={{ fontSize: 12, color: t.tx3 }}>{L('Önümüzdeki 60 günde planlı işlem yok.', 'No planned transactions in the next 60 days.')}</div> : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+              {timeline.map((o) => {
+                const cancelled = o.durum === 'cancelled' || o.durum === 'skipped';
+                const c = tlColor(o.durum);
+                return (
+                  <span key={`${o.seriesId}-${o.recurrenceId}`} title={`${o.isim} · ${o.tarih} · ${o.durum}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: t.tx2, background: t.bg2, border: `1px solid ${t.bd}`, borderRadius: 20, padding: '3px 9px', textDecoration: cancelled ? 'line-through' : 'none', opacity: cancelled ? 0.6 : 1 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: 4, background: c }} />
+                    {o.tarih.slice(5)} · {o.isim}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 14, marginTop: 10, fontSize: 10, color: t.tx3 }}>
+            {[['planned', L('Planlı', 'Planned')], ['paid', L('Ödendi', 'Paid')], ['moved', L('Taşındı', 'Moved')], ['cancelled', L('İptal', 'Cancelled')]].map(([d, lb]) => (
+              <span key={d} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: 4, background: tlColor(d) }} />{lb}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Recurring tablosu */}
+        <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>
+                <th style={th}>{L('İsim', 'Name')}</th>
+                <th style={th}>{L('Kategori', 'Category')}</th>
+                <th style={{ ...th, textAlign: 'center' }}>{L('Tip', 'Type')}</th>
+                <th style={{ ...th, textAlign: 'right' }}>{L('Tutar', 'Amount')}</th>
+                <th style={th}>{L('Frekans', 'Frequency')}</th>
+                <th style={th}>{L('Sonraki Oluşum', 'Next Occurrence')}</th>
+                <th style={th}>{L('Bitiş', 'End')}</th>
+                <th style={{ ...th, textAlign: 'center' }}>{L('Durum', 'Status')}</th>
+                <th style={{ ...th, textAlign: 'center' }}>{L('Aksiyon', 'Action')}</th>
+              </tr></thead>
+              <tbody>
+                {rows.map(({ s, nx }) => {
+                  const active = !!nx;
+                  return (
+                    <tr key={s.id}>
+                      <td style={{ ...td, fontWeight: 500 }}>{s.isim}</td>
+                      <td style={{ ...td, color: t.tx2 }}>{s.kategori}</td>
+                      <td style={{ ...td, textAlign: 'center', color: s.tip === 'Gelir' ? t.gn : t.am, fontWeight: 600 }}>{s.tip}</td>
+                      <td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{money(s.tutar, s.paraBirimi)}</td>
+                      <td style={{ ...td, color: t.tx2 }}>{freqLabel(s)}</td>
+                      <td style={{ ...td }}>{nx ? <>{nx.tarih}{nx.durum === 'moved' && <span style={{ color: t.am, fontSize: 10 }}> · {L('taşındı', 'moved')}</span>}</> : <span style={{ color: t.tx3 }}>—</span>}</td>
+                      <td style={{ ...td, color: t.tx2 }}>{bitisLabel(s)}</td>
+                      <td style={{ ...td, textAlign: 'center' }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, color: active ? t.gn : t.tx3, background: active ? t.gnL : t.bg2, borderRadius: 20, padding: '2px 9px' }}>{active ? L('Aktif', 'Active') : L('Tamamlandı', 'Completed')}</span>
+                      </td>
+                      <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        {nx ? (
+                          <span style={{ display: 'inline-flex', gap: 4 }}>
+                            <button title={L('Taşı/Düzenle', 'Move/Edit')} onClick={() => setOccDlg({ series: s, recurrenceId: nx.recurrenceId, mode: 'edit' })} style={{ ...actBtn, color: t.tx3 }}><Icon name="calendar" size={12} /></button>
+                            <button title={L('Ödendi işaretle', 'Mark paid')} onClick={() => setOccDlg({ series: s, recurrenceId: nx.recurrenceId, mode: 'paid', defaultTutar: nx.tutar, defaultTarih: nx.tarih })} style={{ ...actBtn, color: t.gn }}><Icon name="check" size={12} /></button>
+                            <button title={L('İptal', 'Cancel')} onClick={() => setOccDlg({ series: s, recurrenceId: nx.recurrenceId, mode: 'cancel' })} style={{ ...actBtn, color: t.rd }}><Icon name="x" size={12} /></button>
+                          </span>
+                        ) : <span style={{ color: t.tx3, fontSize: 11 }}>—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {rec.log.length > 0 && (
+            <div style={{ borderTop: `1px solid ${t.bd}`, padding: '9px 16px', fontSize: 10.5, color: t.tx3 }}>
+              <b style={{ color: t.tx2 }}>{L('Son işlemler', 'Recent changes')}:</b>{' '}
+              {rec.log.slice(0, 4).map((e) => `${e.action}${e.scope ? `(${e.scope})` : ''} · ${e.isim}`).join('  |  ')}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const showControls = tab === 'income' || tab === 'balance' || tab === 'cashflow' || tab === 'expense';
   const pctLabel = tab === 'balance' ? f('viewPctAssets') : f('viewPctRevenue');
   const editingTab = isEditing(tab);
@@ -672,7 +811,7 @@ export const FinancialData = ({ t, lang }: Props) => {
 
       {/* ── TAB ŞERİDİ ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, borderBottom: `1px solid ${t.bd}`, flexWrap: 'wrap' }}>
-        {(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'meta'] as TabKey[]).map((tb) => (
+        {(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'recurring', 'meta'] as TabKey[]).map((tb) => (
           <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 16px', fontSize: 13, fontWeight: tab === tb ? 600 : 500, border: 'none', borderBottom: `2px solid ${tab === tb ? t.pr : 'transparent'}`, background: 'transparent', color: tab === tb ? t.pr : t.tx2, cursor: 'pointer', marginBottom: -1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             {f(`tabs.${tb}`)}
             {isEditing(tb) && <span style={{ width: 6, height: 6, borderRadius: 3, background: t.am }} title={f('edit')} />}
@@ -688,6 +827,7 @@ export const FinancialData = ({ t, lang }: Props) => {
         {tab === 'expense' && renderExpense()}
         {tab === 'dividends' && renderDividends()}
         {tab === 'loans' && <LoansTab t={t} lang={lang} f={f} onAudit={(e) => setAudit((a) => [e, ...a])} />}
+        {tab === 'recurring' && renderRecurring()}
         {tab === 'meta' && renderMeta()}
       </div>
 
@@ -695,6 +835,7 @@ export const FinancialData = ({ t, lang }: Props) => {
       {chart && <MetricChart t={t} lang={lang} currency={currency} periods={periodsFor} data={chart} onClose={() => setChart(null)} />}
       {historyOpen && <HistoryModal t={t} f={f} lang={lang} audit={audit} currentTab={tab} onClose={() => setHistoryOpen(false)} />}
       {recModal && <RecurringModal t={t} lang={lang} defaultTip={recModal} onClose={() => setRecModal(null)} />}
+      {occDlg && <OccurrenceDialog t={t} lang={lang} series={occDlg.series} recurrenceId={occDlg.recurrenceId} mode={occDlg.mode} defaultTutar={occDlg.defaultTutar} defaultTarih={occDlg.defaultTarih} onClose={() => setOccDlg(null)} />}
     </div>
   );
 };
@@ -864,7 +1005,7 @@ const HistoryModal = ({ t, f, lang, audit, currentTab, onClose }: {
   const fmtTs = (ts: number) => new Date(ts).toLocaleString(loc, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const fmtLog = (v: number | null) => v === null ? null : `${fmtNumber(v)} ₺`;
   const rows = audit.filter((a) => filter === 'all' || a.tab === filter);
-  const opts = [{ v: 'all', label: f('historyAll') }, ...(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'meta'].map((tb) => ({ v: tb, label: f(`tabs.${tb}`) })))];
+  const opts = [{ v: 'all', label: f('historyAll') }, ...(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'recurring', 'meta'].map((tb) => ({ v: tb, label: f(`tabs.${tb}`) })))];
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: t.cd, borderRadius: 14, width: 640, maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: `1px solid ${t.bd}`, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
