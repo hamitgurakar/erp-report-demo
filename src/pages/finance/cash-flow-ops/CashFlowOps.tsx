@@ -6,8 +6,9 @@ import {
 } from 'recharts';
 import type { CashPeriodMode, CashCell, CashSource } from '../../../types/cashflow';
 import { buildGrid, applyScenario, variance, gridForecastActual, addDays } from '../../../lib/finance/cashflowEngine';
-import { REF_DATE, totalPosition, openingBalance, scenarios } from '../../../constants/cashflowData';
-import { ReportPageLayout, KPIBand, KPICard, ChartCard, Dropdown } from '../../../components/finance';
+import { getScheduledOutflows } from '../../../lib/finance/cashflowFeed';
+import { REF_DATE, totalPosition, openingBalance, scenarios, bankAccounts } from '../../../constants/cashflowData';
+import { ReportPageLayout, KPIBand, KPICard, ChartCard, Dropdown, Waterfall, AIAlertPanel, StatusBadge, type FinAlert } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
 import type { Theme } from '../../../types';
 import type { FinancePageProps } from '../_Placeholder';
@@ -73,6 +74,52 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
     const critIdx = Array.from({ length: n }, (_, i) => gworst.balance[i]).findIndex((b) => b < safetyNet);
     return { rows, critWeek: critIdx >= 0 ? `H${critIdx + 1}` : null };
   }, [scen, currency, safetyNet]);
+
+  // ── B3 grafik verileri (para-birimi bağımsız ham) ──
+  const b3 = useMemo(() => {
+    const fwd = buildGrid('daily', { from: REF_DATE, to: addDays(REF_DATE, 90) }, openingBalance);
+    const w = buildGrid('weekly', { from: REF_DATE, to: addDays(REF_DATE, 90) }, openingBalance);
+    const past = buildGrid('weekly', { from: addDays(REF_DATE, -42), to: addDays(REF_DATE, -1) });
+    const m = buildGrid('monthly', { from: addDays(REF_DATE, -60), to: addDays(REF_DATE, 120) }, openingBalance);
+    const fa = gridForecastActual(past, 'outflow');
+    const v = variance(fa.forecast, fa.actual);
+    const cek3w = getScheduledOutflows({ from: REF_DATE, to: addDays(REF_DATE, 21) }).filter((o) => o.kategori === 'Çek').reduce((s, o) => s + o.tutar, 0);
+    return { fwd, w, past, m, v, cek3w };
+  }, []);
+
+  const shownV = shown;
+  const sumExp = (key: string) => b3.fwd.expense.find((r) => r.line.key === key)?.cells.reduce((s, c) => s + shownV(c), 0) ?? 0;
+  const inflow90 = b3.fwd.totalIncome.reduce((a, b) => a + b, 0);
+  const exp90 = b3.fwd.totalExpense.reduce((a, b) => a + b, 0);
+  const namedExp = ['tedarikci', 'cek', 'kredi', 'kira', 'yapVergi'].reduce((s, k) => s + sumExp(k), 0);
+  const bridge = [
+    { label: L('Açılış', 'Opening'), value: conv(openingBalance), isTotal: true },
+    { label: L('+Tahsilat', '+Receipts'), value: conv(inflow90), isTotal: false },
+    { label: L('−Tedarikçi', '−Suppliers'), value: -conv(sumExp('tedarikci')), isTotal: false },
+    { label: L('−Çek', '−Cheque'), value: -conv(sumExp('cek')), isTotal: false },
+    { label: L('−Kredi', '−Loan'), value: -conv(sumExp('kredi')), isTotal: false },
+    { label: L('−Kira', '−Rent'), value: -conv(sumExp('kira')), isTotal: false },
+    { label: L('−Vergi', '−Tax'), value: -conv(sumExp('yapVergi')), isTotal: false },
+    { label: L('−Diğer', '−Other'), value: -conv(exp90 - namedExp), isTotal: false },
+    { label: L('Kapanış', 'Closing'), value: conv(b3.fwd.balance[b3.fwd.balance.length - 1]), isTotal: true },
+  ];
+
+  const PAL = [t.pr, t.tl, t.am, t.gn, t.pu, t.co, t.c1, t.c2, t.c3, t.rd, t.bdH];
+  const catKeys = b3.w.expense.map((r) => ({ key: r.line.key, label: r.line.label[en ? 'en' : 'tr'] }));
+  const catData = b3.w.dates.map((_, bi) => { const o: Record<string, number | string> = { week: `H${bi + 1}` }; b3.w.expense.forEach((r) => { o[r.line.key] = conv(shownV(r.cells[bi])); }); return o; });
+  const bankData = bankAccounts.map((a) => ({ name: a.banka, value: conv(a.bakiyeTRY), durum: a.durum }));
+  const varData = b3.v.map((r) => ({ week: r.label, sapma: +(r.variancePct * 100).toFixed(1), breach: !r.withinBand }));
+  const usdData = b3.m.dates.map((d, bi) => ({ ay: d, tryTutar: b3.m.totalExpense[bi], usd: b3.m.totalExpense[bi] / 44.9 }));
+
+  // ── AI uyarıları (eşik-tabanlı) ──
+  const idle = [...bankAccounts].filter((a) => a.durum === 'Aktif').sort((a, b) => b.bakiyeTRY - a.bakiyeTRY)[0];
+  const alerts: FinAlert[] = [];
+  if (kpi.minBal < 0) alerts.push({ severity: 'critical', text: L(`${roll.critWeek ?? '13. hafta'} projekte bakiyesi ${fmt(kpi.minBal)}'ye düşüyor: kredi taksiti ile büyük tedarikçi/çek ödemesi aynı haftaya denk geliyor. Öneri: ödemeyi sonraki haftaya kaydır veya atıl bakiyeden aktar.`, `${roll.critWeek ?? 'Week 13'} projected balance drops to ${fmt(kpi.minBal)}: a loan installment coincides with a large supplier/cheque payment. Suggestion: shift the payment a week or transfer from an idle account.`) });
+  alerts.push({ severity: 'warning', text: L('Yazılım/SaaS gideri USD/TRY kaynaklı bu ay ~%8 arttı — 12 aboneliğin 5’i USD; bütçe sapması izlenmeli.', 'Software/SaaS cost rose ~8% this month on USD/TRY — 5 of 12 subscriptions are USD; watch the budget variance.') });
+  if (idle && idle.bakiyeTRY > 3_000_000) alerts.push({ severity: 'watch', text: L(`${idle.banka} hesabında ${fmt(idle.bakiyeTRY)} atıl duruyor; önümüzdeki 3 haftada çıkış planı yok — kısa vadeli değerlendirilebilir.`, `${idle.banka} holds ${fmt(idle.bakiyeTRY)} idle with no outflow planned in the next 3 weeks — consider short-term placement.`) });
+  if (Math.abs(kpi.varLast) <= 0.05) alerts.push({ severity: 'good', text: L(`Bu hafta forecast varyansı %${(kpi.varLast * 100).toFixed(1)} içinde — tahmin kalitesi hedef bandında (30 günde ±%5).`, `This week's forecast variance is ${(kpi.varLast * 100).toFixed(1)}% — within the target band (±5% at 30 days).`) });
+  else alerts.push({ severity: 'warning', text: L(`Forecast varyansı %${(kpi.varLast * 100).toFixed(1)} — hedef bandı aşıldı; tahmin varsayımları gözden geçirilmeli.`, `Forecast variance ${(kpi.varLast * 100).toFixed(1)}% — outside the target band; review forecast assumptions.`) });
+  if (b3.cek3w > 0) alerts.push({ severity: 'tip', text: L(`Vadesi 3 hafta içindeki ${fmt(b3.cek3w)} çek portföyünü tahsilat takvimiyle eşleştir; çek çıkışları ilerleyen haftalarda yoğunlaşıyor.`, `Match the ${fmt(b3.cek3w)} cheque portfolio due within 3 weeks against the collection calendar; cheque outflows cluster in later weeks.`) });
 
   // ── satır tanımları (render sırası) ──
   type RRow = { kind: 'section' | 'line' | 'total' | 'net' | 'balance'; label: string; source?: CashSource; values: number[]; };
@@ -169,6 +216,85 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
         </ChartCard>
       </div>
 
+      {/* Row: Cash bridge + Kategori kırılımı */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 14, flexWrap: 'wrap' }}>
+        <ChartCard t={t} lang={lang} span={44} title={L('Nakit Köprüsü (90 gün)', 'Cash Bridge (90d)')}
+          why={L('Agicap cash-bridge deseni: açılış → tahsilat → çıkışlar → kapanış.', 'Agicap cash-bridge pattern: opening → receipts → outflows → closing.')}>
+          <Waterfall steps={bridge} t={t} fmt={fmtDisp} height={230} />
+        </ChartCard>
+        <ChartCard t={t} lang={lang} span={52} title={L('Kategori Kırılımı (haftalık)', 'Category Breakdown (weekly)')}
+          why={L('Ödeme kategorilerinin zaman içindeki dağılımı (stacked).', 'Payment categories over time (stacked).')}>
+          <ResponsiveContainer width="100%" height={230}>
+            <ComposedChart data={catData} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="week" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={fmtDisp} width={48} />
+              <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => fmtDisp(v)} />
+              <Legend wrapperStyle={{ fontSize: 9 }} />
+              {catKeys.map((c, i) => <Bar key={c.key} dataKey={c.key} name={c.label} stackId="e" fill={PAL[i % PAL.length]} />)}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {/* Row: Banka pozisyonu + Varyans */}
+      <div style={{ display: 'flex', gap: 14, marginTop: 14, flexWrap: 'wrap' }}>
+        <ChartCard t={t} lang={lang} span={44} title={L('Banka Bazlı Nakit Pozisyonu', 'Cash Position by Bank')}
+          why={L('Agicap multi-bank konsolide pozisyon; döviz hesaplar TRY karşılığıyla.', 'Agicap multi-bank consolidated position; FX accounts in TRY-equivalent.')}>
+          <ResponsiveContainer width="100%" height={230}>
+            <ComposedChart data={bankData} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 9, fill: t.tx3 }} axisLine={false} tickLine={false} interval={0} angle={-12} textAnchor="end" height={44} />
+              <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={fmtDisp} width={48} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => fmtDisp(v)} />
+              <Bar dataKey="value" name={L('Bakiye', 'Balance')} radius={[3, 3, 0, 0]} barSize={38}>
+                {bankData.map((b, i) => <Cell key={i} fill={b.durum === 'Bloke' ? t.tx3 : t.pr} />)}
+              </Bar>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        <ChartCard t={t} lang={lang} span={52} title={L('Forecast vs Actual Varyans', 'Forecast vs Actual Variance')}
+          why={L('Agicap/CashAnalytics variance analizi; hedef bandı ±%5 (30g) / ±%15 (90g).', 'Agicap/CashAnalytics variance analysis; target band ±5% (30d) / ±15% (90d).')}>
+          <ResponsiveContainer width="100%" height={230}>
+            <ComposedChart data={varData} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="week" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+              <ReferenceLine y={5} stroke={t.am} strokeDasharray="4 3" /><ReferenceLine y={-5} stroke={t.am} strokeDasharray="4 3" />
+              <ReferenceLine y={15} stroke={t.rd} strokeDasharray="4 3" /><ReferenceLine y={-15} stroke={t.rd} strokeDasharray="4 3" />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => `${v}%`} />
+              <Bar dataKey="sapma" name={L('Sapma %', 'Variance %')} radius={[3, 3, 0, 0]} barSize={26}>
+                {varData.map((d, i) => <Cell key={i} fill={d.breach ? t.rd : t.gn} />)}
+              </Bar>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {/* USD/TRY köprüsü */}
+      <div style={{ marginTop: 14 }}>
+        <ChartCard t={t} lang={lang} title={L('USD/TRY Köprüsü (aylık ödeme)', 'USD/TRY Bridge (monthly payments)')}
+          why={L('Aylık TRY tutar + USD karşılığı (mevcut USD-TRY sheet mantığı).', 'Monthly TRY amount + USD equivalent (existing USD-TRY sheet logic).')}>
+          <ResponsiveContainer width="100%" height={220}>
+            <ComposedChart data={usdData} margin={{ top: 8, right: 10, bottom: 0, left: -6 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+              <XAxis dataKey="ay" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="l" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `₺${Math.round(v / 1e6)}M`} width={48} />
+              <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${Math.round(v / 1e3)}K`} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number, n) => (n === 'usd' ? `$${Math.round(v).toLocaleString('en-US')}` : `₺${Math.round(v).toLocaleString('tr-TR')}`)} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar yAxisId="l" dataKey="tryTutar" name={L('Aylık Ödeme (TRY)', 'Monthly Payment (TRY)')} fill={t.pr} radius={[3, 3, 0, 0]} barSize={22} />
+              <Line yAxisId="r" type="monotone" dataKey="usd" name={L('USD Karşılığı', 'USD Equivalent')} stroke={t.tl} strokeWidth={2} dot={{ r: 2 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {/* AI paneli */}
+      <div style={{ marginTop: 16 }}>
+        <AIAlertPanel t={t} lang={lang} alerts={alerts} title={L('Nakit Akışı Uyarıları', 'Cash Flow Alerts')} />
+      </div>
+
       {/* Grid */}
       <div style={{ marginTop: 18, background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
         <div style={{ padding: '11px 16px', borderBottom: `1px solid ${t.bd}`, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -217,6 +343,48 @@ export const CashFlowOps = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Banka Hesapları */}
+      <div style={{ marginTop: 16, background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', fontSize: 13.5, fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{L('Banka Hesapları', 'Bank Accounts')}</div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>
+              {[L('Hesap', 'Account')].map((h) => <th key={h} style={{ fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'left', padding: '8px 12px', textTransform: 'uppercase', letterSpacing: 0.3 }}>{h}</th>)}
+              <th style={{ fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'center', padding: '8px 12px', textTransform: 'uppercase' }}>{L('Para Birimi', 'Currency')}</th>
+              <th style={{ fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'right', padding: '8px 12px', textTransform: 'uppercase' }}>{L('Bakiye (TRY)', 'Balance (TRY)')}</th>
+              <th style={{ fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'right', padding: '8px 12px', textTransform: 'uppercase' }}>{L('Bakiye (Orijinal)', 'Balance (Original)')}</th>
+              <th style={{ fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'center', padding: '8px 12px', textTransform: 'uppercase' }}>{L('Son Hareket', 'Last Tx')}</th>
+              <th style={{ fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'center', padding: '8px 12px', textTransform: 'uppercase' }}>{L('Durum', 'Status')}</th>
+              <th style={{ fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'center', padding: '8px 12px', textTransform: 'uppercase' }}>{L('Aksiyon', 'Action')}</th>
+            </tr></thead>
+            <tbody>
+              {bankAccounts.map((a) => {
+                const cd: CSSProperties = { fontSize: 12, color: t.tx, padding: '8px 12px', borderTop: `1px solid ${t.bd}`, whiteSpace: 'nowrap' };
+                return (
+                  <tr key={a.id}>
+                    <td style={{ ...cd, fontWeight: 500 }}>{a.ad}</td>
+                    <td style={{ ...cd, textAlign: 'center', color: t.tx2 }}>{a.paraBirimi}</td>
+                    <td style={{ ...cd, textAlign: 'right', fontWeight: 600 }}>{`₺${(a.bakiyeTRY / 1e6).toFixed(2)}M`}</td>
+                    <td style={{ ...cd, textAlign: 'right', color: t.tx2 }}>{a.bakiyeOrijinal != null ? `${a.paraBirimi === 'USD' ? '$' : a.paraBirimi === 'EUR' ? '€' : '₺'}${a.bakiyeOrijinal.toLocaleString('en-US')}` : '—'}</td>
+                    <td style={{ ...cd, textAlign: 'center', color: t.tx3, fontSize: 11.5 }}>{a.sonHareket}</td>
+                    <td style={{ ...cd, textAlign: 'center' }}><StatusBadge t={t} tone={a.durum === 'Aktif' ? 'green' : 'red'} label={a.durum === 'Aktif' ? L('Aktif', 'Active') : L('Bloke', 'Blocked')} /></td>
+                    <td style={{ ...cd, textAlign: 'center' }}>
+                      <button title={L('Ekstre indir', 'Download statement')} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg2, cursor: 'pointer', color: t.tx3 }}><Icon name="download" size={12} /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr>
+                <td style={{ fontSize: 12, fontWeight: 700, color: t.tx, padding: '8px 12px', borderTop: `1px solid ${t.bd}` }}>{L('Toplam', 'Total')}</td>
+                <td style={{ borderTop: `1px solid ${t.bd}` }} />
+                <td style={{ fontSize: 12, fontWeight: 700, color: t.tx, textAlign: 'right', padding: '8px 12px', borderTop: `1px solid ${t.bd}` }}>{`₺${(totalPosition / 1e6).toFixed(2)}M`}</td>
+                <td colSpan={4} style={{ borderTop: `1px solid ${t.bd}` }} />
+              </tr>
             </tbody>
           </table>
         </div>
