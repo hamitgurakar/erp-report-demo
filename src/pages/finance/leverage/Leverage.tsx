@@ -11,7 +11,7 @@ import {
 import { debtInventory, waccInputs, fxPosition } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
-  StatusBadge, Dropdown, Gauge, type FinAlert,
+  StatusBadge, Dropdown, GaugeCard, type FinAlert,
 } from '../../../components/finance';
 import type { FinancePageProps } from '../_Placeholder';
 
@@ -209,8 +209,8 @@ export const Leverage = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
         <ChartCard t={t} lang={lang} span={48} title={en ? 'Interest Coverage' : 'Faiz Karşılama'}
           why={en ? 'insightsoftware coverage-ratio gauge with threshold bands.' : 'insightsoftware coverage-ratio deseni; eşik bantlı.'}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 230 }}>
-            <Gauge t={t} value={coverageOf(curr)} min={0} max={8} display={`${coverageOf(curr).toFixed(1)}x`} label={en ? 'EBIT / Net Interest' : 'EBIT / Net Faiz'} width={210}
-              bands={[{ to: 2, color: t.rd }, { to: 3, color: t.am }, { to: 8, color: t.gn }]} />
+            <GaugeCard t={t} value={coverageOf(curr)} min={0} max={10} format={(v) => `${v.toFixed(1)}x`} label={en ? 'EBIT / Net Interest' : 'EBIT / Net Faiz'}
+              thresholds={[{ limit: 2, color: t.rd }, { limit: 3, color: t.am }, { limit: 10, color: t.gn }]} />
           </div>
         </ChartCard>
       </div>

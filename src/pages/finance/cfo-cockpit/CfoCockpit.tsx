@@ -7,7 +7,7 @@ import type { FinancialPeriod, FinCurrency } from '../../../types/finance';
 import { PERIODS_ANNUAL, incomeRaw, balanceRaw } from '../../../constants/financeData';
 import { scorecardCategories, moduleHealth, rollupAlerts, footballField } from '../../../constants/financeReportsData';
 import {
-  ReportPageLayout, KPICard, KPIBand, ChartCard, StatusBadge, Gauge, InfoTip,
+  ReportPageLayout, KPICard, KPIBand, ChartCard, StatusBadge, GaugeCard, InfoTip,
 } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
 import type { FinancePageProps } from '../_Placeholder';
@@ -126,9 +126,10 @@ export const CfoCockpit = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
           right={<InfoTip t={t} lang={lang} termKey="healthComposite" />}
           why={en ? 'Calqulate/StockTitan financial-health-index gauge.' : 'Calqulate/StockTitan financial-health-index gauge deseni.'}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: 230, justifyContent: 'center' }}>
-            <Gauge t={t} value={composite} min={0} max={100} display={`${composite.toFixed(0)}`} label={en ? 'Composite' : 'Kompozit'} width={200}
-              bands={[{ to: 40, color: t.rd }, { to: 55, color: t.co }, { to: 70, color: t.am }, { to: 85, color: t.pr }, { to: 100, color: t.gn }]} />
-            <div style={{ fontSize: 28, fontWeight: 800, color: gradeColor(gradeOf(composite)), marginTop: -8 }}>{gradeOf(composite)}</div>
+            <div style={{ width: 210 }}>
+              <GaugeCard t={t} value={composite} min={0} max={100} format={(v) => `${Math.round(v)}`} centerText={gradeOf(composite)} label={en ? 'Composite' : 'Kompozit'}
+                thresholds={[{ limit: 40, color: t.rd }, { limit: 55, color: t.co }, { limit: 70, color: t.am }, { limit: 85, color: t.pr }, { limit: 100, color: t.gn }]} />
+            </div>
           </div>
         </ChartCard>
         <ChartCard t={t} lang={lang} span={38} title={en ? '13-Month Cash Trend' : '13-Aylık Nakit Trendi'}

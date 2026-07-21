@@ -11,7 +11,7 @@ import {
 import { scorecardCategories, riskModels } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
-  StatusBadge, Gauge, type FinAlert,
+  StatusBadge, GaugeCard, type FinAlert,
 } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
 import type { FinancePageProps } from '../_Placeholder';
@@ -148,8 +148,10 @@ export const Scorecard = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
       {/* Kompozit skor başlık */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 4, flexWrap: 'wrap', alignItems: 'stretch' }}>
         <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 20, flex: '1 1 320px' }}>
-          <Gauge t={t} value={compositeScore} min={0} max={100} display={`${compositeScore.toFixed(0)}`} label={en ? 'Composite' : 'Kompozit'} width={180}
-            bands={[{ to: 40, color: t.rd }, { to: 55, color: t.co }, { to: 70, color: t.am }, { to: 85, color: t.pr }, { to: 100, color: t.gn }]} />
+          <div style={{ width: 200, flexShrink: 0 }}>
+            <GaugeCard t={t} value={compositeScore} min={0} max={100} format={(v) => `${Math.round(v)}`} centerText={gradeOf(compositeScore)} label={en ? 'Composite' : 'Kompozit'}
+              thresholds={[{ limit: 40, color: t.rd }, { limit: 55, color: t.co }, { limit: 70, color: t.am }, { limit: 85, color: t.pr }, { limit: 100, color: t.gn }]} />
+          </div>
           <div>
             <div style={{ fontSize: 12, color: t.tx2, display: 'flex', alignItems: 'center' }}>{en ? 'Composite Health Score' : 'Kompozit Finansal Sağlık Skoru'}<InfoTip t={t} lang={lang} termKey="healthComposite" /></div>
             <div style={{ fontSize: 44, fontWeight: 800, color: gradeColor(gradeOf(compositeScore)), lineHeight: 1.1 }}>{gradeOf(compositeScore)}</div>
@@ -183,8 +185,8 @@ export const Scorecard = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
           right={<InfoTip t={t} lang={lang} termKey="altmanZ" />}
           why={en ? 'Stock Rover Altman-Z gauge (Altman 1968): >2.99 Safe, 1.81-2.99 Grey, <1.81 Distress.' : 'Stock Rover Altman-Z gauge (Altman 1968): Z>2.99 Güvenli, 1.81-2.99 Gri, <1.81 Tehlike.'}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 260 }}>
-            <Gauge t={t} value={Math.min(altmanZ, 6)} min={0} max={6} display={altmanZ.toFixed(2)} label={en ? 'Z-Score' : 'Z-Skoru'} width={210}
-              bands={[{ to: 1.81, color: t.rd }, { to: 2.99, color: t.am }, { to: 6, color: t.gn }]} />
+            <GaugeCard t={t} value={altmanZ} min={0} max={6} format={(v) => v.toFixed(2)} label={en ? 'Z-Score' : 'Z-Skoru'}
+              thresholds={[{ limit: 1.81, color: t.rd }, { limit: 2.99, color: t.am }, { limit: 6, color: t.gn }]} />
           </div>
         </ChartCard>
       </div>

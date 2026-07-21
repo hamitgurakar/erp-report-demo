@@ -11,7 +11,7 @@ import {
 import { bankAccounts, weeklyCashForecast } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, SourceBadge, InfoTip,
-  ChangePct, StatusBadge, Dropdown, Waterfall, Gauge, type FinAlert,
+  ChangePct, StatusBadge, Dropdown, Waterfall, GaugeCard, type FinAlert,
 } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
 import type { FinancePageProps } from '../_Placeholder';
@@ -222,10 +222,10 @@ export const CashLiquidity = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
         <ChartCard t={t} lang={lang} span={48} title={en ? 'Liquidity Ratios' : 'Likidite Oranları'}
           why={en ? 'insightsoftware Quick-Ratio "front-and-centre" pattern with threshold bands (<1.0 red).' : 'insightsoftware Quick-Ratio "front-and-center" deseni; eşik bantlı (<1.0 kırmızı).'}>
           <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', height: 230, flexWrap: 'wrap' }}>
-            <Gauge t={t} value={currentRatio(curr)} min={0} max={3} label={en ? 'Current Ratio' : 'Cari Oran'} display={`${currentRatio(curr).toFixed(2)}x`}
-              bands={[{ to: 1, color: t.rd }, { to: 1.2, color: t.am }, { to: 2, color: t.gn }, { to: 3, color: t.pr }]} />
-            <Gauge t={t} value={quickRatio(curr)} min={0} max={2} label={en ? 'Quick Ratio' : 'Asit-Test'} display={`${quickRatio(curr).toFixed(2)}x`}
-              bands={[{ to: 1, color: t.rd }, { to: 1.5, color: t.gn }, { to: 2, color: t.pr }]} />
+            <GaugeCard t={t} value={currentRatio(curr)} min={0} max={3} label={en ? 'Current Ratio' : 'Cari Oran'} format={(v) => `${v.toFixed(2)}x`}
+              thresholds={[{ limit: 1, color: t.rd }, { limit: 1.2, color: t.am }, { limit: 3, color: t.gn }]} />
+            <GaugeCard t={t} value={quickRatio(curr)} min={0} max={2} label={en ? 'Quick Ratio' : 'Asit-Test'} format={(v) => `${v.toFixed(2)}x`}
+              thresholds={[{ limit: 1, color: t.rd }, { limit: 2, color: t.gn }]} />
           </div>
         </ChartCard>
       </div>
@@ -235,8 +235,8 @@ export const CashLiquidity = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
         <ChartCard t={t} lang={lang} span={48} title={en ? 'Runway & Cash Trend' : 'Runway & Nakit Trendi'}
           why={en ? 'Mosaic/Drivetrain runway-gauge above-the-fold pattern.' : 'Mosaic/Drivetrain runway-gauge above-the-fold deseni.'}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 230 }}>
-            <Gauge t={t} value={runwayOf(curr)} min={0} max={24} label={en ? 'Runway (mo)' : 'Runway (ay)'} display={`${runwayOf(curr).toFixed(1)}`}
-              bands={[{ to: 6, color: t.rd }, { to: 12, color: t.am }, { to: 24, color: t.gn }]} />
+            <GaugeCard t={t} value={runwayOf(curr)} min={0} max={24} label={en ? 'Runway (mo)' : 'Runway (ay)'} format={(v) => `${v.toFixed(1)}`}
+              thresholds={[{ limit: 6, color: t.rd }, { limit: 12, color: t.am }, { limit: 24, color: t.gn }]} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={runwayTrend} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>

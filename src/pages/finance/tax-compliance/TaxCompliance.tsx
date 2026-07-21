@@ -7,7 +7,7 @@ import { PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw } from '../../../constants/f
 import { taxCalendar2026, ebelgeStatus } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
-  StatusBadge, Dropdown, Gauge, type FinAlert,
+  StatusBadge, Dropdown, GaugeCard, type FinAlert,
 } from '../../../components/finance';
 import type { FinancePageProps } from '../_Placeholder';
 
@@ -234,8 +234,8 @@ export const TaxCompliance = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
         <ChartCard t={t} lang={lang} span={34} title={en ? 'Effective Tax Rate (vs 25%)' : 'Efektif Vergi Oranı (vs %25)'}
           why={en ? 'Fintables effective-tax-rate pattern; green up to the statutory 25%.' : 'Fintables efektif vergi trend deseni; yasal %25’e kadar yeşil.'}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 230 }}>
-            <Gauge t={t} value={eff} min={0} max={40} display={`${eff.toFixed(1)}%`} label={en ? 'vs 25% legal' : 'vs %25 yasal'} width={210}
-              bands={[{ to: 25, color: t.gn }, { to: 30, color: t.am }, { to: 40, color: t.rd }]} />
+            <GaugeCard t={t} value={eff} min={0} max={50} format={(v) => `${v.toFixed(1)}%`} label={en ? 'vs 25% legal' : 'vs %25 yasal'}
+              thresholds={[{ limit: 25, color: t.gn }, { limit: 50, color: t.am }]} />
           </div>
         </ChartCard>
       </div>

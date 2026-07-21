@@ -8,7 +8,7 @@ import { PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw } from '../../..
 import { arAgingByCustomer, collectionWorklist } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
-  StatusBadge, Dropdown, Gauge, type FinAlert,
+  StatusBadge, Dropdown, GaugeCard, type FinAlert,
 } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
 import type { FinancePageProps } from '../_Placeholder';
@@ -200,8 +200,8 @@ export const Receivables = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
         <ChartCard t={t} lang={lang} span={30} title={en ? 'Collection Effectiveness (CEI)' : 'Tahsilat Etkinliği (CEI)'}
           why={en ? 'Tratta/HighRadius CEI gauge — collection-discipline metric that contextualizes DSO.' : 'Tratta/HighRadius CEI gauge deseni; DSO’yu bağlamlayan tahsilat-disiplini metriği.'}>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 240 }}>
-            <Gauge t={t} value={cei} min={0} max={100} display={`${cei.toFixed(0)}%`} label={en ? 'CEI' : 'CEI'} width={200}
-              bands={[{ to: 80, color: t.rd }, { to: 90, color: t.am }, { to: 100, color: t.gn }]} />
+            <GaugeCard t={t} value={cei} min={0} max={100} format={(v) => `${v.toFixed(0)}%`} label="CEI"
+              thresholds={[{ limit: 80, color: t.rd }, { limit: 90, color: t.am }, { limit: 100, color: t.gn }]} />
           </div>
         </ChartCard>
         <ChartCard t={t} lang={lang} span={66} title={en ? 'Customer Concentration Pareto' : 'Müşteri Konsantrasyon Pareto'}
