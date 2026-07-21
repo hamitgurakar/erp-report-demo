@@ -79,10 +79,24 @@ const assemble = (dates: string[], mode: CashPeriodMode, lineCells: Record<strin
   return { mode, dates: buckets.map((b) => b.label), isForecast: buckets.map((b) => b.isForecast), income, expense, totalIncome, totalExpense, net, balance, openingBalance: opening };
 };
 
-/** Satır×tarih matrisi + Toplam Gelir/Gider, Net, running Bakiye. */
-export const buildGrid = (mode: CashPeriodMode, range: { from: string; to: string }, opening: number = SEED_OPENING): CashGrid => {
+/** Recurring vb. dış kaynaktan gelen ek nakit akışı (grid satırına eklenir). */
+export interface ExtraFlow { date: string; gridKey: string; amount: number }
+
+/** Satır×tarih matrisi + Toplam Gelir/Gider, Net, running Bakiye. extra = recurring feed (C0). */
+export const buildGrid = (mode: CashPeriodMode, range: { from: string; to: string }, opening: number = SEED_OPENING, extra: ExtraFlow[] = []): CashGrid => {
   const dates = dailyDates(range.from, range.to);
-  return assemble(dates, mode, dailyLineCells(dates), opening);
+  const cells = dailyLineCells(dates);
+  if (extra.length) {
+    const idx = new Map(dates.map((d, i) => [d, i]));
+    for (const e of extra) {
+      const i = idx.get(e.date); if (i == null) continue;
+      const arr = cells[e.gridKey]; if (!arr) continue;
+      const c = arr[i];
+      c.amount = round(c.amount + e.amount);
+      if (c.actual != null) c.actual = round(c.actual + e.amount);
+    }
+  }
+  return assemble(dates, mode, cells, opening);
 };
 
 /** best/base/worst multiplier uygula; toplam/net/bakiye yeniden hesaplanır. */

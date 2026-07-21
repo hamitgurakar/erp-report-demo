@@ -19,3 +19,5 @@ export { Waterfall } from './Waterfall';
 export type { WFStep } from './Waterfall';
 export { GaugeCard } from './GaugeCard';
 export type { GaugeThreshold } from './GaugeCard';
+export { RecurringModal } from './RecurringModal';
+export { OccurrenceDialog } from './OccurrenceDialog';

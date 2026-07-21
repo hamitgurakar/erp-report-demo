@@ -63,8 +63,9 @@ const dailyBase = (key: string, iso: string): number => {
     case 'muhikuKurumsal': return isWeekend ? 0 : 180_000;
     case 'finansalKredi': return 0;
     case 'tedarikci': return isWeekend ? 0 : 150_000;
-    case 'kira': return d === 1 ? 185_000 : 0;
-    case 'yazilim': return d === 5 ? 145_000 : 0;
+    // Kira ve Yazılım/SaaS artık recurring motorundan (C0) beslenir → tek kaynak, çift kayıt yok
+    case 'kira': return 0;
+    case 'yazilim': return 0;
     case 'pazarlama': return isWeekend ? 30_000 : 90_000;
     case 'lojistik': return isWeekend ? 20_000 : 55_000;
     case 'yonetim': return isWeekend ? 0 : 45_000;

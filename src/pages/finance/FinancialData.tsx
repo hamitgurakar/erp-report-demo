@@ -19,6 +19,7 @@ import {
   divSumInPeriod, type RowSpec, type ComputeCtx,
 } from '../../constants/financeData';
 import { LoansTab } from './LoansTab';
+import { RecurringModal } from '../../components/finance';
 
 interface Props { t: Theme; l: LangStrings; lang: Lang; }
 type TabKey = 'income' | 'balance' | 'cashflow' | 'expense' | 'dividends' | 'loans' | 'meta';
@@ -65,6 +66,7 @@ export const FinancialData = ({ t, lang }: Props) => {
   const [settingsSnap, setSettingsSnap] = useState<{ inflation: InflationMethod; startDate: string } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [recModal, setRecModal] = useState<'Gider' | 'Gelir' | null>(null);
   const [chart, setChart] = useState<{ label: string; isMargin: boolean; perShare: boolean; values: Record<string, number | null> } | null>(null);
 
   const inflation = settings.inflation;
@@ -652,8 +654,10 @@ export const FinancialData = ({ t, lang }: Props) => {
 
         <div style={{ flex: 1 }} />
 
-        {/* Sağ üst: Düzenle / Kaydet+Vazgeç + Değişiklik Geçmişi */}
+        {/* Sağ üst: Harcama/Tahsilat Ekle · Düzenle / Kaydet+Vazgeç + Değişiklik Geçmişi */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={() => setRecModal('Gider')} style={btnGhost}><Icon name="plus" size={13} color={t.tx2} /> {lang === 'en' ? 'Add Expense' : 'Harcama Ekle'}</button>
+          <button onClick={() => setRecModal('Gelir')} style={btnGhost}><Icon name="plus" size={13} color={t.tx2} /> {lang === 'en' ? 'Add Income' : 'Tahsilat Ekle'}</button>
           {tab !== 'loans' && (editingTab ? (
             <>
               <button onClick={() => doSave(tab)} style={btnPrimary}>{f('save')}</button>
@@ -690,6 +694,7 @@ export const FinancialData = ({ t, lang }: Props) => {
       {modalOpen && <DividendModal t={t} f={f} onClose={() => setModalOpen(false)} onSave={(ev) => { setEvents((e) => [...e, ...ev]); setModalOpen(false); }} />}
       {chart && <MetricChart t={t} lang={lang} currency={currency} periods={periodsFor} data={chart} onClose={() => setChart(null)} />}
       {historyOpen && <HistoryModal t={t} f={f} lang={lang} audit={audit} currentTab={tab} onClose={() => setHistoryOpen(false)} />}
+      {recModal && <RecurringModal t={t} lang={lang} defaultTip={recModal} onClose={() => setRecModal(null)} />}
     </div>
   );
 };
