@@ -34,6 +34,7 @@ import { SalesAICoach } from '../components/satis/SalesAICoach';
 import { SalesCommunication } from '../components/satis/SalesCommunication';
 import { SalesForecasting } from '../components/satis/SalesForecasting';
 import { SalesTargets } from '../components/satis/SalesTargets';
+import { SalesCollections } from '../components/satis/SalesCollections';
 import { ManagementTargets } from '../components/yonetim/ManagementTargets';
 import { FinancialData } from './finance/FinancialData';
 import { IncomeProfitability } from './finance/income-profitability/IncomeProfitability';
@@ -78,6 +79,7 @@ export default function Dashboard() {
     'satis__8': db.l.satisIletisim,
     'satis__9': db.l.satisForecasting,
     'satis__10': db.l.satisHedefler,
+    'satis__11': db.l.satisTahsilat,
     'kategori__0': db.l.katOzet,
     'kategori__1': db.l.katPerf,
     'kategori__2': db.l.katStok,
@@ -189,6 +191,8 @@ export default function Dashboard() {
               <SalesForecasting {...kp} />
             ) : db.activeRep === 'satis__10' ? (
               <SalesTargets {...kp} />
+            ) : db.activeRep === 'satis__11' ? (
+              <SalesCollections {...kp} />
             ) : db.activeRep === 'kategori__0' ? (
               <CategoryOverview {...kp} dark={db.dark} />
             ) : db.activeRep === 'kategori__1' ? (

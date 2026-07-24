@@ -599,6 +599,7 @@ const tr: LangStrings = {
   fcHedefTakip: 'UZMAN BAZLI HEDEF TAKİBİ — Q4 2025',
   // Sales Targets
   satisHedefler: 'Hedefler 🎯',
+  satisTahsilat: 'Tahsilat',
   tgtOzet: 'B2B HEDEF ÖZET KARTLARI',
   tgtAylikMatris: 'AYLIK KIRILIM MATRİSİ',
   tgtCeyreklik: 'B2B FORECAST VS GERÇEKLEŞEN',
@@ -1232,6 +1233,7 @@ const en: LangStrings = {
   fcHedefTakip: 'REP TARGET TRACKING — Q4 2025',
   // Sales Targets
   satisHedefler: 'Targets 🎯',
+  satisTahsilat: 'Collections',
   tgtOzet: 'B2B TARGET SUMMARY',
   tgtAylikMatris: 'MONTHLY BREAKDOWN MATRIX',
   tgtCeyreklik: 'B2B FORECAST VS ACTUAL',

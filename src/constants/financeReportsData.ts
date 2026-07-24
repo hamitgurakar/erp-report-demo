@@ -67,15 +67,24 @@ export const cccComponents: CCCComponent[] = [
 export interface ARCustomer {
   customer: string; musteriTipi: 'B2B' | 'B2C'; total: number; current: number; d1_30: number; d31_60: number; d61_90: number; d90plus: number;
   oldestInvoice: string; riskScore: number; status: 'current' | 'overdue' | 'doubtful';
+  // ── Satış lensi türev alanları (Kurumsal Satış > Tahsilat sayfası okur; tek kaynak) ──
+  temsilci: string;              // sales rep
+  dealTutari: number;            // toplam satış (deal büyüklüğü) — total = hâlâ açık AR
+  dealKapanisTarihi: string;     // deal kapanış (ISO)
+  tahsilatTarihi: string | null; // tahsil edildiyse tarih; açıksa null
+  satisTuru: 'Peşin' | 'Vadeli';
+  komisyonTutari: number;
+  komisyonOdendiMi: boolean;
 }
 // musteriTipi: Satış tarafındaki müşteri tipi kırılımıyla tutarlı (kurumsal cari → B2B, perakende/mağaza → B2C)
+// Satış alanları: her müşteri = bir deal; tahsil edilen = dealTutari − total (açık AR). Temsilciler Satış modülüyle aynı.
 export const arAgingByCustomer: ARCustomer[] = [
-  { customer: 'Yıldız Hediyelik A.Ş.', musteriTipi: 'B2B', total: 1_240_000, current: 120_000, d1_30: 80_000, d31_60: 90_000, d61_90: 110_000, d90plus: 840_000, oldestInvoice: '2026-02-11', riskScore: 88, status: 'doubtful' },
-  { customer: 'Ada Mağazacılık Ltd.', musteriTipi: 'B2C', total: 960_000, current: 420_000, d1_30: 310_000, d31_60: 150_000, d61_90: 80_000, d90plus: 0, oldestInvoice: '2026-05-02', riskScore: 42, status: 'overdue' },
-  { customer: 'Marmara Perakende', musteriTipi: 'B2C', total: 720_000, current: 500_000, d1_30: 160_000, d31_60: 60_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-01', riskScore: 28, status: 'current' },
-  { customer: 'Ege Toptan Dağıtım', musteriTipi: 'B2B', total: 640_000, current: 210_000, d1_30: 180_000, d31_60: 120_000, d61_90: 90_000, d90plus: 40_000, oldestInvoice: '2026-03-20', riskScore: 61, status: 'overdue' },
-  { customer: 'Anadolu Zincir Market', musteriTipi: 'B2B', total: 540_000, current: 400_000, d1_30: 90_000, d31_60: 50_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-10', riskScore: 22, status: 'current' },
-  { customer: 'Bosphorus Retail Group', musteriTipi: 'B2C', total: 480_000, current: 150_000, d1_30: 120_000, d31_60: 110_000, d61_90: 70_000, d90plus: 30_000, oldestInvoice: '2026-04-05', riskScore: 55, status: 'overdue' },
+  { customer: 'Yıldız Hediyelik A.Ş.', musteriTipi: 'B2B', total: 1_240_000, current: 120_000, d1_30: 80_000, d31_60: 90_000, d61_90: 110_000, d90plus: 840_000, oldestInvoice: '2026-02-11', riskScore: 88, status: 'doubtful', temsilci: 'Ayşe K.', dealTutari: 1_400_000, dealKapanisTarihi: '2026-01-15', tahsilatTarihi: null, satisTuru: 'Vadeli', komisyonTutari: 140_000, komisyonOdendiMi: true },
+  { customer: 'Ada Mağazacılık Ltd.', musteriTipi: 'B2C', total: 960_000, current: 420_000, d1_30: 310_000, d31_60: 150_000, d61_90: 80_000, d90plus: 0, oldestInvoice: '2026-05-02', riskScore: 42, status: 'overdue', temsilci: 'Mehmet D.', dealTutari: 2_200_000, dealKapanisTarihi: '2026-04-20', tahsilatTarihi: null, satisTuru: 'Vadeli', komisyonTutari: 66_000, komisyonOdendiMi: false },
+  { customer: 'Marmara Perakende', musteriTipi: 'B2C', total: 720_000, current: 500_000, d1_30: 160_000, d31_60: 60_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-01', riskScore: 28, status: 'current', temsilci: 'Elif S.', dealTutari: 2_600_000, dealKapanisTarihi: '2026-05-25', tahsilatTarihi: '2026-06-20', satisTuru: 'Peşin', komisyonTutari: 52_000, komisyonOdendiMi: true },
+  { customer: 'Ege Toptan Dağıtım', musteriTipi: 'B2B', total: 640_000, current: 210_000, d1_30: 180_000, d31_60: 120_000, d61_90: 90_000, d90plus: 40_000, oldestInvoice: '2026-03-20', riskScore: 61, status: 'overdue', temsilci: 'Ayşe K.', dealTutari: 920_000, dealKapanisTarihi: '2026-03-01', tahsilatTarihi: null, satisTuru: 'Vadeli', komisyonTutari: 55_200, komisyonOdendiMi: true },
+  { customer: 'Anadolu Zincir Market', musteriTipi: 'B2B', total: 540_000, current: 400_000, d1_30: 90_000, d31_60: 50_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-10', riskScore: 22, status: 'current', temsilci: 'Can Y.', dealTutari: 2_400_000, dealKapanisTarihi: '2026-06-02', tahsilatTarihi: '2026-06-20', satisTuru: 'Peşin', komisyonTutari: 48_000, komisyonOdendiMi: true },
+  { customer: 'Bosphorus Retail Group', musteriTipi: 'B2C', total: 480_000, current: 150_000, d1_30: 120_000, d31_60: 110_000, d61_90: 70_000, d90plus: 30_000, oldestInvoice: '2026-04-05', riskScore: 55, status: 'overdue', temsilci: 'Burak A.', dealTutari: 1_300_000, dealKapanisTarihi: '2026-03-25', tahsilatTarihi: null, satisTuru: 'Vadeli', komisyonTutari: 26_000, komisyonOdendiMi: true },
 ];
 
 export interface CollectionTask {

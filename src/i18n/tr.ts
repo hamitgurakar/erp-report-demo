@@ -4,7 +4,7 @@ export const tr = {
   nav: {
     urun: 'Ürün',
     cms: 'CMS',
-    satis: 'Satış',
+    satis: 'Kurumsal Satış',
     satinAlma: 'Satın Alma',
     operasyon: 'Operasyon',
     destek: 'Destek',
@@ -20,7 +20,7 @@ export const tr = {
     yakinda: 'Yakında',
     depts: {
       yonetim: 'Yönetim',
-      satis: 'Satış',
+      satis: 'Kurumsal Satış',
       kategori: 'Kategori',
       satinAlma: 'Satın Alma',
       operasyon: 'Operasyon',
@@ -33,7 +33,7 @@ export const tr = {
       satis: [
         'Yönetici Özeti', 'Gelir & Karlılık', 'Pipeline & Deal', 'Uzman Performans',
         'Müşteri & Segment', 'Ürün & Kategori', 'Sezonsal & Zaman', 'AI Sales Coach',
-        'İletişim & Aktivite', 'Forecasting', 'Hedefler 🎯',
+        'İletişim & Aktivite', 'Forecasting', 'Hedefler 🎯', 'Tahsilat',
       ],
       kategori: ['Kategori Özeti', 'Performans Analizi', 'Stok & Envanter', 'Marka Analizi', 'ABC / Portföy Analizi'],
       satinAlma: [

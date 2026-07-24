@@ -4,7 +4,7 @@ export const en: Dict = {
   nav: {
     urun: 'Product',
     cms: 'CMS',
-    satis: 'Sales',
+    satis: 'Corporate Sales',
     satinAlma: 'Procurement',
     operasyon: 'Operations',
     destek: 'Support',
@@ -20,7 +20,7 @@ export const en: Dict = {
     yakinda: 'Coming Soon',
     depts: {
       yonetim: 'Management',
-      satis: 'Sales',
+      satis: 'Corporate Sales',
       kategori: 'Category',
       satinAlma: 'Procurement',
       operasyon: 'Operations',
@@ -33,7 +33,7 @@ export const en: Dict = {
       satis: [
         'Executive Overview', 'Revenue & Profitability', 'Pipeline & Deal', 'Rep Performance',
         'Customer & Segment', 'Product & Category', 'Seasonal & Time', 'AI Sales Coach',
-        'Communication & Activity', 'Forecasting', 'Targets 🎯',
+        'Communication & Activity', 'Forecasting', 'Targets 🎯', 'Collections',
       ],
       kategori: ['Category Overview', 'Performance Analysis', 'Inventory & Stock', 'Brand Analysis', 'ABC / Portfolio Analysis'],
       satinAlma: [
