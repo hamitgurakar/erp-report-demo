@@ -6,7 +6,7 @@ import {
 import type { FinCurrency, PeriodType, OrderMode } from '../../types/finance';
 import { arAgingByCustomer } from '../../constants/financeReportsData';
 import {
-  ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, StatusBadge, Dropdown, type FinAlert,
+  ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, StatusBadge, Dropdown, TahsilatTrendChart, type FinAlert,
 } from '../../components/finance';
 import { Icon } from '../../components/ui/Icon';
 import type { FinancePageProps } from '../../pages/finance/_Placeholder';
@@ -105,12 +105,7 @@ export const SalesCollections = ({ t, l, lang, onSelectRep }: FinancePageProps) 
     const ps = 0.28 + (pesinNow - 0.28) * (i / 11);
     return { month: m, pesin: conv(total * ps), vadeli: conv(total * (1 - ps)) };
   });
-  // Chart 5: segment tahsilat kalitesi (ort. tahsilat günü, düşük=iyi)
-  const segTrend = MONTHS.map((m, i) => ({
-    month: m,
-    b2b: Math.round(b2bDays * (0.82 + 0.03 * i)),
-    b2c: Math.round(b2cDays * (0.88 + 0.022 * i)),
-  }));
+  // Chart 5: segment tahsilat kalitesi → yerini reusable TahsilatTrendChart aldı (B2B tek seri)
 
   // Chart 1: rep ranking; Chart 4: komisyon riski by rep; Chart 6: scatter
   const rankData = [...repAgg].sort((a, b) => b.rate - a.rate).map((r) => ({ rep: r.rep, oran: +(r.rate * 100).toFixed(0), below: r.rate < RATE_THRESHOLD }));
@@ -234,20 +229,7 @@ export const SalesCollections = ({ t, l, lang, onSelectRep }: FinancePageProps) 
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
-        <ChartCard t={t} lang={lang} span={44} title={L('Segment Tahsilat Kalitesi (B2B / B2C)', 'Segment Collection Quality (B2B / B2C)')}
-          why={L('Revenue/collection-by-segment deseni; iki seri ayrı okunur (düşük gün = iyi).', 'Collection-by-segment pattern; two series read separately (lower days = better).')}>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={segTrend} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}${en ? 'd' : 'g'}`} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => `${v} ${en ? 'days' : 'gün'}`} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="b2b" name="B2B" stroke={t.pr} strokeWidth={2.5} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="b2c" name="B2C" stroke={t.tl} strokeWidth={2.5} dot={{ r: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
+        <TahsilatTrendChart t={t} lang={lang} span={44} title={L('B2B Tahsilat Trendi', 'B2B Collections Trend')} segments={['B2B']} segmentToggle={false} currency={currency} />
       </div>
 
       {/* Row: Komisyon riski + Rep scatter */}

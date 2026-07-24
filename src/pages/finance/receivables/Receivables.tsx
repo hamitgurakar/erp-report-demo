@@ -5,11 +5,11 @@ import {
 } from 'recharts';
 import type { FinancialPeriod, FinCurrency, PeriodType, OrderMode } from '../../../types/finance';
 import { PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw } from '../../../constants/financeData';
-import { arAgingByCustomer, collectionWorklist } from '../../../constants/financeReportsData';
+import { arAgingByCustomer, collectionWorklist, collectionsLedger } from '../../../constants/financeReportsData';
 import { checksSeed } from '../../../constants/loansData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
-  StatusBadge, Dropdown, GaugeCard, type FinAlert,
+  StatusBadge, Dropdown, GaugeCard, TahsilatTrendChart, type FinAlert,
 } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
 import type { FinancePageProps } from '../_Placeholder';
@@ -111,35 +111,7 @@ export const Receivables = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
     return { month: m, expected: conv(amt) };
   });
 
-  // ── Tahsilat Trendi (B2B / B2C) — son 12 ay ─────────────────────────────────
-  // Toplam = son yıl Muhasebe cirosu (incomeRaw); tip payı alacak kartındaki B2B/B2C ağırlığından.
-  const b2bARw = AG.filter((c) => c.musteriTipi === 'B2B').reduce((s, c) => s + c.total, 0);
-  const b2cARw = AG.filter((c) => c.musteriTipi === 'B2C').reduce((s, c) => s + c.total, 0);
-  const b2bShare = b2bARw / (b2bARw + b2cARw);
-  const annualRev = incomeRaw[PERIODS_ANNUAL[PERIODS_ANNUAL.length - 1].id]?.revenue ?? 0; // Muhasebe: son yıl cirosu
-  const MONTHS = en ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    : ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-  // 12 aylık şekiller: B2B son 3 ay düşüşte, B2C istikrarlı yükselişte (deterministik)
-  const b2bShape = [1.10, 1.12, 1.14, 1.15, 1.16, 1.15, 1.13, 1.12, 1.10, 1.02, 0.94, 0.86];
-  const b2cShape = [0.80, 0.82, 0.85, 0.88, 0.90, 0.93, 0.96, 0.99, 1.02, 1.06, 1.10, 1.14];
-  const sumB2b = b2bShape.reduce((a, b) => a + b, 0);
-  const sumB2c = b2cShape.reduce((a, b) => a + b, 0);
-  const b2bFactor = (annualRev * b2bShare) / sumB2b;      // Σ B2B = yıllık ciro × B2B payı
-  const b2cFactor = (annualRev * (1 - b2bShare)) / sumB2c; // Σ B2C = yıllık ciro × B2C payı
-  const collTrendRaw = MONTHS.map((_, i) => {
-    const monthIdx = (7 + i) % 12; // Ağu..Tem penceresi (son 12 ay)
-    return { i, month: MONTHS[monthIdx], b2bTRY: b2bShape[i] * b2bFactor, b2cTRY: b2cShape[i] * b2cFactor };
-  });
-  const collTrend = collTrendRaw.map((r) => {
-    const prev = r.i > 0 ? collTrendRaw[r.i - 1] : null;
-    const mom = (cur: number, pv?: number) => (pv ? ((cur - pv) / pv) * 100 : 0);
-    return {
-      month: r.month,
-      b2b: conv(r.b2bTRY), b2c: conv(r.b2cTRY), toplam: conv(r.b2bTRY + r.b2cTRY),
-      b2bMoM: mom(r.b2bTRY, prev?.b2bTRY), b2cMoM: mom(r.b2cTRY, prev?.b2cTRY),
-    };
-  });
-  // Tip bazlı ortalama gecikme (overdue-ağırlıklı) → DSO farkı için
+  // ── Tip bazlı ortalama gecikme (overdue-ağırlıklı) → DSO farkı (AI uyarısı) ──
   const avgDelayByType = (tip: 'B2B' | 'B2C') => {
     const cs = AG.filter((c) => c.musteriTipi === tip);
     const od = cs.reduce((s, c) => s + (c.total - c.current), 0);
@@ -147,10 +119,13 @@ export const Receivables = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
     return od ? num / od : 0;
   };
   const dsoGap = Math.round(avgDelayByType('B2B') - avgDelayByType('B2C'));
-  const b2bColl = collTrend.reduce((s, r) => s + r.b2b, 0);
-  const b2bLast3 = collTrend.slice(-3).reduce((s, r) => s + r.b2b, 0);
-  const b2bPrev3 = collTrend.slice(-6, -3).reduce((s, r) => s + r.b2b, 0);
-  const b2bDeclining = b2bLast3 < b2bPrev3;
+  // B2B tahsilat eğilimi (son 3 ay vs önceki 3 ay) — tek kaynak: collectionsLedger
+  const b2bMonthly = (() => {
+    const m = new Map<string, number>();
+    for (const e of collectionsLedger) if (e.musteriTipi === 'B2B') m.set(e.tarih.slice(0, 7), (m.get(e.tarih.slice(0, 7)) ?? 0) + e.tutar);
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).map((x) => x[1]);
+  })();
+  const b2bDeclining = b2bMonthly.length >= 6 && b2bMonthly.slice(-3).reduce((a, b) => a + b, 0) < b2bMonthly.slice(-6, -3).reduce((a, b) => a + b, 0);
 
   // ── ısı haritası ──
   const heatBuckets = AGING_SERIES;
@@ -194,30 +169,6 @@ export const Receivables = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
       <Icon name={icon} size={12} />
     </button>
   );
-
-  // Tahsilat Trendi tooltip — iki seri + toplam + period-over-period (MoM)
-  const CollTip = ({ active, payload, label }: { active?: boolean; payload?: { payload: (typeof collTrend)[number] }[]; label?: string }) => {
-    if (!active || !payload || !payload.length) return null;
-    const d = payload[0].payload;
-    const row = (name: string, val: number, mom: number, color: string) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: color }} />{name}</span>
-        <span style={{ fontWeight: 600 }}>{fmtC(val)} <span style={{ color: mom >= 0 ? t.gn : t.rd, fontSize: 10, fontWeight: 600 }}>{mom >= 0 ? '▲' : '▼'}{Math.abs(mom).toFixed(1)}%</span></span>
-      </div>
-    );
-    return (
-      <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '8px 10px', fontSize: 11.5, color: t.tx, minWidth: 190 }}>
-        <div style={{ fontWeight: 700, marginBottom: 5 }}>{label}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {row('B2B', d.b2b, d.b2bMoM, t.pr)}
-          {row('B2C', d.b2c, d.b2cMoM, t.tl)}
-          <div style={{ borderTop: `1px solid ${t.bd}`, marginTop: 2, paddingTop: 3, display: 'flex', justifyContent: 'space-between', color: t.tx2 }}>
-            <span>{en ? 'Total' : 'Toplam'}</span><span style={{ fontWeight: 700 }}>{fmtC(d.toplam)}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <ReportPageLayout
@@ -264,27 +215,9 @@ export const Receivables = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
         </ChartCard>
       </div>
 
-      {/* Tahsilat Trendi (B2B / B2C) — Seeking Alpha collection-by-segment deseni */}
+      {/* Tahsilat Trendi — reusable component (B2B/B2C seçilebilir, dönem toggle) */}
       <div style={{ marginTop: 14 }}>
-        <ChartCard t={t} lang={lang} title={en ? 'Collections Trend (B2B / B2C)' : 'Tahsilat Trendi (B2B / B2C)'}
-          why={en ? 'Seeking Alpha collection/revenue-by-segment trend pattern — reads each segment separately.' : 'Seeking Alpha segment-bazlı tahsilat/gelir trend deseni — her segment ayrı okunur.'}>
-          <ResponsiveContainer width="100%" height={250}>
-            <ComposedChart data={collTrend} margin={{ top: 8, right: 10, bottom: 0, left: -6 }}>
-              <defs>
-                <linearGradient id="collB2B" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t.pr} stopOpacity={0.26} /><stop offset="100%" stopColor={t.pr} stopOpacity={0.03} /></linearGradient>
-                <linearGradient id="collB2C" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t.tl} stopOpacity={0.26} /><stop offset="100%" stopColor={t.tl} stopOpacity={0.03} /></linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={fmtC} width={48} />
-              <Tooltip content={<CollTip />} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="b2b" name="B2B" stroke={t.pr} strokeWidth={2.5} fill="url(#collB2B)" dot={{ r: 2 }} activeDot={{ r: 4 }} />
-              <Area type="monotone" dataKey="b2c" name="B2C" stroke={t.tl} strokeWidth={2.5} fill="url(#collB2C)" dot={{ r: 2 }} activeDot={{ r: 4 }} />
-              <Line type="monotone" dataKey="toplam" name={en ? 'Total' : 'Toplam'} stroke={t.tx3} strokeWidth={1.3} strokeDasharray="5 3" dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </ChartCard>
+        <TahsilatTrendChart t={t} lang={lang} title={en ? 'Collections Trend' : 'Tahsilat Trendi'} segments={['B2B', 'B2C']} segmentToggle currency={currency} />
       </div>
 
       {/* Row: CEI gauge + Concentration Pareto */}

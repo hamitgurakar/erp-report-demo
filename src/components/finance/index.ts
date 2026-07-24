@@ -21,3 +21,5 @@ export { GaugeCard } from './GaugeCard';
 export type { GaugeThreshold } from './GaugeCard';
 export { RecurringModal } from './RecurringModal';
 export { OccurrenceDialog } from './OccurrenceDialog';
+export { TahsilatTrendChart } from './TahsilatTrendChart';
+export type { PeriodMode } from './TahsilatTrendChart';

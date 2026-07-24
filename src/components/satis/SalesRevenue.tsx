@@ -9,6 +9,7 @@ import { SectionHeader } from '../ui/SectionHeader';
 import { ChartContainer } from '../ui/ChartContainer';
 import { Icon } from '../ui/Icon';
 import { fmtMonth } from '../../utils/format';
+import { TahsilatTrendChart } from '../finance';
 
 interface Props {
   t: Theme;
@@ -265,6 +266,11 @@ export const SalesRevenue = ({ t, l, lang, panels, onAddPanel, onPinTo }: Props)
             </AreaChart>
           </ResponsiveContainer>
         </ChartContainer>
+      </div>
+
+      {/* Aylık Ciro Trendi'nin hemen altına — B2B Tahsilat Trendi (aynı reusable component) */}
+      <div style={{ marginBottom: 12 }}>
+        <TahsilatTrendChart t={t} lang={lang} title={lang === 'en' ? 'B2B Collections Trend' : 'B2B Tahsilat Trendi'} segments={['B2B']} segmentToggle={false} />
       </div>
 
       {/* ── Section 4: MÜŞTERİ SEGMENTİ BAZLI GELİR ────────────────────────── */}

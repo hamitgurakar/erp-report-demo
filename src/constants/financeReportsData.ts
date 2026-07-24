@@ -87,6 +87,32 @@ export const arAgingByCustomer: ARCustomer[] = [
   { customer: 'Bosphorus Retail Group', musteriTipi: 'B2C', total: 480_000, current: 150_000, d1_30: 120_000, d31_60: 110_000, d61_90: 70_000, d90plus: 30_000, oldestInvoice: '2026-04-05', riskScore: 55, status: 'overdue', temsilci: 'Burak A.', dealTutari: 1_300_000, dealKapanisTarihi: '2026-03-25', tahsilatTarihi: null, satisTuru: 'Vadeli', komisyonTutari: 26_000, komisyonOdendiMi: true },
 ];
 
+// ── Tahsilat defteri (türev — receivables tek kaynağından üretilir) ──────────
+// Her müşterinin tahsil edilen tutarı (dealTutari − açık AR) deal kapanışından
+// tahsilat tarihine (yoksa bugüne) kadar aylara yayılır. TahsilatTrendChart bunu
+// döneme göre bucket'lar. Σ(segment) = Σ(dealTutari − total) → Muhasebe ile tutar.
+export interface CollectionEvent { customer: string; musteriTipi: 'B2B' | 'B2C'; tarih: string; tutar: number; }
+const COLL_TODAY = '2026-07-24';
+const enumMonths = (startYM: string, endYM: string): string[] => {
+  const out: string[] = []; let [y, m] = startYM.split('-').map(Number);
+  const [ey, em] = endYM.split('-').map(Number); let guard = 0;
+  while ((y < ey || (y === ey && m <= em)) && guard++ < 60) { out.push(`${y}-${String(m).padStart(2, '0')}`); m++; if (m > 12) { m = 1; y++; } }
+  return out;
+};
+export const collectionsLedger: CollectionEvent[] = arAgingByCustomer.flatMap((c) => {
+  const collected = c.dealTutari - c.total;
+  if (collected <= 0) return [];
+  const endISO = c.tahsilatTarihi ?? COLL_TODAY;
+  const months = enumMonths(c.dealKapanisTarihi.slice(0, 7), endISO.slice(0, 7));
+  const wSum = months.reduce((s, _, i) => s + (i + 1), 0); // artan ağırlık
+  let acc = 0;
+  return months.map((mo, i) => {
+    const tutar = i === months.length - 1 ? collected - acc : Math.round((collected * (i + 1)) / wSum);
+    acc += tutar;
+    return { customer: c.customer, musteriTipi: c.musteriTipi, tarih: `${mo}-15`, tutar };
+  });
+});
+
 export interface CollectionTask {
   customer: string; overdueAmount: number; days: number; lastContact: string; promisedPayment: string | null; assignee: string; status: Bi;
 }
