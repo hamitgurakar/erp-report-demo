@@ -65,16 +65,17 @@ export const cccComponents: CCCComponent[] = [
 
 // ── SAYFA 3 — Alacak Yönetimi ───────────────────────────────────────────────
 export interface ARCustomer {
-  customer: string; total: number; current: number; d1_30: number; d31_60: number; d61_90: number; d90plus: number;
+  customer: string; musteriTipi: 'B2B' | 'B2C'; total: number; current: number; d1_30: number; d31_60: number; d61_90: number; d90plus: number;
   oldestInvoice: string; riskScore: number; status: 'current' | 'overdue' | 'doubtful';
 }
+// musteriTipi: Satış tarafındaki müşteri tipi kırılımıyla tutarlı (kurumsal cari → B2B, perakende/mağaza → B2C)
 export const arAgingByCustomer: ARCustomer[] = [
-  { customer: 'Yıldız Hediyelik A.Ş.', total: 1_240_000, current: 120_000, d1_30: 80_000, d31_60: 90_000, d61_90: 110_000, d90plus: 840_000, oldestInvoice: '2026-02-11', riskScore: 88, status: 'doubtful' },
-  { customer: 'Ada Mağazacılık Ltd.', total: 960_000, current: 420_000, d1_30: 310_000, d31_60: 150_000, d61_90: 80_000, d90plus: 0, oldestInvoice: '2026-05-02', riskScore: 42, status: 'overdue' },
-  { customer: 'Marmara Perakende', total: 720_000, current: 500_000, d1_30: 160_000, d31_60: 60_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-01', riskScore: 28, status: 'current' },
-  { customer: 'Ege Toptan Dağıtım', total: 640_000, current: 210_000, d1_30: 180_000, d31_60: 120_000, d61_90: 90_000, d90plus: 40_000, oldestInvoice: '2026-03-20', riskScore: 61, status: 'overdue' },
-  { customer: 'Anadolu Zincir Market', total: 540_000, current: 400_000, d1_30: 90_000, d31_60: 50_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-10', riskScore: 22, status: 'current' },
-  { customer: 'Bosphorus Retail Group', total: 480_000, current: 150_000, d1_30: 120_000, d31_60: 110_000, d61_90: 70_000, d90plus: 30_000, oldestInvoice: '2026-04-05', riskScore: 55, status: 'overdue' },
+  { customer: 'Yıldız Hediyelik A.Ş.', musteriTipi: 'B2B', total: 1_240_000, current: 120_000, d1_30: 80_000, d31_60: 90_000, d61_90: 110_000, d90plus: 840_000, oldestInvoice: '2026-02-11', riskScore: 88, status: 'doubtful' },
+  { customer: 'Ada Mağazacılık Ltd.', musteriTipi: 'B2C', total: 960_000, current: 420_000, d1_30: 310_000, d31_60: 150_000, d61_90: 80_000, d90plus: 0, oldestInvoice: '2026-05-02', riskScore: 42, status: 'overdue' },
+  { customer: 'Marmara Perakende', musteriTipi: 'B2C', total: 720_000, current: 500_000, d1_30: 160_000, d31_60: 60_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-01', riskScore: 28, status: 'current' },
+  { customer: 'Ege Toptan Dağıtım', musteriTipi: 'B2B', total: 640_000, current: 210_000, d1_30: 180_000, d31_60: 120_000, d61_90: 90_000, d90plus: 40_000, oldestInvoice: '2026-03-20', riskScore: 61, status: 'overdue' },
+  { customer: 'Anadolu Zincir Market', musteriTipi: 'B2B', total: 540_000, current: 400_000, d1_30: 90_000, d31_60: 50_000, d61_90: 0, d90plus: 0, oldestInvoice: '2026-06-10', riskScore: 22, status: 'current' },
+  { customer: 'Bosphorus Retail Group', musteriTipi: 'B2C', total: 480_000, current: 150_000, d1_30: 120_000, d31_60: 110_000, d61_90: 70_000, d90plus: 30_000, oldestInvoice: '2026-04-05', riskScore: 55, status: 'overdue' },
 ];
 
 export interface CollectionTask {
