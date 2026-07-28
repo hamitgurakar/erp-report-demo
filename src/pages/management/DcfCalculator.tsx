@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import {
-  LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  LineChart, Line, AreaChart, Area, BarChart, Bar, Cell, LabelList,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import type { FinCurrency } from '../../types/finance';
 import type { Theme, Lang } from '../../types';
@@ -9,7 +10,7 @@ import { dcfDefaults, BASE_BY_METRIC, DCF_SHARES } from '../../constants/dcfData
 import { runDcf, scenarioWeighted, reverseDcf, projectCashflows, sensitivityMatrix } from '../../lib/finance/dcfEngine';
 import { useDcf } from '../../context/DcfContext';
 import {
-  ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, StatusBadge, Waterfall, InfoTip, Dropdown, type FinAlert,
+  ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, StatusBadge, InfoTip, Dropdown, type FinAlert,
 } from '../../components/finance';
 import { Icon } from '../../components/ui/Icon';
 import type { FinancePageProps } from '../finance/_Placeholder';
@@ -94,13 +95,16 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
   const netkarData = useMemo(() => buildSeries(BASE_BY_METRIC.NetKar), [s]);
   const favokData = useMemo(() => buildSeries(BASE_BY_METRIC.FAVOK), [s]);
 
-  const bridge = [
-    { label: L('Şirket Değeri', 'Enterprise Value'), value: conv(res.enterpriseValue), isTotal: true },
-    { label: L('− Net Borç', '− Net Debt'), value: -conv(s.netDebtTRY), isTotal: false },
-    { label: L('Özkaynak', 'Equity'), value: conv(res.equityValue), isTotal: true },
-    { label: L(`− DLOM %${s.dlomPct}`, `− DLOM ${s.dlomPct}%`), value: -conv(res.equityValue * s.dlomPct / 100), isTotal: false },
-    { label: L('Net Değer', 'Net Value'), value: conv(res.equityAfterDLOM), isTotal: true },
+  // Değer köprüsü — invisible-base + delta tekniği (floating bar). Tüm barlar aynı 0→EV ölçeğinde.
+  const dlomAmt = res.equityValue * s.dlomPct / 100;
+  const bridgeData = [
+    { name: L('Şirket Değeri', 'Enterprise Value'), base: 0, delta: conv(res.enterpriseValue), val: conv(res.enterpriseValue), down: false }, // total
+    { name: L('−Net Borç', '−Net Debt'), base: conv(res.equityValue), delta: conv(s.netDebtTRY), val: -conv(s.netDebtTRY), down: true },      // eq→EV arası asılı
+    { name: L('Özkaynak', 'Equity'), base: 0, delta: conv(res.equityValue), val: conv(res.equityValue), down: false }, // total
+    { name: L(`−DLOM %${s.dlomPct}`, `−DLOM ${s.dlomPct}%`), base: conv(res.equityAfterDLOM), delta: conv(dlomAmt), val: -conv(dlomAmt), down: true }, // net→eq arası asılı
+    { name: L('Net Değer', 'Net Value'), base: 0, delta: conv(res.equityAfterDLOM), val: conv(res.equityAfterDLOM), down: false }, // total
   ];
+  const bridgeMax = conv(res.enterpriseValue) * 1.08; // Y ekseni EV'ye küçük pay
 
   // ── kaydet/yükle ──
   const saveSettings = () => dcf.saveToSettings(s);
@@ -278,8 +282,29 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
           )}
           {chartTab === 'bridge' && (
             <div>
-              <div style={{ fontSize: 11.5, color: t.tx3, marginBottom: 8 }}>{L('EV → −Net Borç → Özkaynak → −DLOM → Net Değer', 'EV → −Net Debt → Equity → −DLOM → Net Value')}</div>
-              <Waterfall steps={bridge} t={t} fmt={(c) => { const a = Math.abs(c); const str = a >= 1e6 ? (c / 1e6).toFixed(1) + 'M' : a >= 1e3 ? (c / 1e3).toFixed(0) + 'K' : Math.round(c).toString(); return `${sym}${str}`; }} height={260} />
+              <div style={{ fontSize: 11.5, color: t.tx3, marginBottom: 8 }}>{L('EV → −Net Borç → Özkaynak → −DLOM → Net Değer (azalışlar havada asılı, floating)', 'EV → −Net Debt → Equity → −DLOM → Net Value (decreases float)')}</div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={bridgeData} margin={{ top: 24, right: 12, bottom: 0, left: -2 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={t.bd} vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10.5, fill: t.tx2 }} axisLine={false} tickLine={false} interval={0} />
+                  <YAxis domain={[0, bridgeMax]} tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={fmtC} width={54} />
+                  <Tooltip cursor={{ fill: t.bg2 }} content={({ active, payload }: { active?: boolean; payload?: { payload: (typeof bridgeData)[number] }[] }) => {
+                    if (!active || !payload || !payload.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 8, padding: '7px 10px', fontSize: 12, color: t.tx }}>
+                        <div style={{ fontWeight: 700, marginBottom: 2 }}>{d.name}</div>
+                        <div style={{ color: d.down ? t.rd : t.gn, fontWeight: 600 }}>{d.down ? '−' : ''}{fmtC(Math.abs(d.val))}</div>
+                      </div>
+                    );
+                  }} />
+                  <Bar dataKey="base" stackId="a" fill="transparent" isAnimationActive={false} />
+                  <Bar dataKey="delta" stackId="a" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                    {bridgeData.map((d, i) => <Cell key={i} fill={d.down ? '#F87171' : t.gn} />)}
+                    <LabelList dataKey="val" position="top" formatter={(v: number) => `${v < 0 ? '−' : ''}${fmtC(Math.abs(v))}`} style={{ fontSize: 10, fontWeight: 600, fill: t.tx }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
           {chartTab === 'sens' && (
