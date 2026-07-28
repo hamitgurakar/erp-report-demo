@@ -106,7 +106,7 @@ export const mkSpk = (trend: string, unit = 'K ₺', lang: Lang = 'tr'): SparkPo
 // Any report key NOT in this set is treated as "coming soon" (Yakında) in the sidebar.
 // When a new page is wired into Dashboard.tsx, add its key here and the badge disappears.
 export const IMPLEMENTED_REPORTS = new Set<string>([
-  'yonetim__0', 'yonetim__3', 'yonetim__4',
+  'yonetim__0', 'yonetim__3', 'yonetim__4', 'yonetim__5',
   'satis__0', 'satis__1', 'satis__2', 'satis__3', 'satis__4', 'satis__5',
   'satis__6', 'satis__7', 'satis__8', 'satis__9', 'satis__10', 'satis__11',
   'kategori__0', 'kategori__1', 'kategori__2', 'kategori__3', 'kategori__4',

@@ -4,12 +4,15 @@ import './index.css'
 import App from './App.jsx'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { RecurringProvider } from './context/RecurringContext'
+import { DcfProvider } from './context/DcfContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <LanguageProvider>
       <RecurringProvider>
-        <App />
+        <DcfProvider>
+          <App />
+        </DcfProvider>
       </RecurringProvider>
     </LanguageProvider>
   </StrictMode>,

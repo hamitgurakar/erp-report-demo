@@ -29,7 +29,7 @@ export const en: Dict = {
       destek: 'Customer Support',
     },
     reports: {
-      yonetim: ['Overview Report', 'Financial Health', 'Growth Analysis', 'Total Targets 🎯', 'Financial Data'],
+      yonetim: ['Overview Report', 'Financial Health', 'Growth Analysis', 'Total Targets 🎯', 'Financial Data', 'DCF Calculator'],
       satis: [
         'Executive Overview', 'Revenue & Profitability', 'Pipeline & Deal', 'Rep Performance',
         'Customer & Segment', 'Product & Category', 'Seasonal & Time', 'AI Sales Coach',

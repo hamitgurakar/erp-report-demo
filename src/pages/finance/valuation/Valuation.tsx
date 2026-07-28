@@ -5,11 +5,12 @@ import {
 } from 'recharts';
 import type { FinancialPeriod, FinCurrency, PeriodType } from '../../../types/finance';
 import { PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw, TOTAL_SHARES } from '../../../constants/financeData';
-import { compsSet, dcfAssumptions, footballField } from '../../../constants/financeReportsData';
+import { compsSet, footballField } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
   Dropdown, Waterfall, type FinAlert,
 } from '../../../components/finance';
+import { useDcf } from '../../../context/DcfContext';
 import type { FinancePageProps } from '../_Placeholder';
 
 const ebitdaAnnualOf = (p: FinancialPeriod) => {
@@ -28,6 +29,15 @@ export const Valuation = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   const [currency, setCurrency] = useState<FinCurrency>('TRY');
   const [eduOpen, setEduOpen] = useState(false);
   const en = lang === 'en';
+  const dcf = useDcf(); // DCF Calculator "Ayarlar'a kaydet" → bu tablo canlı besleniyor (tek kaynak)
+  const liveAssumptions = [
+    { assumption: { tr: 'WACC', en: 'WACC' }, value: `%${dcf.saved.waccPct}`, note: { tr: 'TL nominal', en: 'TRY nominal' } },
+    { assumption: { tr: 'Türkiye ERP', en: 'Turkey ERP' }, value: `%${dcf.saved.erpPct.toFixed(2)}`, note: { tr: 'Damodaran 07/2026', en: 'Damodaran 07/2026' } },
+    { assumption: { tr: 'Terminal Büyüme', en: 'Terminal Growth' }, value: `%${dcf.saved.terminalGrowthPct}`, note: { tr: '≈GSYİH, WACC altında', en: '≈GDP, below WACC' } },
+    { assumption: { tr: 'Projeksiyon', en: 'Projection' }, value: `${dcf.saved.years} ${en ? 'yr' : 'yıl'}`, note: { tr: 'Açık dönem', en: 'Explicit period' } },
+    { assumption: { tr: 'Senaryo Ağırlığı', en: 'Scenario Weight' }, value: dcf.saved.scenarios.map((sc) => sc.weight).join(' / '), note: { tr: 'Kötü/Baz/İyi', en: 'Bear/Base/Bull' } },
+    { assumption: { tr: 'DLOM', en: 'DLOM' }, value: `%${dcf.saved.dlomPct}`, note: { tr: 'Pazarlanabilirlik iskontosu', en: 'Marketability discount' } },
+  ];
 
   const periods = donem === 'annual' ? PERIODS_ANNUAL : PERIODS_QUARTER;
   const curr = periods[periods.length - 1];
@@ -319,7 +329,7 @@ export const Valuation = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
               </tr>
             </thead>
             <tbody>
-              {dcfAssumptions.map((a, i) => {
+              {liveAssumptions.map((a, i) => {
                 const isERP = a.assumption.tr.includes('ERP');
                 const isDlom = a.assumption.tr.includes('DLOM');
                 return (

@@ -29,7 +29,7 @@ export const tr = {
       destek: 'Müşteri Destek',
     },
     reports: {
-      yonetim: ['Özet Rapor', 'Finansal Sağlık', 'Büyüme Analizi', 'Toplam Hedefler 🎯', 'Finansal Veriler'],
+      yonetim: ['Özet Rapor', 'Finansal Sağlık', 'Büyüme Analizi', 'Toplam Hedefler 🎯', 'Finansal Veriler', 'DCF Calculator'],
       satis: [
         'Yönetici Özeti', 'Gelir & Karlılık', 'Pipeline & Deal', 'Uzman Performans',
         'Müşteri & Segment', 'Ürün & Kategori', 'Sezonsal & Zaman', 'AI Sales Coach',

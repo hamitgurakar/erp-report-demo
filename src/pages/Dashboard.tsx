@@ -37,6 +37,7 @@ import { SalesTargets } from '../components/satis/SalesTargets';
 import { SalesCollections } from '../components/satis/SalesCollections';
 import { ManagementTargets } from '../components/yonetim/ManagementTargets';
 import { FinancialData } from './finance/FinancialData';
+import { DcfCalculator } from './management/DcfCalculator';
 import { IncomeProfitability } from './finance/income-profitability/IncomeProfitability';
 import { CashLiquidity } from './finance/cash-liquidity/CashLiquidity';
 import { Receivables } from './finance/receivables/Receivables';
@@ -68,6 +69,7 @@ export default function Dashboard() {
   const repTitles: Record<string, string> = {
     'yonetim__3': db.l.yonetimHedefler,
     'yonetim__4': db.l.finansalVeriler,
+    'yonetim__5': db.l.dcfCalculator,
     'satis__0': db.l.satisOzeti,
     'satis__1': db.l.satisRaporu,
     'satis__2': db.l.pipelineAnalizi,
@@ -147,7 +149,7 @@ export default function Dashboard() {
             onChangeAcct={db.setAcct}
             dateRange={db.dateRange}
             setDateRange={db.setDateRange}
-            hideAccount={db.activeRep === 'yonetim__4' || db.activeRep.startsWith('muhasebe__')}
+            hideAccount={db.activeRep === 'yonetim__4' || db.activeRep === 'yonetim__5' || db.activeRep.startsWith('muhasebe__')}
           />
 
           <div style={{ padding: '5px 24px', fontSize: 11, color: db.t.tx3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -169,6 +171,8 @@ export default function Dashboard() {
               <ManagementTargets {...kp} />
             ) : db.activeRep === 'yonetim__4' ? (
               <FinancialData {...kp} />
+            ) : db.activeRep === 'yonetim__5' ? (
+              <DcfCalculator {...kp} />
             ) : db.activeRep === 'satis__0' ? (
               <SalesOverview {...kp} />
             ) : db.activeRep === 'satis__1' ? (
