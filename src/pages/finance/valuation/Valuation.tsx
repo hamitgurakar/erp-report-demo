@@ -26,6 +26,7 @@ const MEDIAN = compsSet.find((c) => c.company.startsWith('Medyan') || c.company.
 export const Valuation = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   const [donem, setDonem] = useState<PeriodType>('annual');
   const [currency, setCurrency] = useState<FinCurrency>('TRY');
+  const [eduOpen, setEduOpen] = useState(false);
   const en = lang === 'en';
 
   const periods = donem === 'annual' ? PERIODS_ANNUAL : PERIODS_QUARTER;
@@ -344,6 +345,82 @@ export const Valuation = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
 
       <div style={{ marginTop: 16 }}>
         <AIAlertPanel t={t} lang={lang} alerts={alerts} />
+      </div>
+
+      {/* ── Eğitim / Bilgilendirme (accordion, default kapalı) ─────────────────── */}
+      <div style={{ marginTop: 16, background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
+        <button onClick={() => setEduOpen((o) => !o)}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+          <span style={{ width: 4, height: 18, background: t.tl, borderRadius: 2, flexShrink: 0 }} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: t.tx, flex: 1 }}>{en ? 'What is DCF & How It Works?' : 'DCF Nedir & Nasıl Çalışır?'}</span>
+          <span style={{ fontSize: 12, color: t.tx3, transform: eduOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▸</span>
+        </button>
+        {eduOpen && (() => {
+          const H: CSSProperties = { fontSize: 13, fontWeight: 700, color: t.tx, margin: '18px 0 7px' };
+          const P: CSSProperties = { fontSize: 12.5, color: t.tx2, lineHeight: 1.65, margin: '0 0 8px' };
+          const LI: CSSProperties = { fontSize: 12.5, color: t.tx2, lineHeight: 1.6, marginBottom: 6 };
+          const b = (s: string) => <strong style={{ color: t.tx, fontWeight: 700 }}>{s}</strong>;
+          return (
+            <div style={{ padding: '0 18px 20px', borderTop: `1px solid ${t.bd}` }}>
+              {/* DCF Nedir? */}
+              <div style={{ ...H, marginTop: 16 }}>DCF Nedir? (What is DCF?)</div>
+              <p style={P}>
+                İndirgenmiş Nakit Akışı (Discounted Cash Flow / DCF), bir şirketin bugünkü değerini, gelecekte
+                üreteceği nakit akışlarını bugüne indirgeyerek hesaplayan değerleme yöntemidir. Temel fikir:{' '}
+                {b('bir şirket, gelecekte sahiplerine üretebileceği nakit kadar değerlidir.')} Bugünkü 1₺, gelecekteki
+                1₺'den değerlidir (paranın zaman değeri / time value of money) — çünkü bugünkü para yatırılıp
+                getiri sağlayabilir. DCF bu "gelecekteki nakdi bugünkü değerine çevirme" işlemidir.
+              </p>
+
+              {/* Neden kullanılır? */}
+              <div style={H}>Neden şirketler bu yöntemi kullanır? (Why is it used?)</div>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                <li style={LI}>{b('Piyasa fiyatından bağımsızdır:')} Çarpan yöntemleri (F/K, EV/FAVÖK) piyasanın o anki ruh haline bağlıdır; DCF şirketin kendi nakit üretme gücüne dayanır (intrinsic / içsel değer).</li>
+                <li style={LI}>{b('Halka kapalı şirketler için idealdir:')} Muhiku gibi borsada işlem görmeyen şirketlerde "hisse fiyatı" yoktur; DCF, fiyat olmadan değer biçebilen tek sağlam yöntemdir.</li>
+                <li style={LI}>{b('Varsayımları şeffaftır:')} Büyüme, kârlılık, iskonto oranı açıkça girilir; "değer neye duyarlı?" sorusu duyarlılık analiziyle görülür.</li>
+                <li style={LI}>{b('Yatırım/satış/ortaklık kararlarında standarttır:')} Şirket değerleme, hisse devri, yatırımcı görüşmeleri ve stratejik planlamada kullanılır.</li>
+              </ul>
+
+              {/* Nasıl çalışır? */}
+              <div style={H}>Nasıl çalışır? (How it works — 4 adım)</div>
+              <ol style={{ margin: 0, paddingLeft: 18 }}>
+                <li style={LI}>{b('Nakit akışı projeksiyonu (Cash Flow Projection):')} Şirketin önümüzdeki N yıl (ör. 5 yıl) üreteceği serbest nakit akışı / net kâr, bir büyüme oranıyla tahmin edilir. {b('Growth Decay')} ile büyüme her yıl kademeli yavaşlatılır (gerçekçilik: hiçbir şirket sonsuza dek aynı hızda büyümez).</li>
+                <li style={LI}>{b('Terminal değer (Terminal Value):')} Projeksiyon sonrası şirketin "kalan tüm ömrü" tek bir değere indirgenir — ya sabit sonsuz büyüme (Gordon Growth) ya da çıkış çarpanı (exit multiple) ile. <em style={{ color: t.tx3 }}>Dikkat: değerin genelde %60-80'i terminal değerden gelir; bu yüzden terminal varsayımı kritiktir.</em></li>
+                <li style={LI}>{b('İskonto (Discounting / WACC):')} Gelecekteki nakit akışları ve terminal değer, {b('iskonto oranı (WACC — Ağırlıklı Ortalama Sermaye Maliyeti / Weighted Average Cost of Capital)')} ile bugüne indirgenir. WACC ne kadar yüksekse gelecekteki nakit o kadar "ucuzlar" — Türkiye'de yüksek enflasyon/risk primi (Damodaran TR risk primi ~%9,30) WACC'i yükseltir, bu da değeri düşürür.</li>
+                <li style={LI}>{b('Değer köprüsü (EV → Equity → Net Değer):')} İndirgenmiş toplam = {b('Şirket Değeri (Enterprise Value)')}. Bundan {b('Net Borç')} çıkarılınca {b('Özkaynak Değeri (Equity Value)')}; halka kapalı/pazarlanamaz olduğu için {b('DLOM (Pazarlanabilirlik İskontosu / Discount for Lack of Marketability ~%25)')} uygulanınca nihai değer bulunur. 20.000.000 hisseye bölününce {b('hisse başına değer')}, cap table paylarıyla çarpılınca {b('ortak bazında değer')} elde edilir.</li>
+              </ol>
+
+              {/* Modlar */}
+              <div style={H}>Modlar (Modes)</div>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                <li style={LI}>{b('FCF-DCF:')} En sağlam yöntem — serbest nakit akışına dayanır. Muhiku varsayılanı.</li>
+                <li style={LI}>{b('Earnings / Exit-Multiple:')} Hızlı tahmin — net kârı büyütüp çıkış çarpanıyla çarpar. Kaba ama pratik.</li>
+                <li style={LI}>{b('Reverse DCF (Ters DCF):')} Tersine çevirir — "mevcut değerlemeyi haklı çıkarmak için şirketin ne kadar büyümesi gerekir?" sorusunu yanıtlar. İma edilen büyüme, tarihsel büyümeden çok yüksekse değerleme iyimser demektir (GuruFocus reverse-DCF mantığı).</li>
+              </ul>
+
+              {/* Senaryo & Duyarlılık */}
+              <div style={H}>Senaryo &amp; Duyarlılık (Scenario &amp; Sensitivity)</div>
+              <p style={P}>
+                Tek bir "kesin değer" yanıltıcıdır. Bu araç {b('Kötümser %25 / Baz %50 / İyimser %25')} senaryolarını
+                ağırlıklandırır ve {b('WACC × Terminal Büyüme duyarlılık matrisi')} ile değerin varsayımlara ne kadar
+                hassas olduğunu gösterir. Amaç tek rakam değil, {b('savunulabilir bir değer aralığıdır.')}
+              </p>
+
+              {/* Sınırları */}
+              <div style={H}>Sınırları (Limitations — dürüst uyarı)</div>
+              <p style={P}>
+                DCF, girdiğiniz varsayımlar kadar iyidir ("garbage in, garbage out"). Küçük WACC/terminal büyüme
+                değişiklikleri sonucu büyük oranda değiştirebilir. Bu yüzden DCF'i tek başına değil, çarpan (comps)
+                ve piyasa mantığıyla birlikte kullanın (bkz. bu sayfadaki football-field / 3-yöntem kıyası).
+              </p>
+
+              <div style={{ marginTop: 14, fontSize: 12, color: t.tx3, borderTop: `1px solid ${t.bd}`, paddingTop: 12 }}>
+                {en ? 'Edit DCF assumptions (WACC, terminal growth, DLOM) in ' : 'DCF varsayımlarını (WACC, terminal büyüme, DLOM) düzenle → '}
+                <span style={{ color: t.pr, fontWeight: 600, cursor: 'pointer' }} onClick={() => onSelectRep?.('yonetim__4')}>{en ? 'Settings →' : 'Ayarlar'}</span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </ReportPageLayout>
   );
