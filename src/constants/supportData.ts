@@ -379,6 +379,59 @@ export const getCdrRows = (): CdrRow[] => voiceInteractions
   }))
   .sort((a, b) => b.startAt.localeCompare(a.startAt));
 
+// ══════════ L2.1 Ticket & Konuşma Analizi helper'ları ══════════
+const isTicketResolved = (r: SupportInteraction) => isResolved(r) && !r.reopened;
+
+export interface TicketTrendPoint { week: string; yeni: number; cozulen: number; backlog: number; hacim: number; }
+export const getTicketTrend = (): TicketTrendPoint[] => {
+  const weeks = [...new Set(supportInteractions.map((r) => mondayOf(r.startAt)))].sort();
+  let backlog = 0;
+  return weeks.map((wk) => {
+    const started = supportInteractions.filter((r) => mondayOf(r.startAt) === wk);
+    const yeni = started.length;
+    const cozulen = started.filter(isTicketResolved).length;
+    backlog = Math.max(0, backlog + yeni - cozulen);
+    return { week: wk, yeni, cozulen, backlog, hacim: yeni };
+  });
+};
+
+export const getBacklog = (): number => { const tr = getTicketTrend(); return tr.length ? tr[tr.length - 1].backlog : 0; };
+export const getReopenRate = (): number => (supportInteractions.length ? (supportInteractions.filter((r) => r.reopened).length / supportInteractions.length) * 100 : 0);
+
+export interface SegmentStat { segment: 'Kurumsal' | 'Bireysel'; count: number; csat: number; }
+export const getSegmentBreakdown = (): SegmentStat[] => (['Kurumsal', 'Bireysel'] as const).map((seg) => {
+  const rows = supportInteractions.filter((r) => r.segment === seg);
+  const cs = rows.filter((r) => r.csat != null).map((r) => r.csat!);
+  return { segment: seg, count: rows.length, csat: mean(cs) };
+});
+
+export interface GeoStat { province: string; count: number; }
+export const getGeoByProvince = (): GeoStat[] => {
+  const map = new Map<string, number>();
+  for (const r of supportInteractions) { if (!r.city) continue; map.set(r.city, (map.get(r.city) ?? 0) + 1); }
+  return [...map.entries()].map(([province, count]) => ({ province, count })).sort((a, b) => b.count - a.count);
+};
+
+export interface TicketKpis { backlog: KpiVal; yeni: KpiVal; reopenPct: KpiVal; avgKonusma: KpiVal; }
+export const getTicketKpis = (): TicketKpis => {
+  const months = [...new Set(supportInteractions.map((r) => monthKey(r.startAt)))].sort();
+  const last = months[months.length - 1], prev = months[months.length - 2];
+  const inMonth = (m: string) => supportInteractions.filter((r) => monthKey(r.startAt) === m);
+  const mom = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
+  const tr = getTicketTrend();
+  const backlogNow = tr.length ? tr[tr.length - 1].backlog : 0;
+  const backlog4 = tr.length >= 5 ? tr[tr.length - 5].backlog : (tr[0]?.backlog ?? 0);
+  const yeniL = inMonth(last).length, yeniP = inMonth(prev).length;
+  const reopen = (rows: SupportInteraction[]) => (rows.length ? (rows.filter((r) => r.reopened).length / rows.length) * 100 : 0);
+  const konusma = (rows: SupportInteraction[]) => mean(rows.filter((r) => !r.abandoned).map((r) => r.talkSec));
+  return {
+    backlog: { value: backlogNow, mom: mom(backlogNow, backlog4) },
+    yeni: { value: yeniL, mom: mom(yeniL, yeniP) },
+    reopenPct: { value: getReopenRate(), mom: mom(reopen(inMonth(last)), reopen(inMonth(prev))) },
+    avgKonusma: { value: konusma(supportInteractions), mom: mom(konusma(inMonth(last)), konusma(inMonth(prev))) },
+  };
+};
+
 export interface AgentStat { id: string; name: string; count: number; csat: number; kind: 'voice' | 'digital'; }
 export const getAgentSnapshot = (): { top: AgentStat[]; attention: AgentStat[] } => {
   const map = new Map<string, { name: string; count: number; csats: number[]; kind: 'voice' | 'digital' }>();

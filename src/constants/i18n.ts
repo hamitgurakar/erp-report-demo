@@ -613,6 +613,7 @@ const tr: LangStrings = {
   dcfCalculator: 'DCF Calculator',
   destekGenelBakis: 'Destek Genel Bakış',
   destekCagriMerkezi: 'Çağrı Merkezi',
+  destekTicket: 'Ticket & Konuşma Analizi',
   // Finans Suite (Muhasebe) sayfa başlıkları
   mhFin0: 'Gelir & Karlılık',
   mhFin1: 'Nakit & Likidite',
@@ -1250,6 +1251,7 @@ const en: LangStrings = {
   dcfCalculator: 'DCF Calculator',
   destekGenelBakis: 'Support Overview',
   destekCagriMerkezi: 'Call Center',
+  destekTicket: 'Ticket & Conversation Analysis',
   // Finance Suite (Accounting) page titles
   mhFin0: 'Income & Profitability',
   mhFin1: 'Cash & Liquidity',
