@@ -633,3 +633,71 @@ export const getKanalKpis = (): KanalKpis => {
     yanitOrani: { value: respRate(supportInteractions), mom: mom(respRate(inM(last)), respRate(inM(prev))) },
   };
 };
+
+// ══════════ L2.6 Nedenler & Operasyon Kesişimi + Self-Service helper'ları ══════════
+const MOCK_ORDERS_6M = 6000; // Operasyon modülü veri sağlamıyor → mock sipariş tabanı (6 ay)
+
+export interface ReasonDeep { reason: Reason; total: number; kurumsal: number; bireysel: number; }
+export const getReasonDeep = (): ReasonDeep[] => REASONS.map(([reason]) => {
+  const rows = supportInteractions.filter((r) => r.reason === reason);
+  return { reason, total: rows.length, kurumsal: rows.filter((r) => r.segment === 'Kurumsal').length, bireysel: rows.filter((r) => r.segment === 'Bireysel').length };
+}).sort((a, b) => b.total - a.total);
+
+export interface OpsCorrPoint { week: string; ticketVol: number; kargoSL: number; }
+// Operasyon kargo SL — mockSupport içinde WISMO/Teslimat hacmiyle TERS korele üretilir (bağımsız mock).
+export const getOpsCorrelation = (): OpsCorrPoint[] => {
+  const weeks = [...new Set(supportInteractions.map((r) => mondayOf(r.startAt)))].sort();
+  const volOf = (wk: string) => supportInteractions.filter((r) => mondayOf(r.startAt) === wk && (r.reason === 'WISMO' || r.reason === 'Teslimat')).length;
+  const vols = weeks.map(volOf);
+  const minV = Math.min(...vols), maxV = Math.max(...vols);
+  return weeks.map((wk, i) => {
+    const norm = maxV > minV ? (vols[i] - minV) / (maxV - minV) : 0; // 0..1 (yüksek hacim)
+    const kargoSL = Math.round((96 - norm * 24) * 10) / 10; // hacim↑ → SL↓ (96 → 72)
+    return { week: wk, ticketVol: vols[i], kargoSL };
+  });
+};
+
+export interface ArticleFb { title: string; helpful: number; unhelpful: number; helpfulPct: number; }
+const hashStr = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
+const KB_ARTICLES = ['Sipariş Takibi & Kargom Nerede? (WISMO)', 'Teslimat Süresi ve Gecikme Durumları', 'İade ve Değişim Adımları', 'Fatura / İrsaliye Talebi', 'Kişiselleştirme / Baskı Rehberi', 'Toplu / Kurumsal Sipariş Süreci'];
+export const getArticleFeedback = (): ArticleFb[] => KB_ARTICLES.map((title) => {
+  const base = 120 + Math.round(hashStr(title) * 380);
+  const helpfulPct = 62 + Math.round(hashStr(title + 'h') * 30); // %62-92
+  const helpful = Math.round(base * helpfulPct / 100), unhelpful = base - helpful;
+  return { title, helpful, unhelpful, helpfulPct: Math.round((helpful / base) * 100) };
+}).sort((a, b) => (b.helpful + b.unhelpful) - (a.helpful + a.unhelpful));
+
+export interface Deflection { deflectionPct: number; botPct: number; kbDeflected: number; ticketDropPct: number; aiImpactPct: number; }
+export const getDeflection = (): Deflection => {
+  const digital = supportInteractions.filter(isDigital);
+  const bot = supportInteractions.filter((r) => r.botContained).length;
+  const kbDeflected = Math.round(bot * 3.2); // mock: KB self-serve ile yönlendirilen (bot'un ~3.2 katı)
+  return {
+    deflectionPct: (bot + kbDeflected) / (supportInteractions.length + kbDeflected) * 100,
+    botPct: digital.length ? (bot / digital.length) * 100 : 0,
+    kbDeflected, ticketDropPct: 18, aiImpactPct: 27,
+  };
+};
+
+export interface NedenlerKpis { wismoPayi: KpiVal; ticketSiparis: KpiVal; deflection: KpiVal; botKapsama: KpiVal; }
+export const getNedenlerKpis = (): NedenlerKpis => {
+  const months = [...new Set(supportInteractions.map((r) => monthKey(r.startAt)))].sort();
+  const last = months[months.length - 1], prev = months[months.length - 2];
+  const inM = (m: string) => supportInteractions.filter((r) => monthKey(r.startAt) === m);
+  const mom = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
+  const wismoShare = (rows: SupportInteraction[]) => rows.length ? (rows.filter((r) => r.reason === 'WISMO' || r.reason === 'Teslimat').length / rows.length) * 100 : 0;
+  const linkedRate = (rows: SupportInteraction[]) => (rows.filter((r) => r.linkedOrderId).length / (MOCK_ORDERS_6M / 6)) * 100; // aylık teması/sipariş
+  const defl = getDeflection();
+  return {
+    wismoPayi: { value: wismoShare(supportInteractions), mom: mom(wismoShare(inM(last)), wismoShare(inM(prev))) },
+    ticketSiparis: { value: linkedRate(supportInteractions) / months.length, mom: mom(linkedRate(inM(last)), linkedRate(inM(prev))) },
+    deflection: { value: defl.deflectionPct, mom: mom(defl.deflectionPct, defl.deflectionPct * 0.94) },
+    botKapsama: { value: defl.botPct, mom: mom(defl.botPct, defl.botPct * 0.9) },
+  };
+};
+
+export interface CrossLinkRow { id: string; reason: Reason; channel: Channel; segment: 'Kurumsal' | 'Bireysel'; date: string; orderId: string; }
+export const getCrossLinkRows = (): CrossLinkRow[] => supportInteractions
+  .filter((r) => r.linkedOrderId)
+  .map((r) => ({ id: r.id, reason: r.reason, channel: r.channel, segment: r.segment, date: r.startAt.slice(0, 10), orderId: r.linkedOrderId! }))
+  .sort((a, b) => b.date.localeCompare(a.date));

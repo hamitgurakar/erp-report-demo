@@ -47,7 +47,7 @@ export const en: Dict = {
         'Financial Scorecard', 'CFO Cockpit', 'Cash Flow (Ops)',
       ],
       pazarlama: ['Campaign ROI', 'Channel Attribution'],
-      destek: ['Support Overview', 'Ticket Analysis', 'SLA Performance', 'Team Report', 'Call Center', 'Channel Report'],
+      destek: ['Support Overview', 'Ticket Analysis', 'SLA Performance', 'Team Report', 'Call Center', 'Channel Report', 'Reasons'],
     },
   },
   common: {
