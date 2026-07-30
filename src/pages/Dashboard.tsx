@@ -38,6 +38,7 @@ import { SalesCollections } from '../components/satis/SalesCollections';
 import { ManagementTargets } from '../components/yonetim/ManagementTargets';
 import { FinancialData } from './finance/FinancialData';
 import { DcfCalculator } from './management/DcfCalculator';
+import { DestekGenelBakis } from './support/DestekGenelBakis';
 import { IncomeProfitability } from './finance/income-profitability/IncomeProfitability';
 import { CashLiquidity } from './finance/cash-liquidity/CashLiquidity';
 import { Receivables } from './finance/receivables/Receivables';
@@ -82,6 +83,7 @@ export default function Dashboard() {
     'satis__9': db.l.satisForecasting,
     'satis__10': db.l.satisHedefler,
     'satis__11': db.l.satisTahsilat,
+    'destek__0': db.l.destekGenelBakis,
     'kategori__0': db.l.katOzet,
     'kategori__1': db.l.katPerf,
     'kategori__2': db.l.katStok,
@@ -197,6 +199,8 @@ export default function Dashboard() {
               <SalesTargets {...kp} />
             ) : db.activeRep === 'satis__11' ? (
               <SalesCollections {...kp} />
+            ) : db.activeRep === 'destek__0' ? (
+              <DestekGenelBakis {...kp} />
             ) : db.activeRep === 'kategori__0' ? (
               <CategoryOverview {...kp} dark={db.dark} />
             ) : db.activeRep === 'kategori__1' ? (

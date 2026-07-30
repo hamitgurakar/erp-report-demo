@@ -611,6 +611,7 @@ const tr: LangStrings = {
   yonetimHedefler: 'Toplam Hedefler 🎯',
   finansalVeriler: 'Finansal Veriler',
   dcfCalculator: 'DCF Calculator',
+  destekGenelBakis: 'Destek Genel Bakış',
   // Finans Suite (Muhasebe) sayfa başlıkları
   mhFin0: 'Gelir & Karlılık',
   mhFin1: 'Nakit & Likidite',
@@ -1246,6 +1247,7 @@ const en: LangStrings = {
   yonetimHedefler: 'Total Targets 🎯',
   finansalVeriler: 'Financial Data',
   dcfCalculator: 'DCF Calculator',
+  destekGenelBakis: 'Support Overview',
   // Finance Suite (Accounting) page titles
   mhFin0: 'Income & Profitability',
   mhFin1: 'Cash & Liquidity',

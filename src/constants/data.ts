@@ -109,6 +109,7 @@ export const IMPLEMENTED_REPORTS = new Set<string>([
   'yonetim__0', 'yonetim__3', 'yonetim__4', 'yonetim__5',
   'satis__0', 'satis__1', 'satis__2', 'satis__3', 'satis__4', 'satis__5',
   'satis__6', 'satis__7', 'satis__8', 'satis__9', 'satis__10', 'satis__11',
+  'destek__0',
   'kategori__0', 'kategori__1', 'kategori__2', 'kategori__3', 'kategori__4',
   'satin-alma__0', 'satin-alma__1', 'satin-alma__2', 'satin-alma__3', 'satin-alma__4', 'satin-alma__5', 'satin-alma__6', 'satin-alma__7', 'satin-alma__8',
   'muhasebe__0', 'muhasebe__1', 'muhasebe__2', 'muhasebe__3', 'muhasebe__4',
