@@ -47,7 +47,7 @@ export const tr = {
         'Finansal Skorkart', 'CFO Kokpiti', 'Nakit Akışı',
       ],
       pazarlama: ['Kampanya ROI', 'Kanal Attribution'],
-      destek: ['Destek Genel Bakış', 'Ticket Analizi', 'SLA Performansı', 'Ekip Raporu', 'Çağrı Merkezi'],
+      destek: ['Destek Genel Bakış', 'Ticket Analizi', 'SLA Performansı', 'Ekip Raporu', 'Çağrı Merkezi', 'Kanal Raporu'],
     },
   },
   common: {

@@ -43,6 +43,7 @@ import { CagriMerkezi } from './support/CagriMerkezi';
 import { TicketAnalizi } from './support/TicketAnalizi';
 import { SlaPerformans } from './support/SlaPerformans';
 import { EkipPerformans } from './support/EkipPerformans';
+import { KanalRating } from './support/KanalRating';
 import { IncomeProfitability } from './finance/income-profitability/IncomeProfitability';
 import { CashLiquidity } from './finance/cash-liquidity/CashLiquidity';
 import { Receivables } from './finance/receivables/Receivables';
@@ -92,6 +93,7 @@ export default function Dashboard() {
     'destek__2': db.l.destekSla,
     'destek__3': db.l.destekEkip,
     'destek__4': db.l.destekCagriMerkezi,
+    'destek__5': db.l.destekKanal,
     'kategori__0': db.l.katOzet,
     'kategori__1': db.l.katPerf,
     'kategori__2': db.l.katStok,
@@ -217,6 +219,8 @@ export default function Dashboard() {
               <SlaPerformans {...kp} />
             ) : db.activeRep === 'destek__3' ? (
               <EkipPerformans {...kp} />
+            ) : db.activeRep === 'destek__5' ? (
+              <KanalRating {...kp} />
             ) : db.activeRep === 'kategori__0' ? (
               <CategoryOverview {...kp} dark={db.dark} />
             ) : db.activeRep === 'kategori__1' ? (

@@ -616,6 +616,7 @@ const tr: LangStrings = {
   destekTicket: 'Ticket & Konuşma Analizi',
   destekSla: 'SLA & Yanıt Performansı',
   destekEkip: 'Ekip & Temsilci',
+  destekKanal: 'Kanal & Memnuniyet',
   // Finans Suite (Muhasebe) sayfa başlıkları
   mhFin0: 'Gelir & Karlılık',
   mhFin1: 'Nakit & Likidite',
@@ -1256,6 +1257,7 @@ const en: LangStrings = {
   destekTicket: 'Ticket & Conversation Analysis',
   destekSla: 'SLA & Response Performance',
   destekEkip: 'Team & Agents',
+  destekKanal: 'Channel & Satisfaction',
   // Finance Suite (Accounting) page titles
   mhFin0: 'Income & Profitability',
   mhFin1: 'Cash & Liquidity',

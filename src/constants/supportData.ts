@@ -574,3 +574,62 @@ export const getEkipKpis = (): EkipKpis => {
     ortYanit: { value: all.ortYanit, mom: mom(mL.ortYanit, mP.ortYanit) }, etkPerTemsilci: { value: all.etkPer, mom: mom(mL.etkPer, mP.etkPer) },
   };
 };
+
+// ══════════ L2.4 Kanal & Memnuniyet helper'ları ══════════
+export interface ChannelVolTrend { channel: Channel; count: number; trendPct: number; }
+export const getChannelVolumeTrend = (): ChannelVolTrend[] => {
+  const months = [...new Set(supportInteractions.map((r) => monthKey(r.startAt)))].sort();
+  const last = months[months.length - 1], prev = months[months.length - 2];
+  const cnt = (ch: Channel, m?: string) => supportInteractions.filter((r) => r.channel === ch && (!m || monthKey(r.startAt) === m)).length;
+  return (['whatsapp', 'phone', 'chat', 'email', 'messenger', 'instagram'] as Channel[]).map((ch) => {
+    const l = cnt(ch, last), p = cnt(ch, prev);
+    return { channel: ch, count: cnt(ch), trendPct: p ? ((l - p) / p) * 100 : 0 };
+  }).sort((a, b) => b.count - a.count);
+};
+
+export const getCsatByChannel = (): { channel: Channel; csat: number; rated: number }[] =>
+  (['whatsapp', 'phone', 'chat', 'email', 'messenger', 'instagram'] as Channel[]).map((ch) => {
+    const cs = supportInteractions.filter((r) => r.channel === ch && r.csat != null).map((r) => r.csat!);
+    return { channel: ch, csat: mean(cs), rated: cs.length };
+  }).sort((a, b) => b.csat - a.csat);
+
+export interface RatingDist { dist: { star: number; count: number; pct: number }[]; mean: number; total: number; }
+export const getRatingDistribution = (): RatingDist => {
+  const rated = supportInteractions.filter((r) => r.csat != null).map((r) => r.csat!);
+  const dist = [5, 4, 3, 2, 1].map((star) => { const count = rated.filter((c) => c === star).length; return { star, count, pct: rated.length ? (count / rated.length) * 100 : 0 }; });
+  return { dist, mean: mean(rated), total: rated.length };
+};
+
+export interface RatingComment { id: string; text: string; rating: number; channel: Channel; date: string; tone: 'positive' | 'neutral' | 'negative'; }
+const COMMENTS_POS = ['Hızlı ve çözüm odaklı destek, teşekkürler.', 'Temsilci çok ilgiliydi, sorun anında çözüldü.', 'Kurumsal siparişimizde harika yardım aldık.', 'Yanıt süresi beklentimin üzerinde iyiydi.', 'Kişiselleştirme talebimiz eksiksiz karşılandı.', 'İade sürecim sorunsuz ilerledi.'];
+const COMMENTS_NEU = ['Sorun çözüldü ama biraz beklemek gerekti.', 'Yardımcı oldular, süreç ortalamaydı.', 'Fatura konusu netleşti, teşekkürler.', 'İkinci temasta hallolabildi.'];
+const COMMENTS_NEG = ['Kargo gecikmesi hakkında net bilgi alamadım.', 'Uzun süre beklettiler, tekrar iletişime geçmek zorunda kaldım.', 'Ürün hasarlıydı, çözüm yavaş ilerledi.', 'Teslimat sorunu hâlâ tam çözülmedi.', 'Yanıt için çok bekledim.'];
+export const getRatingComments = (limit = 16): RatingComment[] => {
+  const rated = supportInteractions.filter((r) => r.csat != null).sort((a, b) => b.startAt.localeCompare(a.startAt));
+  const step = Math.max(1, Math.floor(rated.length / limit));
+  const out: RatingComment[] = [];
+  for (let i = 0; i < rated.length && out.length < limit; i += step) {
+    const r = rated[i]; const rt = r.csat!;
+    const tone: RatingComment['tone'] = rt >= 4 ? 'positive' : rt === 3 ? 'neutral' : 'negative';
+    const pool = tone === 'positive' ? COMMENTS_POS : tone === 'neutral' ? COMMENTS_NEU : COMMENTS_NEG;
+    out.push({ id: r.id, text: pool[i % pool.length], rating: rt, channel: r.channel, date: r.startAt.slice(0, 10), tone });
+  }
+  return out;
+};
+
+export interface KanalKpis { hacim: KpiVal; csat: KpiVal; best: { channel: Channel; csat: number }; worst: { channel: Channel; csat: number }; yanitOrani: KpiVal; }
+export const getKanalKpis = (): KanalKpis => {
+  const months = [...new Set(supportInteractions.map((r) => monthKey(r.startAt)))].sort();
+  const last = months[months.length - 1], prev = months[months.length - 2];
+  const inM = (m: string) => supportInteractions.filter((r) => monthKey(r.startAt) === m);
+  const mom = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
+  const csatOf = (rows: SupportInteraction[]) => mean(rows.filter((r) => r.csat != null).map((r) => r.csat!));
+  const respRate = (rows: SupportInteraction[]) => { const responded = rows.filter((r) => (isDigital(r) && r.frtSec != null) || (r.channel === 'phone' && (r.result === 'agent_answered' || r.result === 'ivr_answered'))).length; return rows.length ? (responded / rows.length) * 100 : 0; };
+  const byCh = getCsatByChannel().filter((c) => c.rated >= 10);
+  return {
+    hacim: { value: supportInteractions.length, mom: mom(inM(last).length, inM(prev).length) },
+    csat: { value: csatOf(supportInteractions), mom: mom(csatOf(inM(last)), csatOf(inM(prev))) },
+    best: { channel: byCh[0].channel, csat: byCh[0].csat }, worst: { channel: byCh[byCh.length - 1].channel, csat: byCh[byCh.length - 1].csat },
+    yanitOrani: { value: respRate(supportInteractions), mom: mom(respRate(inM(last)), respRate(inM(prev))) },
+  };
+};
