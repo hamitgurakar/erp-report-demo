@@ -41,6 +41,7 @@ import { DcfCalculator } from './management/DcfCalculator';
 import { DestekGenelBakis } from './support/DestekGenelBakis';
 import { CagriMerkezi } from './support/CagriMerkezi';
 import { TicketAnalizi } from './support/TicketAnalizi';
+import { SlaPerformans } from './support/SlaPerformans';
 import { IncomeProfitability } from './finance/income-profitability/IncomeProfitability';
 import { CashLiquidity } from './finance/cash-liquidity/CashLiquidity';
 import { Receivables } from './finance/receivables/Receivables';
@@ -87,6 +88,7 @@ export default function Dashboard() {
     'satis__11': db.l.satisTahsilat,
     'destek__0': db.l.destekGenelBakis,
     'destek__1': db.l.destekTicket,
+    'destek__2': db.l.destekSla,
     'destek__4': db.l.destekCagriMerkezi,
     'kategori__0': db.l.katOzet,
     'kategori__1': db.l.katPerf,
@@ -209,6 +211,8 @@ export default function Dashboard() {
               <CagriMerkezi {...kp} />
             ) : db.activeRep === 'destek__1' ? (
               <TicketAnalizi {...kp} />
+            ) : db.activeRep === 'destek__2' ? (
+              <SlaPerformans {...kp} />
             ) : db.activeRep === 'kategori__0' ? (
               <CategoryOverview {...kp} dark={db.dark} />
             ) : db.activeRep === 'kategori__1' ? (

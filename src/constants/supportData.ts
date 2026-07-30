@@ -432,6 +432,75 @@ export const getTicketKpis = (): TicketKpis => {
   };
 };
 
+// ══════════ L2.2 SLA & Yanıt Performansı helper'ları ══════════
+export type OfficeFilter = 'all' | 'in' | 'out';
+export type ChannelFilter = 'all' | 'chat';
+const isOfficeHours = (r: SupportInteraction) => { const d = new Date(r.startAt); const dow = (d.getUTCDay() + 6) % 7; const h = d.getUTCHours(); return dow < 5 && h >= 9 && h < 18; };
+const applyOffice = (rows: SupportInteraction[], office: OfficeFilter) => (office === 'all' ? rows : office === 'in' ? rows.filter(isOfficeHours) : rows.filter((r) => !isOfficeHours(r)));
+const fastLiveRow = (r: SupportInteraction) => (isDigital(r) && FAST_DIGITAL.includes(r.channel)) || (r.channel === 'phone' && !r.abandoned);
+export const FRT_IDEAL_SEC = 90; // B3 ideal ilk-yanıt benchmark (chat); SLA uyumu yanıt-SLA'sıyla (15dk/24h) ölçülür
+
+const slaMetrics = (rows: SupportInteraction[]) => {
+  const digital = rows.filter(isDigital);
+  const met = digital.filter((r) => (r.frtSec ?? Infinity) <= SLA_TARGET_SEC[r.channel]);
+  const frts = rows.filter(fastLiveRow).map((r) => (r.frtSec != null ? r.frtSec : r.waitSec));
+  const resns = rows.filter((r) => fastLiveRow(r) && (r.resolutionSec != null || r.channel === 'phone')).map((r) => (r.resolutionSec != null ? r.resolutionSec : r.handleSec));
+  return { sla: digital.length ? (met.length / digital.length) * 100 : 0, breaches: digital.length - met.length, frt: mean(frts), resn: mean(resns) };
+};
+
+export interface SlaKpis { sla: KpiVal; frt: KpiVal; resn: KpiVal; breaches: KpiVal; }
+export const getSlaKpis = (office: OfficeFilter = 'all'): SlaKpis => {
+  const rows = applyOffice(supportInteractions, office);
+  const months = [...new Set(rows.map((r) => monthKey(r.startAt)))].sort();
+  const last = months[months.length - 1], prev = months[months.length - 2];
+  const all = slaMetrics(rows);
+  const mL = slaMetrics(rows.filter((r) => monthKey(r.startAt) === last));
+  const mP = slaMetrics(rows.filter((r) => monthKey(r.startAt) === prev));
+  const mom = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
+  return {
+    sla: { value: all.sla, mom: mom(mL.sla, mP.sla) }, frt: { value: all.frt, mom: mom(mL.frt, mP.frt) },
+    resn: { value: all.resn, mom: mom(mL.resn, mP.resn) }, breaches: { value: all.breaches, mom: mom(mL.breaches, mP.breaches) },
+  };
+};
+
+export interface DistBucket { bucket: string; count: number; }
+export const getFrtDistribution = (office: OfficeFilter = 'all'): { buckets: DistBucket[]; channelAvg: { channel: Channel; avgSec: number }[] } => {
+  const rows = applyOffice(supportInteractions, office).filter(fastLiveRow);
+  const val = (r: SupportInteraction) => (r.frtSec != null ? r.frtSec : r.waitSec);
+  const defs: [string, (s: number) => boolean][] = [['0-30sn', (s) => s <= 30], ['31-90sn', (s) => s > 30 && s <= 90], ['91-300sn', (s) => s > 90 && s <= 300], ['5-10dk', (s) => s > 300 && s <= 600], ['10-15dk', (s) => s > 600 && s <= 900], ['15dk+', (s) => s > 900]];
+  const buckets = defs.map(([bucket, f]) => ({ bucket, count: rows.filter((r) => f(val(r))).length }));
+  const chans: Channel[] = ['chat', 'whatsapp', 'messenger', 'instagram', 'phone'];
+  const channelAvg = chans.map((ch) => ({ channel: ch, avgSec: mean(rows.filter((r) => r.channel === ch).map(val)) })).filter((x) => x.avgSec > 0);
+  return { buckets, channelAvg };
+};
+
+export const getResolutionDistribution = (office: OfficeFilter = 'all'): DistBucket[] => {
+  const rows = applyOffice(supportInteractions, office).filter((r) => fastLiveRow(r) && (r.resolutionSec != null || r.channel === 'phone'));
+  const val = (r: SupportInteraction) => (r.resolutionSec != null ? r.resolutionSec : r.handleSec);
+  const defs: [string, (s: number) => boolean][] = [['≤1sa', (s) => s <= 3600], ['1-2sa', (s) => s > 3600 && s <= 7200], ['2-4sa', (s) => s > 7200 && s <= 14400], ['4-8sa', (s) => s > 14400 && s <= 28800], ['8sa+', (s) => s > 28800]];
+  return defs.map(([bucket, f]) => ({ bucket, count: rows.filter((r) => f(val(r))).length }));
+};
+
+export interface CsatSlaPoint { week: string; csatPct: number; slaPct: number; }
+export const getCsatSlaSeries = (office: OfficeFilter = 'all', channel: ChannelFilter = 'all'): CsatSlaPoint[] => {
+  let rows = applyOffice(supportInteractions, office);
+  if (channel === 'chat') rows = rows.filter((r) => r.channel === 'chat');
+  const weeks = [...new Set(rows.map((r) => mondayOf(r.startAt)))].sort();
+  return weeks.map((wk) => {
+    const w = rows.filter((r) => mondayOf(r.startAt) === wk);
+    const cs = w.filter((r) => r.csat != null).map((r) => r.csat!);
+    const digital = w.filter(isDigital);
+    const met = digital.filter((r) => (r.frtSec ?? Infinity) <= SLA_TARGET_SEC[r.channel]);
+    return { week: wk, csatPct: cs.length ? (mean(cs) / 5) * 100 : 0, slaPct: digital.length ? (met.length / digital.length) * 100 : 0 };
+  });
+};
+
+export interface SlaBreach { id: string; channel: Channel; agentName: string; targetSec: number; actualSec: number; delaySec: number; startAt: string; }
+export const getSlaBreaches = (office: OfficeFilter = 'all'): SlaBreach[] => applyOffice(supportInteractions, office)
+  .filter((r) => isDigital(r) && r.frtSec != null && r.frtSec > SLA_TARGET_SEC[r.channel])
+  .map((r) => ({ id: r.id, channel: r.channel, agentName: r.agentName ?? '—', targetSec: SLA_TARGET_SEC[r.channel], actualSec: r.frtSec!, delaySec: r.frtSec! - SLA_TARGET_SEC[r.channel], startAt: r.startAt }))
+  .sort((a, b) => b.delaySec - a.delaySec);
+
 export interface AgentStat { id: string; name: string; count: number; csat: number; kind: 'voice' | 'digital'; }
 export const getAgentSnapshot = (): { top: AgentStat[]; attention: AgentStat[] } => {
   const map = new Map<string, { name: string; count: number; csats: number[]; kind: 'voice' | 'digital' }>();

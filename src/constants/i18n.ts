@@ -614,6 +614,7 @@ const tr: LangStrings = {
   destekGenelBakis: 'Destek Genel Bakış',
   destekCagriMerkezi: 'Çağrı Merkezi',
   destekTicket: 'Ticket & Konuşma Analizi',
+  destekSla: 'SLA & Yanıt Performansı',
   // Finans Suite (Muhasebe) sayfa başlıkları
   mhFin0: 'Gelir & Karlılık',
   mhFin1: 'Nakit & Likidite',
@@ -1252,6 +1253,7 @@ const en: LangStrings = {
   destekGenelBakis: 'Support Overview',
   destekCagriMerkezi: 'Call Center',
   destekTicket: 'Ticket & Conversation Analysis',
+  destekSla: 'SLA & Response Performance',
   // Finance Suite (Accounting) page titles
   mhFin0: 'Income & Profitability',
   mhFin1: 'Cash & Liquidity',
