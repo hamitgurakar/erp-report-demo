@@ -249,6 +249,136 @@ export const getVoiceSL = (): VoiceSLData => {
   };
 };
 
+// ══════════ L2.5 Çağrı Merkezi (Verimor, %100 ses) helper'ları ══════════
+export const voiceInteractions = supportInteractions.filter((r) => r.channel === 'phone');
+const isAnswered = (r: SupportInteraction) => r.result === 'agent_answered' || r.result === 'ivr_answered';
+
+// Ses metrikleri (bir satır kümesi için) — ses tuzaklarına sadık (B1)
+const voiceMetrics = (rows: SupportInteraction[]) => {
+  const inbound = rows.filter((r) => r.direction === 'inbound');
+  const outbound = rows.filter((r) => r.direction === 'outbound');
+  const answered = inbound.filter(isAnswered);
+  const abandoned = inbound.filter((r) => r.abandoned);
+  const recovered = abandoned.filter((r) => r.recovered);
+  const slHit = inbound.filter((r) => r.result === 'agent_answered' && r.waitSec <= VOICE_SL_SEC);
+  const waitAns = answered.map((r) => r.waitSec);
+  const ahtRows = answered.map((r) => r.handleSec);
+  return {
+    total: rows.length, gelen: inbound.length, giden: outbound.length,
+    cevaplamaPct: inbound.length ? (answered.length / inbound.length) * 100 : 0,
+    kacanPct: inbound.length ? (abandoned.length / inbound.length) * 100 : 0,
+    donulenPct: abandoned.length ? (recovered.length / abandoned.length) * 100 : 0,
+    sl: inbound.length ? (slHit.length / inbound.length) * 100 : 0,
+    avgWait: mean(waitAns), aht: mean(ahtRows),
+  };
+};
+
+export interface VoiceKpis {
+  total: KpiVal; gelen: number; giden: number; cevaplamaPct: KpiVal; kacanPct: KpiVal; donulenPct: number;
+  sl: KpiVal; avgWait: KpiVal; aht: KpiVal;
+}
+export const getVoiceKpis = (): VoiceKpis => {
+  const months = [...new Set(voiceInteractions.map((r) => monthKey(r.startAt)))].sort();
+  const last = months[months.length - 1], prev = months[months.length - 2];
+  const all = voiceMetrics(voiceInteractions);
+  const mL = voiceMetrics(voiceInteractions.filter((r) => monthKey(r.startAt) === last));
+  const mP = voiceMetrics(voiceInteractions.filter((r) => monthKey(r.startAt) === prev));
+  const mom = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
+  return {
+    total: { value: all.total, mom: mom(mL.total, mP.total) }, gelen: all.gelen, giden: all.giden,
+    cevaplamaPct: { value: all.cevaplamaPct, mom: mom(mL.cevaplamaPct, mP.cevaplamaPct) },
+    kacanPct: { value: all.kacanPct, mom: mom(mL.kacanPct, mP.kacanPct) }, donulenPct: all.donulenPct,
+    sl: { value: all.sl, mom: mom(mL.sl, mP.sl) },
+    avgWait: { value: all.avgWait, mom: mom(mL.avgWait, mP.avgWait) },
+    aht: { value: all.aht, mom: mom(mL.aht, mP.aht) },
+  };
+};
+
+export interface VoiceHourly { hour: number; cevaplanan: number; kacan: number; }
+export const getVoiceHourly = (): VoiceHourly[] => {
+  const inbound = voiceInteractions.filter((r) => r.direction === 'inbound');
+  return Array.from({ length: 24 }, (_, h) => {
+    const hr = inbound.filter((r) => new Date(r.startAt).getUTCHours() === h);
+    return { hour: h, cevaplanan: hr.filter(isAnswered).length, kacan: hr.filter((r) => r.abandoned).length };
+  });
+};
+
+export interface VoiceDaily { date: string; gelen: number; giden: number; gelenDk: number; gidenDk: number; }
+export const getVoiceDaily = (days = 30): VoiceDaily[] => {
+  const maxD = voiceInteractions.reduce((m, r) => (r.startAt > m ? r.startAt : m), '').slice(0, 10);
+  const maxT = Date.parse(`${maxD}T00:00:00Z`);
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date(maxT - (days - 1 - i) * 86400000).toISOString().slice(0, 10);
+    const rows = voiceInteractions.filter((r) => r.startAt.slice(0, 10) === d);
+    const gelen = rows.filter((r) => r.direction === 'inbound'), giden = rows.filter((r) => r.direction === 'outbound');
+    return { date: d, gelen: gelen.length, giden: giden.length, gelenDk: Math.round(gelen.reduce((s, r) => s + r.talkSec, 0) / 60), gidenDk: Math.round(giden.reduce((s, r) => s + r.talkSec, 0) / 60) };
+  });
+};
+
+export interface WaitBucket { bucket: string; count: number; }
+export const getWaitBuckets = (): WaitBucket[] => {
+  // Bekleme YALNIZCA cevaplanan çağrılar üzerinden (B1 tuzağı #4)
+  const answered = voiceInteractions.filter((r) => r.direction === 'inbound' && isAnswered(r));
+  const defs: [string, (w: number) => boolean][] = [
+    ['0-10', (w) => w <= 10], ['11-20', (w) => w > 10 && w <= 20], ['21-30', (w) => w > 20 && w <= 30],
+    ['31-40', (w) => w > 30 && w <= 40], ['41-60', (w) => w > 40 && w <= 60], ['61+', (w) => w > 60],
+  ];
+  return defs.map(([bucket, f]) => ({ bucket, count: answered.filter((r) => f(r.waitSec)).length }));
+};
+
+export const getVoiceFunnel = (): { label: string; value: number }[] => {
+  const inbound = voiceInteractions.filter((r) => r.direction === 'inbound');
+  const answered = inbound.filter(isAnswered);
+  const abandoned = inbound.filter((r) => r.abandoned);
+  const recovered = abandoned.filter((r) => r.recovered);
+  return [
+    { label: 'Gelen', value: inbound.length },
+    { label: 'Cevaplanan', value: answered.length },
+    { label: 'Kaçan', value: abandoned.length },
+    { label: 'Dönülen', value: recovered.length },
+    { label: 'Hâlâ kayıp', value: abandoned.length - recovered.length },
+  ];
+};
+
+export interface VoiceAgentStat {
+  id: string; name: string; cevaplanan: number; kacan: number; basariPct: number;
+  toplamKonusmaSec: number; ortKonusmaSec: number; enUzunSec: number; giden: number; gidenBasariPct: number;
+}
+export const getVoiceAgentStats = (): VoiceAgentStat[] => {
+  const inbound = voiceInteractions.filter((r) => r.direction === 'inbound');
+  const totalAbandoned = inbound.filter((r) => r.abandoned).length;
+  const totalAnswered = inbound.filter(isAnswered).length || 1;
+  const outbound = voiceInteractions.filter((r) => r.direction === 'outbound');
+  const totalOutAbandoned = outbound.filter((r) => r.abandoned).length;
+  const totalOutAnswered = outbound.filter(isAnswered).length || 1;
+  return VOICE_AGENTS.map((ag) => {
+    const ans = inbound.filter((r) => r.agentId === ag.id && r.result === 'agent_answered');
+    const talks = ans.map((r) => r.talkSec);
+    // kaçanlar dahili-atanmamış (Verimor kuyruk) → cevaplanan payına göre orantısal dağıt (deterministik mock)
+    const kacan = Math.round(totalAbandoned * (ans.length / totalAnswered));
+    const gidenAns = outbound.filter((r) => r.agentId === ag.id && r.result === 'agent_answered');
+    const gidenKacan = Math.round(totalOutAbandoned * (gidenAns.length / totalOutAnswered));
+    return {
+      id: ag.id, name: ag.name, cevaplanan: ans.length, kacan, basariPct: (ans.length / (ans.length + kacan || 1)) * 100,
+      toplamKonusmaSec: talks.reduce((a, b) => a + b, 0), ortKonusmaSec: mean(talks), enUzunSec: talks.length ? Math.max(...talks) : 0,
+      giden: gidenAns.length, gidenBasariPct: (gidenAns.length / (gidenAns.length + gidenKacan || 1)) * 100,
+    };
+  });
+};
+
+export interface CdrRow {
+  id: string; startAt: string; endAt: string; direction: Direction; customerRef: string;
+  agentId: string | null; agentName?: string; durationSec: number; talkSec: number;
+  result: Result; abandoned: boolean; recovered: boolean; hasRecording: boolean; linkedOrderId?: string;
+}
+export const getCdrRows = (): CdrRow[] => voiceInteractions
+  .map((r) => ({
+    id: r.id, startAt: r.startAt, endAt: r.endAt, direction: r.direction, customerRef: r.customerRef,
+    agentId: r.agentId, agentName: r.agentName, durationSec: Math.round((Date.parse(r.endAt) - Date.parse(r.startAt)) / 1000),
+    talkSec: r.talkSec, result: r.result, abandoned: r.abandoned, recovered: r.recovered, hasRecording: !!r.hasRecording, linkedOrderId: r.linkedOrderId,
+  }))
+  .sort((a, b) => b.startAt.localeCompare(a.startAt));
+
 export interface AgentStat { id: string; name: string; count: number; csat: number; kind: 'voice' | 'digital'; }
 export const getAgentSnapshot = (): { top: AgentStat[]; attention: AgentStat[] } => {
   const map = new Map<string, { name: string; count: number; csats: number[]; kind: 'voice' | 'digital' }>();
