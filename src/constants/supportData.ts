@@ -514,3 +514,63 @@ export const getAgentSnapshot = (): { top: AgentStat[]; attention: AgentStat[] }
   const byCsat = [...stats].sort((x, y) => y.csat - x.csat);
   return { top: byCsat.slice(0, 2), attention: byCsat.slice(-2).reverse() };
 };
+
+// ══════════ L2.3 Ekip & Temsilci helper'ları ══════════
+const respTimeOf = (r: SupportInteraction): number | null => {
+  if (isDigital(r)) return FAST_DIGITAL.includes(r.channel) ? (r.frtSec ?? null) : null; // email async (24h) → yanıt hızına girmez
+  return r.result === 'agent_answered' ? r.waitSec : null; // ses ASA (cevaplanan)
+};
+
+export interface Operator { id: string; name: string; kind: 'voice' | 'digital'; count: number; avgRespSec: number; csat: number; badge: 'top' | 'attention' | 'normal'; }
+export const getOperatorLeaderboard = (): Operator[] => {
+  const map = new Map<string, { name: string; kind: 'voice' | 'digital'; count: number; csats: number[]; resp: number[] }>();
+  for (const r of supportInteractions) {
+    if (!r.agentId) continue;
+    if (!map.has(r.agentId)) map.set(r.agentId, { name: r.agentName ?? r.agentId, kind: r.channel === 'phone' ? 'voice' : 'digital', count: 0, csats: [], resp: [] });
+    const a = map.get(r.agentId)!; a.count++;
+    if (r.csat != null) a.csats.push(r.csat);
+    const rt = respTimeOf(r); if (rt != null) a.resp.push(rt);
+  }
+  const ops: Operator[] = [...map.entries()].map(([id, a]) => ({ id, name: a.name, kind: a.kind, count: a.count, avgRespSec: mean(a.resp), csat: mean(a.csats), badge: 'normal' as const }));
+  const rated = ops.filter((o) => o.count >= 20).sort((x, y) => y.csat - x.csat);
+  const topIds = new Set(rated.slice(0, 2).map((o) => o.id));
+  const attIds = new Set(rated.slice(-2).map((o) => o.id));
+  return ops.map((o) => ({ ...o, badge: topIds.has(o.id) ? 'top' : attIds.has(o.id) ? 'attention' : 'normal' })).sort((x, y) => y.count - x.count);
+};
+
+export interface WorkloadRow { id: string; name: string; kind: 'voice' | 'digital'; count: number; }
+export const getWorkload = (): WorkloadRow[] => getOperatorLeaderboard().map((o) => ({ id: o.id, name: o.name, kind: o.kind, count: o.count })).sort((a, b) => b.count - a.count);
+
+export interface PresenceRow { id: string; name: string; kind: 'voice' | 'digital'; durum: 'Müsait' | 'Çağrıda' | 'Çevrimdışı'; }
+// Canlı meşguliyet — statik mock (Verimor Meşguliyet Panosu deseni), deterministik
+export const getPresence = (): PresenceRow[] => [
+  { id: '1000', name: 'Batuhan', kind: 'voice', durum: 'Çağrıda' },
+  { id: '1001', name: 'Ahmet', kind: 'voice', durum: 'Müsait' },
+  { id: '1004', name: 'Benan', kind: 'voice', durum: 'Çağrıda' },
+  { id: '1005', name: 'Çisem', kind: 'voice', durum: 'Çevrimdışı' },
+  { id: 'D01', name: 'Dijital Operatör 1', kind: 'digital', durum: 'Müsait' },
+  { id: 'D02', name: 'Dijital Operatör 2', kind: 'digital', durum: 'Çağrıda' },
+  { id: 'D03', name: 'Dijital Operatör 3', kind: 'digital', durum: 'Müsait' },
+  { id: 'D04', name: 'Dijital Operatör 4', kind: 'digital', durum: 'Çevrimdışı' },
+  { id: 'D05', name: 'Dijital Operatör 5', kind: 'digital', durum: 'Müsait' },
+];
+
+export interface EkipKpis { aktif: KpiVal; csat: KpiVal; ortYanit: KpiVal; etkPerTemsilci: KpiVal; }
+export const getEkipKpis = (): EkipKpis => {
+  const months = [...new Set(supportInteractions.map((r) => monthKey(r.startAt)))].sort();
+  const last = months[months.length - 1], prev = months[months.length - 2];
+  const m = (rows: SupportInteraction[]) => {
+    const handled = rows.filter((r) => r.agentId);
+    const agentIds = new Set(handled.filter((r) => { const c = handled.filter((x) => x.agentId === r.agentId).length; return c >= 5; }).map((r) => r.agentId));
+    const csats = rows.filter((r) => r.csat != null).map((r) => r.csat!);
+    const resp = rows.map(respTimeOf).filter((x): x is number => x != null);
+    const aktif = agentIds.size || new Set(handled.map((r) => r.agentId)).size;
+    return { aktif, csat: mean(csats), ortYanit: mean(resp), etkPer: aktif ? handled.length / aktif : 0 };
+  };
+  const all = m(supportInteractions), mL = m(supportInteractions.filter((r) => monthKey(r.startAt) === last)), mP = m(supportInteractions.filter((r) => monthKey(r.startAt) === prev));
+  const mom = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
+  return {
+    aktif: { value: all.aktif, mom: mom(mL.aktif, mP.aktif) }, csat: { value: all.csat, mom: mom(mL.csat, mP.csat) },
+    ortYanit: { value: all.ortYanit, mom: mom(mL.ortYanit, mP.ortYanit) }, etkPerTemsilci: { value: all.etkPer, mom: mom(mL.etkPer, mP.etkPer) },
+  };
+};
