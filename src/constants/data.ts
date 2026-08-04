@@ -106,7 +106,7 @@ export const mkSpk = (trend: string, unit = 'K ₺', lang: Lang = 'tr'): SparkPo
 // Any report key NOT in this set is treated as "coming soon" (Yakında) in the sidebar.
 // When a new page is wired into Dashboard.tsx, add its key here and the badge disappears.
 export const IMPLEMENTED_REPORTS = new Set<string>([
-  'yonetim__0', 'yonetim__3', 'yonetim__4', 'yonetim__5',
+  'yonetim__0', 'yonetim__3', 'yonetim__4', 'yonetim__5', 'yonetim__6', 'yonetim__7',
   'satis__0', 'satis__1', 'satis__2', 'satis__3', 'satis__4', 'satis__5',
   'satis__6', 'satis__7', 'satis__8', 'satis__9', 'satis__10', 'satis__11',
   'destek__0', 'destek__1', 'destek__2', 'destek__3', 'destek__4', 'destek__5', 'destek__6',
@@ -117,6 +117,17 @@ export const IMPLEMENTED_REPORTS = new Set<string>([
 ]);
 
 export const isComingSoon = (repKey: string): boolean => !IMPLEMENTED_REPORTS.has(repKey);
+
+// Sidebar'da kendi departmanı altında GÖSTERİLMEYEN rapor anahtarları.
+// 'muhasebe__7' (Ortak Getirisi) Yönetim'e taşındı (yonetim__6, admin-only). Anahtarı
+// çapraz-link kararlılığı için yerinde bırakıyoruz ama Muhasebe nav'ında gizliyoruz;
+// tüm gelen linkler yonetim__6'ya yönlendirildiği için bu slot artık erişilemez.
+export const HIDDEN_REPORTS = new Set<string>(['muhasebe__7']);
+
+export const isHiddenReport = (repKey: string): boolean => HIDDEN_REPORTS.has(repKey);
+
+// Yönetim departmanı ve tüm alt sayfaları YALNIZCA admin'e görünür.
+export const isAdminOnlyReport = (repKey: string): boolean => repKey.startsWith('yonetim__');
 
 export const mkDeptReports = (d: Dict): DeptReport[] => [
   { id: 'yonetim', label: d.sidebar.depts.yonetim, icon: 'barChart3', reports: [...d.sidebar.reports.yonetim] },

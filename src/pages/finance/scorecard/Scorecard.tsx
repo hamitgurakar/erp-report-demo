@@ -30,7 +30,7 @@ const compositeScore = (() => {
 // Drill-down eşlemesi
 const DRILL: Record<string, string> = {
   'Değerleme': 'muhasebe__6', 'Büyüme': 'muhasebe__0', 'Karlılık': 'muhasebe__0', 'Finansal Sağlık': 'muhasebe__5',
-  'Nakit-Likidite': 'muhasebe__1', 'Sermaye Verimliliği': 'muhasebe__1', 'Ortak Getirisi': 'muhasebe__7', 'Yönetim Kalitesi': 'muhasebe__0',
+  'Nakit-Likidite': 'muhasebe__1', 'Sermaye Verimliliği': 'muhasebe__1', 'Ortak Getirisi': 'yonetim__6', 'Yönetim Kalitesi': 'muhasebe__0',
 };
 const SUBMETRIC: Record<string, { tr: string; en: string; bench: string }> = {
   'Değerleme': { tr: 'EV/EBITDA, F/K peer’a göre', en: 'EV/EBITDA, P/E vs peers', bench: 'Peer medyan' },

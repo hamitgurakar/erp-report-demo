@@ -1,6 +1,6 @@
 import type { Theme, LangStrings, Panel, DeptReport } from '../../types';
 import { Icon } from '../ui/Icon';
-import { isComingSoon } from '../../constants/data';
+import { isComingSoon, isHiddenReport } from '../../constants/data';
 import { useTranslation } from '../../i18n/LanguageContext';
 
 interface SidebarProps {
@@ -118,6 +118,7 @@ export const Sidebar = ({
               </div>
               {isExpanded && dept.reports.map((rep, ri) => {
                 const k = `${dept.id}__${ri}`;
+                if (isHiddenReport(k)) return null; // kendi departmanında gizli (Yönetim'e taşındı)
                 const soon = isComingSoon(k);
                 const isActive = activeRep === k && view === 'report';
                 const isFav = favs.includes(k);

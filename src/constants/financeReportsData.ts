@@ -296,7 +296,7 @@ export const moduleHealth: ModuleHealth[] = [
   { moduleKey: 'tax', module: { tr: 'Vergi & Uyum', en: 'Tax & Compliance' }, score: 71, grade: 'B', trend: 'flat', openAlerts: 1, repKey: 'muhasebe__4' },
   { moduleKey: 'leverage', module: { tr: 'Borçluluk', en: 'Leverage' }, score: 73, grade: 'B', trend: 'down', openAlerts: 1, repKey: 'muhasebe__5' },
   { moduleKey: 'valuation', module: { tr: 'Değerleme', en: 'Valuation' }, score: 58, grade: 'C', trend: 'flat', openAlerts: 0, repKey: 'muhasebe__6' },
-  { moduleKey: 'returns', module: { tr: 'Ortak Getirisi', en: 'Shareholder Returns' }, score: 72, grade: 'B', trend: 'flat', openAlerts: 0, repKey: 'muhasebe__7' },
+  { moduleKey: 'returns', module: { tr: 'Ortak Getirisi', en: 'Shareholder Returns' }, score: 72, grade: 'B', trend: 'flat', openAlerts: 0, repKey: 'yonetim__6' },
 ];
 
 export interface RollupAlert {

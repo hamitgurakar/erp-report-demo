@@ -1,4 +1,9 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useDashboard } from '../hooks/useDashboard';
+import { useRole } from '../auth/RoleContext';
+import { isAdminOnlyReport } from '../constants/data';
+import { AccessDenied, RoleLoading } from '../components/ui/AccessGate';
+import { AdminSettings } from './management/AdminSettings';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Toolbar } from '../components/layout/Toolbar';
@@ -61,6 +66,31 @@ import { Icon } from '../components/ui/Icon';
 
 export default function Dashboard() {
   const db = useDashboard();
+  const { isAdmin, roleLoaded } = useRole();
+
+  // Yönetim menüsü YALNIZCA rol yüklendi VE admin ise gösterilir (flash yok, FAIL CLOSED).
+  const adminReady = roleLoaded && isAdmin;
+  const visibleDeptReports = useMemo(
+    () => (adminReady ? db.deptReports : db.deptReports.filter((d) => d.id !== 'yonetim')),
+    [adminReady, db.deptReports],
+  );
+  const visibleFavs = useMemo(
+    () => (adminReady ? db.favs : db.favs.filter((k) => !isAdminOnlyReport(k))),
+    [adminReady, db.favs],
+  );
+
+  const activeIsAdminOnly = isAdminOnlyReport(db.activeRep);
+
+  // Boot: yetkisiz kullanıcı varsayılan olarak bir Yönetim sayfasına düşerse güvenli
+  // bir sayfaya yönlendir (bir kez). Sonraki açık navigasyonlarda placeholder gösterilir.
+  const [bootHandled, setBootHandled] = useState(false);
+  useEffect(() => {
+    if (!roleLoaded || bootHandled) return;
+    setBootHandled(true);
+    if (!isAdmin && isAdminOnlyReport(db.activeRep)) {
+      db.selectRep('satis__0');
+    }
+  }, [roleLoaded, isAdmin, bootHandled, db]);
 
   const kp = {
     t: db.t,
@@ -77,6 +107,8 @@ export default function Dashboard() {
     'yonetim__3': db.l.yonetimHedefler,
     'yonetim__4': db.l.finansalVeriler,
     'yonetim__5': db.l.dcfCalculator,
+    'yonetim__6': db.l.mhFin7,
+    'yonetim__7': db.l.yonetimAyarlar,
     'satis__0': db.l.satisOzeti,
     'satis__1': db.l.satisRaporu,
     'satis__2': db.l.pipelineAnalizi,
@@ -137,10 +169,10 @@ export default function Dashboard() {
           l={db.l}
           open={db.sidebarOpen}
           onClose={() => db.setSidebarOpen(false)}
-          deptReports={db.deptReports}
+          deptReports={visibleDeptReports}
           expandedDepts={db.expandedDepts}
           onToggleDept={db.toggleDept}
-          favs={db.favs}
+          favs={visibleFavs}
           onToggleFav={db.toggleFav}
           activeRep={db.activeRep}
           onSelectRep={db.selectRep}
@@ -163,7 +195,7 @@ export default function Dashboard() {
             onChangeAcct={db.setAcct}
             dateRange={db.dateRange}
             setDateRange={db.setDateRange}
-            hideAccount={db.activeRep === 'yonetim__4' || db.activeRep === 'yonetim__5' || db.activeRep.startsWith('muhasebe__')}
+            hideAccount={db.activeRep === 'yonetim__4' || db.activeRep === 'yonetim__5' || db.activeRep === 'yonetim__6' || db.activeRep === 'yonetim__7' || db.activeRep.startsWith('muhasebe__')}
           />
 
           <div style={{ padding: '5px 24px', fontSize: 11, color: db.t.tx3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -181,12 +213,20 @@ export default function Dashboard() {
                 onRemoveItem={db.removeFromPanel}
                 onReorder={db.reorderPanel}
               />
+            ) : activeIsAdminOnly && !roleLoaded ? (
+              <RoleLoading t={db.t} />
+            ) : activeIsAdminOnly && !isAdmin ? (
+              <AccessDenied t={db.t} lang={db.lang} />
             ) : db.activeRep === 'yonetim__3' ? (
               <ManagementTargets {...kp} />
             ) : db.activeRep === 'yonetim__4' ? (
               <FinancialData {...kp} />
             ) : db.activeRep === 'yonetim__5' ? (
               <DcfCalculator {...kp} />
+            ) : db.activeRep === 'yonetim__6' ? (
+              <ShareholderReturns {...kp} />
+            ) : db.activeRep === 'yonetim__7' ? (
+              <AdminSettings t={db.t} l={db.l} lang={db.lang} />
             ) : db.activeRep === 'satis__0' ? (
               <SalesOverview {...kp} />
             ) : db.activeRep === 'satis__1' ? (

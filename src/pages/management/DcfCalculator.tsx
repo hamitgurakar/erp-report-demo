@@ -130,7 +130,7 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
       subtitle={L('İnteraktif DCF hesap motoru — Muhiku halka kapalı (hisse fiyatı yok). Varsayımlar Ayarlar’dan; kullanıcı override edebilir.',
         'Interactive DCF engine — Muhiku is private (no share price). Assumptions from Settings; user can override.')}
       controls={controls} currency={currency} onCurrency={setCurrency}
-      crossLink={{ label: L('Tam değerleme (comps + football-field) → Değerleme', 'Full valuation (comps + football-field) → Valuation'), onClick: () => onSelectRep?.('muhasebe__7') }}
+      crossLink={{ label: L('Tam değerleme (comps + football-field) → Değerleme', 'Full valuation (comps + football-field) → Valuation'), onClick: () => onSelectRep?.('muhasebe__6') }}
     >
       {/* 3 kolon */}
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 300px', gap: 14, alignItems: 'start' }}>
@@ -344,7 +344,7 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
       <div style={{ marginTop: 14, fontSize: 12, color: t.tx3, display: 'flex', alignItems: 'center', gap: 6 }}>
         <Icon name="externalLink" size={13} color={t.tx3} />
         {L('DCF nasıl çalışır (eğitim)?', 'How does DCF work (learn)?')}
-        <span style={{ color: t.pr, fontWeight: 600, cursor: 'pointer' }} onClick={() => onSelectRep?.('muhasebe__7')}>{L('→ Değerleme sayfası', '→ Valuation page')}</span>
+        <span style={{ color: t.pr, fontWeight: 600, cursor: 'pointer' }} onClick={() => onSelectRep?.('muhasebe__6')}>{L('→ Değerleme sayfası', '→ Valuation page')}</span>
       </div>
     </ReportPageLayout>
   );
