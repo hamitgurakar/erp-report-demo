@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import {
   LineChart, Line, BarChart, Bar, ComposedChart, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine,
@@ -8,13 +8,40 @@ import {
   PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw, BALANCE_ROWS, INCOME_ROWS,
   netIncomeOf, TOTAL_SHARES, divSumInPeriod, dividendEventsSeed, PARTNERS,
 } from '../../../constants/financeData';
-import { partnerReturns, capTableEvolution, dupontFactors } from '../../../constants/financeReportsData';
+import { dupontFactors } from '../../../constants/financeReportsData';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, InfoTip,
   Dropdown, Waterfall, type FinAlert,
 } from '../../../components/finance';
 import { Icon } from '../../../components/ui/Icon';
+import { AccessDenied } from '../../../components/ui/AccessGate';
+import { supabase } from '../../../lib/supabase';
 import type { FinancePageProps } from '../_Placeholder';
+
+// Ortak Getirisi verisi Supabase'ten gelir (public.ortak_getirisi). Kolonlar migration
+// ile birebir eşleşir: supabase/migrations/*_ortak_getirisi.sql
+interface OrtakGetirisiRow {
+  id: number;
+  partner_id: string;
+  name: string;
+  pct: number;
+  shares: number;
+  cumulative_div: number;
+  this_period: number;
+  tsr: number;
+  created_at: string;
+}
+
+// Cap table evrimi — long format (period × partner_id × share_pct)
+interface CapTableRow {
+  id: number;
+  period: string;
+  partner_id: string;
+  share_pct: number;
+  created_at: string;
+}
+
+type LoadStatus = 'loading' | 'ready' | 'empty' | 'error';
 
 const WACC_REAL = 17; // reel bazlı WACC (nominal %36 Borçluluk sayfasında); reel ROIC ile kıyas için
 
@@ -46,6 +73,54 @@ export const ShareholderReturns = ({ t, l, lang, onSelectRep }: FinancePageProps
   const [order, setOrder] = useState<OrderMode>('newestRight');
   const [currency, setCurrency] = useState<FinCurrency>('TRY');
   const en = lang === 'en';
+
+  // ── Supabase: Ortak Getirisi + Cap Table Evrimi (tek kaynak) ──
+  const [rows, setRows] = useState<OrtakGetirisiRow[]>([]);
+  const [capRows, setCapRows] = useState<CapTableRow[]>([]);
+  const [status, setStatus] = useState<LoadStatus>('loading');
+  const [errMsg, setErrMsg] = useState('');
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [pr, cap] = await Promise.all([
+        supabase.from('ortak_getirisi')
+          .select('id,partner_id,name,pct,shares,cumulative_div,this_period,tsr,created_at')
+          .order('id', { ascending: true }),
+        supabase.from('cap_table_evolution')
+          .select('id,period,partner_id,share_pct,created_at')
+          .order('id', { ascending: true }),
+      ]);
+      if (!active) return;
+      if (pr.error) { setErrMsg(pr.error.message); setStatus('error'); return; }
+      if (cap.error) { setErrMsg(cap.error.message); setStatus('error'); return; }
+      if (!pr.data || pr.data.length === 0) { setRows([]); setCapRows([]); setStatus('empty'); return; }
+      setRows(pr.data as OrtakGetirisiRow[]);
+      setCapRows((cap.data ?? []) as CapTableRow[]);
+      setStatus('ready');
+    })();
+    return () => { active = false; };
+  }, []);
+
+  // Satırları sayfanın beklediği şekle map'le (camelCase, sayısal coercion).
+  const partners = rows.map((r) => ({
+    partnerId: r.partner_id, name: r.name, pct: Number(r.pct), shares: Number(r.shares),
+    cumulativeDiv: Number(r.cumulative_div), thisPeriod: Number(r.this_period), tsr: Number(r.tsr),
+  }));
+
+  // Cap table: long → wide (period başına 1 satır; ortak_id → % kolonları).
+  // Ortak sırası PARTNERS id sistemi ile hizalı (grafik renk/legend kararlılığı).
+  const capPartnerIds = (() => {
+    const ids = PARTNERS.map((p) => p.id).filter((id) => capRows.some((r) => r.partner_id === id));
+    capRows.forEach((r) => { if (!ids.includes(r.partner_id)) ids.push(r.partner_id); });
+    return ids;
+  })();
+  const capPeriods = [...new Set(capRows.map((r) => r.period))];
+  const capEvo = capPeriods.map((period) => {
+    const row: Record<string, number | string> = { period };
+    capRows.filter((r) => r.period === period).forEach((r) => { row[r.partner_id] = Number(r.share_pct); });
+    return row;
+  });
+  const capColors = [t.pr, t.tl, t.am, t.pu, t.co, t.c1, t.c2];
 
   const periods = donem === 'annual' ? PERIODS_ANNUAL : PERIODS_QUARTER;
   const B = useMemo(() => Object.fromEntries(periods.map((p) => [p.id, resolveRows(BALANCE_ROWS, balanceRaw, p)])), [periods]);
@@ -106,10 +181,7 @@ export const ShareholderReturns = ({ t, l, lang, onSelectRep }: FinancePageProps
   ];
 
   // ── Chart 4: Ortak bazında getiri stacked-bar ──
-  const partnerBars = partnerReturns.map((pr) => ({ name: pr.name.split(' ')[0], cumulative: conv(pr.cumulativeDiv - pr.thisPeriod), thisPeriod: conv(pr.thisPeriod), pct: pr.pct }));
-
-  // ── Chart 5: Cap table evrimi ──
-  const capEvo = capTableEvolution.map((c) => ({ period: c.period, ...c }));
+  const partnerBars = partners.map((pr) => ({ name: pr.name.split(' ')[0], cumulative: conv(pr.cumulativeDiv - pr.thisPeriod), thisPeriod: conv(pr.thisPeriod), pct: pr.pct }));
 
   // ── Chart 6: ROIC vs WACC trend ──
   const roicTrend = ordered.map((p) => ({ period: pl(p), roic: roicOf(p), wacc: WACC_REAL, spread: roicOf(p) - WACC_REAL }));
@@ -127,9 +199,15 @@ export const ShareholderReturns = ({ t, l, lang, onSelectRep }: FinancePageProps
     { severity: 'warning', text: en
       ? `Payout ${payoutOf(curr).toFixed(0)}%; FCF coverage fell to ~1.1x — dividend sustainability is under pressure.`
       : `Dağıtım oranı %${payoutOf(curr).toFixed(0)}; FCF karşılaması ~1.1x’e düştü, temettü sürdürülebilirliği baskı altında.` },
-    { severity: 'tip', text: en
-      ? 'Hasan Topalakcı has received ₺3.2M cumulative dividends (30% stake); distribution is consistent with the cap table.'
-      : 'Hasan Topalakcı kümülatif ₺3.2M temettü aldı (%30 pay); dağıtım cap table ile tutarlı.' },
+    ((): FinAlert => {
+      // En düşük paylı ortağı veriden türet (hardcoded isim yok).
+      const tp = partners.length ? [...partners].sort((a, b) => a.pct - b.pct)[0] : null;
+      return { severity: 'tip', text: tp
+        ? (en
+            ? `${tp.name} has received ${fmtC(conv(tp.cumulativeDiv))} cumulative dividends (${tp.pct}% stake); distribution is consistent with the cap table.`
+            : `${tp.name} kümülatif ${fmtC(conv(tp.cumulativeDiv))} temettü aldı (%${tp.pct} pay); dağıtım cap table ile tutarlı.`)
+        : (en ? 'Distributions are consistent with the cap table.' : 'Dağıtımlar cap table ile tutarlı.') };
+    })(),
   ];
 
   const controls = (
@@ -144,6 +222,53 @@ export const ShareholderReturns = ({ t, l, lang, onSelectRep }: FinancePageProps
   const th: CSSProperties = { fontSize: 11, fontWeight: 600, color: t.tx3, textAlign: 'right', padding: '8px 10px', textTransform: 'uppercase', letterSpacing: 0.3, whiteSpace: 'nowrap' };
   const td: CSSProperties = { fontSize: 12, color: t.tx, textAlign: 'right', padding: '8px 10px', borderTop: `1px solid ${t.bd}`, whiteSpace: 'nowrap' };
   const partnerName = (id: string) => PARTNERS.find((p) => p.id === id)?.name ?? id;
+
+  const subtitle = en
+    ? 'Returns, DuPont and shareholder distributions. Dividend records are kept in one place (Financial Data › Shareholder Returns).'
+    : 'Getiri, DuPont ve ortak dağıtımları. Temettü kaydı tek yerde tutulur (Finansal Veriler › Ortak Getirisi).';
+
+  // ── Yükleniyor: skeleton ──
+  if (status === 'loading') {
+    const block = (h: number, w: string | number = '100%'): CSSProperties => ({
+      height: h, width: w, borderRadius: 8, background: t.bg2,
+      animation: 'mh-pulse 1.2s ease-in-out infinite',
+    });
+    return (
+      <ReportPageLayout t={t} lang={lang} title={l.mhFin7} subtitle={subtitle} currency={currency} onCurrency={setCurrency}>
+        <style>{`@keyframes mh-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.45 } }`}</style>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+          {Array.from({ length: 8 }).map((_, i) => <div key={i} style={block(74, 150)} />)}
+        </div>
+        <div style={{ ...block(120), marginBottom: 14 }} />
+        <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
+          <div style={block(230, '56%')} /><div style={block(230, '40%')} />
+        </div>
+        <div style={block(220)} />
+      </ReportPageLayout>
+    );
+  }
+
+  // ── Hata ──
+  if (status === 'error') {
+    return (
+      <ReportPageLayout t={t} lang={lang} title={l.mhFin7} subtitle={subtitle} currency={currency} onCurrency={setCurrency}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '16px 18px', marginTop: 8 }}>
+          <Icon name="alertTriangle" size={18} color="#B91C1C" />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#991B1B' }}>
+              {en ? 'Failed to load shareholder returns' : 'Ortak getirisi verisi yüklenemedi'}
+            </div>
+            <div style={{ fontSize: 12.5, color: '#B91C1C', marginTop: 4 }}>{errMsg}</div>
+          </div>
+        </div>
+      </ReportPageLayout>
+    );
+  }
+
+  // ── Boş / RLS engelli → yetki yok ──
+  if (status === 'empty') {
+    return <AccessDenied t={t} lang={lang} />;
+  }
 
   return (
     <ReportPageLayout
@@ -228,9 +353,13 @@ export const ShareholderReturns = ({ t, l, lang, onSelectRep }: FinancePageProps
               <YAxis tick={{ fontSize: 10, fill: t.tx3 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${t.bd}`, background: t.cd }} formatter={(v: number) => `${v}%`} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Area type="monotone" dataKey="abdulhamit" name="Abdülhamit" stackId="1" stroke={t.pr} fill={t.pr} fillOpacity={0.55} />
-              <Area type="monotone" dataKey="ahmet" name="Ahmet" stackId="1" stroke={t.tl} fill={t.tl} fillOpacity={0.55} />
-              <Area type="monotone" dataKey="hasan" name="Hasan" stackId="1" stroke={t.am} fill={t.am} fillOpacity={0.55} />
+              {capPartnerIds.map((id, i) => {
+                const c = capColors[i % capColors.length];
+                return (
+                  <Area key={id} type="monotone" dataKey={id} name={partnerName(id).split(' ')[0]}
+                    stackId="1" stroke={c} fill={c} fillOpacity={0.55} />
+                );
+              })}
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -315,7 +444,7 @@ export const ShareholderReturns = ({ t, l, lang, onSelectRep }: FinancePageProps
               </tr>
             </thead>
             <tbody>
-              {partnerReturns.map((pr) => (
+              {partners.map((pr) => (
                 <tr key={pr.partnerId}>
                   <td style={{ ...td, textAlign: 'left', fontWeight: 500 }}>{partnerName(pr.partnerId)}</td>
                   <td style={td}>{pr.pct}%</td>
@@ -329,8 +458,8 @@ export const ShareholderReturns = ({ t, l, lang, onSelectRep }: FinancePageProps
                 <td style={{ ...td, textAlign: 'left', fontWeight: 700 }}>{en ? 'Total' : 'Toplam'}</td>
                 <td style={{ ...td, fontWeight: 700 }}>100%</td>
                 <td style={{ ...td, fontWeight: 700 }}>{(TOTAL_SHARES / 1e6).toFixed(0)}M</td>
-                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(partnerReturns.reduce((s, p) => s + p.cumulativeDiv, 0)))}</td>
-                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(partnerReturns.reduce((s, p) => s + p.thisPeriod, 0)))}</td>
+                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(partners.reduce((s, p) => s + p.cumulativeDiv, 0)))}</td>
+                <td style={{ ...td, fontWeight: 700 }}>{fmtC(conv(partners.reduce((s, p) => s + p.thisPeriod, 0)))}</td>
                 <td style={td} />
               </tr>
             </tbody>

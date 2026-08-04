@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, Cell, LabelList,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -9,6 +9,8 @@ import type { DcfSettings, BaseMetric } from '../../constants/dcfData';
 import { dcfDefaults, BASE_BY_METRIC, DCF_SHARES } from '../../constants/dcfData';
 import { runDcf, scenarioWeighted, reverseDcf, projectCashflows, sensitivityMatrix } from '../../lib/finance/dcfEngine';
 import { useDcf } from '../../context/DcfContext';
+import { PARTNERS } from '../../constants/financeData';
+import { supabase } from '../../lib/supabase';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, StatusBadge, InfoTip, Dropdown, type FinAlert,
 } from '../../components/finance';
@@ -46,6 +48,29 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
   const [scenarioName, setScenarioName] = useState('');
   const [loadName, setLoadName] = useState('');
 
+  const partnerName = (id: string) => PARTNERS.find((p) => p.id === id)?.name ?? id;
+  const partnerIdx = (id: string) => { const i = PARTNERS.findIndex((p) => p.id === id); return i < 0 ? 999 : i; };
+
+  // ── Cap table — Supabase (public.cap_table_evolution, en güncel dönem) ──
+  // Ortaklık yüzdeleri artık mock'ta değil; DLOM sonrası özkaynağı buradan böleriz.
+  const [capRows, setCapRows] = useState<{ partner_id: string; share_pct: number; period: string }[]>([]);
+  const [capStatus, setCapStatus] = useState<'loading' | 'ready' | 'error' | 'empty'>('loading');
+  const [capErr, setCapErr] = useState('');
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from('cap_table_evolution')
+        .select('partner_id,share_pct,period');
+      if (!active) return;
+      if (error) { setCapErr(error.message); setCapStatus('error'); return; }
+      if (!data || data.length === 0) { setCapRows([]); setCapStatus('empty'); return; }
+      setCapRows(data as { partner_id: string; share_pct: number; period: string }[]);
+      setCapStatus('ready');
+    })();
+    return () => { active = false; };
+  }, []);
+
   const sym = currency === 'USD' ? '$' : '₺';
   const conv = (v: number) => (currency === 'USD' ? v / FX : v);
   const fmtC = (v: number) => { const c = conv(v); const a = Math.abs(c); const str = a >= 1e9 ? (c / 1e9).toFixed(2) + 'B' : a >= 1e6 ? (c / 1e6).toFixed(1) + 'M' : a >= 1e3 ? (c / 1e3).toFixed(0) + 'K' : Math.round(c).toString(); return `${sym}${str}`; };
@@ -58,6 +83,18 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
   // ── hesap (mod'a göre) — girdi değişince canlı ──
   const eff = mode === 'exit' ? { ...s, terminalMethod: 'exit' as const } : s;
   const res = useMemo(() => runDcf(eff), [eff]);
+
+  // En güncel dönemin cap table'ı → DLOM sonrası özkaynağı ortaklara böl.
+  const latestPeriod = capRows.reduce((mx, r) => (r.period > mx ? r.period : mx), '');
+  const capTableView = capRows
+    .filter((r) => r.period === latestPeriod)
+    .sort((a, b) => partnerIdx(a.partner_id) - partnerIdx(b.partner_id))
+    .map((r) => ({
+      partnerId: r.partner_id,
+      name: partnerName(r.partner_id).split(' ')[0],
+      pct: Number(r.share_pct),
+      value: res.equityAfterDLOM * (Number(r.share_pct) / 100),
+    }));
   const sw = useMemo(() => scenarioWeighted(eff), [eff]);
   const rev = useMemo(() => reverseDcf(eff, s.currentFairValueTRY), [eff, s.currentFairValueTRY]);
   const sens = useMemo(() => sensitivityMatrix(eff), [eff]);
@@ -245,16 +282,27 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
               <div style={{ marginTop: 6 }}><StatusBadge t={t} tone={revOptimistic ? 'red' : 'green'} label={revOptimistic ? L('İyimser', 'Optimistic') : L('Ulaşılabilir', 'Achievable')} /> <span style={{ fontSize: 11, color: t.tx3 }}>{L('tarihsel', 'historical')} %{s.historicalCagrPct}</span></div>
             </div>
           )}
-          {/* Cap table */}
-          <div style={{ ...card, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 14px', fontSize: 12.5, fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{L('Cap Table (DLOM sonrası)', 'Cap Table (post-DLOM)')}</div>
-            {res.capTable.map((c) => (
-              <div key={c.partner} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', borderTop: `1px solid ${t.bd}`, fontSize: 12 }}>
-                <span style={{ color: t.tx2 }}>{c.partner} <span style={{ color: t.tx3 }}>%{c.pct}</span></span>
-                <span style={{ fontWeight: 600, color: t.tx }}>{fmtC(c.value)}</span>
-              </div>
-            ))}
-          </div>
+          {/* Cap table — Supabase (en güncel dönem, DLOM sonrası). Veri yoksa gizli. */}
+          {capStatus !== 'empty' && (
+            <div style={{ ...card, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px', fontSize: 12.5, fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{L('Cap Table (DLOM sonrası)', 'Cap Table (post-DLOM)')}</div>
+              {capStatus === 'loading' ? (
+                <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[0, 1, 2].map((i) => <div key={i} style={{ height: 16, borderRadius: 5, background: t.bg2, animation: 'mh-pulse 1.2s ease-in-out infinite' }} />)}
+                  <style>{`@keyframes mh-pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.45 } }`}</style>
+                </div>
+              ) : capStatus === 'error' ? (
+                <div style={{ padding: '10px 14px', fontSize: 12, color: t.rd }}>{L('Cap table yüklenemedi', 'Failed to load cap table')}: {capErr}</div>
+              ) : (
+                capTableView.map((c) => (
+                  <div key={c.partnerId} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 14px', borderTop: `1px solid ${t.bd}`, fontSize: 12 }}>
+                    <span style={{ color: t.tx2 }}>{c.name} <span style={{ color: t.tx3 }}>%{c.pct}</span></span>
+                    <span style={{ fontWeight: 600, color: t.tx }}>{fmtC(c.value)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
 

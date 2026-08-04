@@ -1,5 +1,6 @@
 // DCF Calculator varsayımları — tek kaynak (Ayarlar). Değerleme sayfası da bunları okur.
-// Muhiku halka kapalı: hisse fiyatı/market cap YOK. 20.000.000 hisse, cap table %35/%35/%30.
+// Muhiku halka kapalı: hisse fiyatı/market cap YOK. Sabit 20.000.000 hisse.
+// Cap table (ortaklık yüzdeleri) burada TUTULMUYOR — Supabase public.cap_table_evolution.
 export type BaseMetric = 'FCF' | 'NetKar' | 'FAVOK';
 export type TerminalMethod = 'gordon' | 'exit';
 
@@ -23,7 +24,6 @@ export interface DcfSettings {
   currentFairValueTRY: number; // Reverse DCF hedefi (Ayarlar'daki mevcut AI gerçeğe uygun değer, DLOM sonrası özkaynak)
   historicalCagrPct: number; // reverse kıyas (tarihsel büyüme)
   shares: number;            // sabit 20.000.000
-  capTable: { partner: string; pct: number }[];
 }
 
 export const DCF_SHARES = 20_000_000;
@@ -57,9 +57,4 @@ export const dcfDefaults: DcfSettings = {
   currentFairValueTRY: 55_000_000, // Ayarlar mevcut fair value (DLOM sonrası özkaynak) — reverse hedefi
   historicalCagrPct: 30,
   shares: DCF_SHARES,
-  capTable: [
-    { partner: 'Abdülhamit', pct: 35 },
-    { partner: 'Ahmet', pct: 35 },
-    { partner: 'Hasan', pct: 30 },
-  ],
 };

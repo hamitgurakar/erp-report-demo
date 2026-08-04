@@ -44,7 +44,6 @@ export interface DcfResult {
   equityValue: number;      // EV − Net Borç
   equityAfterDLOM: number;  // × (1 − DLOM)
   perShare: number;         // / 20.000.000
-  capTable: { partner: string; pct: number; value: number }[];
   terminalShare: number;    // PV(terminal) / EV
   growthValue: number;      // = pvGrowth
 }
@@ -64,9 +63,8 @@ export const runDcf = (s: DcfSettings, growthOverride?: number): DcfResult => {
   const equityValue = enterpriseValue - s.netDebtTRY;
   const equityAfterDLOM = equityValue * (1 - pct(s.dlomPct));
   const perShare = equityAfterDLOM / (s.shares || DCF_SHARES);
-  const capTable = s.capTable.map((c) => ({ partner: c.partner, pct: c.pct, value: equityAfterDLOM * pct(c.pct) }));
   const terminalShare = enterpriseValue ? pvTerminal / enterpriseValue : 0;
-  return { projections, pvGrowth, terminalValueRaw, pvTerminal, enterpriseValue, equityValue, equityAfterDLOM, perShare, capTable, terminalShare, growthValue: pvGrowth };
+  return { projections, pvGrowth, terminalValueRaw, pvTerminal, enterpriseValue, equityValue, equityAfterDLOM, perShare, terminalShare, growthValue: pvGrowth };
 };
 
 /** Senaryo-ağırlıklı beklenen özkaynak (DLOM sonrası). */

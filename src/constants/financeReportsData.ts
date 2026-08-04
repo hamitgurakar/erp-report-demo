@@ -238,22 +238,11 @@ export const footballField: { ranges: FFRange[]; current: number; aiFairValue: n
 };
 
 // ── SAYFA 8 — Yatırım & Ortak Getirisi ──────────────────────────────────────
-export interface PartnerReturn { partnerId: string; name: string; pct: number; shares: number; cumulativeDiv: number; thisPeriod: number; tsr: number }
-export const partnerReturns: PartnerReturn[] = [
-  { partnerId: 'abdulhamit', name: 'Abdülhamit Gürakar', pct: 35, shares: 7_000_000, cumulativeDiv: 7_720_850, thisPeriod: 1_120_000, tsr: 24.5 },
-  { partnerId: 'ahmet', name: 'Ahmet Üreme', pct: 35, shares: 7_000_000, cumulativeDiv: 7_720_850, thisPeriod: 1_120_000, tsr: 24.5 },
-  { partnerId: 'hasan', name: 'Hasan Topalakcı', pct: 30, shares: 6_000_000, cumulativeDiv: 6_598_000, thisPeriod: 960_000, tsr: 23.8 },
-];
+// partnerReturns / PartnerReturn KALDIRILDI — veri artık Supabase'ten gelir
+// (public.ortak_getirisi). Kaynak dosyada tutulmuyor (bundle sızması/güvenlik).
 
-/** Cap table evrimi — pay dağılımı zaman içinde (%) . */
-export interface CapTableSnapshot { period: string; abdulhamit: number; ahmet: number; hasan: number }
-export const capTableEvolution: CapTableSnapshot[] = [
-  { period: '2022', abdulhamit: 40, ahmet: 40, hasan: 20 },
-  { period: '2023', abdulhamit: 38, ahmet: 37, hasan: 25 },
-  { period: '2024', abdulhamit: 36, ahmet: 36, hasan: 28 },
-  { period: '2025', abdulhamit: 35, ahmet: 35, hasan: 30 },
-  { period: '2026', abdulhamit: 35, ahmet: 35, hasan: 30 },
-];
+// capTableEvolution / CapTableSnapshot KALDIRILDI — veri artık Supabase'ten gelir
+// (public.cap_table_evolution). HASSAS ortaklık yüzdeleri kaynak dosyada tutulmuyor.
 
 /** DuPont 5-faktör (ROE ayrıştırması). */
 export interface DuPontFactor { key: Bi; value: number; unit: string }
