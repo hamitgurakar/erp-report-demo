@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-type ProjectId = 'erp' | 'tahsilat';
+type ProjectId = 'erp' | 'influencer' | 'tahsilat';
 type ProjectStatus = 'live' | 'soon';
-type ProjectIcon = 'bar-chart' | 'coin';
+type ProjectIcon = 'bar-chart' | 'rating' | 'coin';
 
 interface Project {
   id: ProjectId;
@@ -32,6 +32,16 @@ const PROJECTS: Project[] = [
     icon: 'bar-chart',
   },
   {
+    id: 'influencer',
+    name: 'Influencer Rating',
+    desc: 'Başvuru, skorlama ve kutu gönderimi',
+    status: 'live',
+    url: '/influencer',
+    iconBg: '#7C3AED',
+    iconColor: '#FFFFFF',
+    icon: 'rating',
+  },
+  {
     id: 'tahsilat',
     name: 'Muhasebe Tahsilat',
     desc: 'Tahsilat takip ve alacak yönetimi',
@@ -42,6 +52,30 @@ const PROJECTS: Project[] = [
     icon: 'coin',
   },
 ];
+
+const PORTAL_ORIGIN = import.meta.env.VITE_PORTAL_ORIGIN ?? 'https://lab.mhkapp.com';
+
+/**
+ * Proje başına tam URL override'ı (.env.local). İki projeyi aynı anda local'de
+ * gezmek için: VITE_INFLUENCER_URL=http://localhost:5173/influencer
+ * Vite bu değerleri build sırasında yerine koyduğu için referanslar statik olmalı.
+ */
+const URL_OVERRIDES: Record<ProjectId, string | undefined> = {
+  erp: import.meta.env.VITE_ERP_URL,
+  influencer: import.meta.env.VITE_INFLUENCER_URL,
+  tahsilat: import.meta.env.VITE_TAHSILAT_URL,
+};
+
+/**
+ * Prod'da kardeş projeler portal üzerinden relative path ile çözülür (/erp, /influencer).
+ * Dev'de ise Vite'ın base'i /erp/ olduğu için "/influencer" local sunucuda aranır ve
+ * "did you mean /erp/influencer?" hatası çıkar — bu yüzden local'de PORTAL_ORIGIN'e gidiyoruz.
+ */
+const resolveUrl = (p: Project) => {
+  const override = URL_OVERRIDES[p.id];
+  if (override) return override;
+  return import.meta.env.DEV ? `${PORTAL_ORIGIN}${p.url}` : p.url;
+};
 
 const C = {
   indigo: '#4F46E5',
@@ -104,6 +138,18 @@ const ProjectGlyph = ({ icon, color }: { icon: ProjectIcon; color: string }) => 
       </svg>
     );
   }
+  if (icon === 'rating') {
+    return (
+      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="9.5" cy="7.5" r="3.5" fill={color} />
+        <path d="M3.5 19.5c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        <path
+          d="M17.5 12l1.24 2.5 2.76.4-2 1.95.47 2.75-2.47-1.3-2.47 1.3.47-2.75-2-1.95 2.76-.4L17.5 12z"
+          fill={color}
+        />
+      </svg>
+    );
+  }
   // coin
   return (
     <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -128,7 +174,7 @@ const ArrowLeft = () => (
 
 /* ---------- Component ---------- */
 
-export const ProjectSwitcher = ({ activeProject, portalUrl = 'https://lab.mhkapp.com' }: ProjectSwitcherProps) => {
+export const ProjectSwitcher = ({ activeProject, portalUrl = PORTAL_ORIGIN }: ProjectSwitcherProps) => {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -153,7 +199,7 @@ export const ProjectSwitcher = ({ activeProject, portalUrl = 'https://lab.mhkapp
   const go = (p: Project) => {
     if (p.status !== 'live') return;
     setOpen(false);
-    window.location.href = p.url;
+    window.location.href = resolveUrl(p);
   };
 
   return (
