@@ -10,13 +10,13 @@ import { finTerm } from '../../i18n/terms';
 import { fmtNumber } from '../../utils/format';
 import type {
   FinCurrency, FinSource, ViewMode, OrderMode, PeriodType, FinancialPeriod,
-  InflationMethod, DividendEvent, PartnerId, AuditEntry,
+  InflationMethod, AuditEntry,
 } from '../../types/finance';
 import {
-  PARTNERS, TOTAL_SHARES, PERIODS_ANNUAL, PERIODS_QUARTER,
+  TOTAL_SHARES, PERIODS_ANNUAL, PERIODS_QUARTER,
   LINE_LABELS, INCOME_ROWS, BALANCE_ROWS, CASHFLOW_ROWS, EXPENSE_TREE,
-  incomeRaw, balanceRaw, cashflowRaw, expenseRaw, dividendEventsSeed,
-  divSumInPeriod, type RowSpec, type ComputeCtx,
+  incomeRaw, balanceRaw, cashflowRaw, expenseRaw,
+  type RowSpec, type ComputeCtx,
 } from '../../constants/financeData';
 import { LoansTab } from './LoansTab';
 import { RecurringModal, OccurrenceDialog } from '../../components/finance';
@@ -26,7 +26,7 @@ import { REF_DATE } from '../../constants/cashflowData';
 import type { RecurringSeries } from '../../types/recurring';
 
 interface Props { t: Theme; l: LangStrings; lang: Lang; }
-type TabKey = 'income' | 'balance' | 'cashflow' | 'expense' | 'dividends' | 'loans' | 'recurring' | 'meta';
+type TabKey = 'income' | 'balance' | 'cashflow' | 'expense' | 'loans' | 'recurring' | 'meta';
 type StoreKey = 'income' | 'balance' | 'cashflow' | 'expense';
 type Store = Record<string, Record<string, number | null>>;
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -64,11 +64,8 @@ export const FinancialData = ({ t, lang }: Props) => {
   const [draftTree, setDraftTree] = useState<typeof EXPENSE_TREE | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
-  const [events, setEvents] = useState<DividendEvent[]>(() => clone(dividendEventsSeed));
-  const [draftDivs, setDraftDivs] = useState<DividendEvent[] | null>(null);
   const [settings, setSettings] = useState<{ inflation: InflationMethod; startDate: string }>({ inflation: 'nominal', startDate: '2020-01-01' });
   const [settingsSnap, setSettingsSnap] = useState<{ inflation: InflationMethod; startDate: string } | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [recModal, setRecModal] = useState<'Gider' | 'Gelir' | null>(null);
   const [occDlg, setOccDlg] = useState<{ series: RecurringSeries; recurrenceId: string; mode: 'edit' | 'cancel' | 'paid'; defaultTutar?: number; defaultTarih?: string } | null>(null);
@@ -76,7 +73,6 @@ export const FinancialData = ({ t, lang }: Props) => {
   const rec = useRecurring();
 
   const inflation = settings.inflation;
-  const activeEvents = draftDivs ?? events;
   const activeTree = draftTree ?? tree;
 
   // Rapor başlangıç tarihine göre dönem üretimi (ilk dönem startDate'ten itibaren)
@@ -90,7 +86,7 @@ export const FinancialData = ({ t, lang }: Props) => {
 
   const activeStore = (s: StoreKey): Store => draftStores[s] ?? stores[s];
   const isEditing = (tb: TabKey): boolean =>
-    tb === 'dividends' ? draftDivs !== null : tb === 'meta' ? settingsSnap !== null : !!draftStores[tb as StoreKey];
+    tb === 'meta' ? settingsSnap !== null : !!draftStores[tb as StoreKey];
 
   // ── Değer biçimlendirme (dönem kuruna göre USD) ────────────────────────────
   const money = (tryVal: number | null, p: FinancialPeriod, perShare = false): string => {
@@ -126,8 +122,6 @@ export const FinancialData = ({ t, lang }: Props) => {
         revenue: incRaw.revenue ?? null,
         netIncome: netIncomeFromRaw(incRaw),
         shares: TOTAL_SHARES,
-        divDeclared: divSumInPeriod(activeEvents, p, 'beyan'),
-        divPaid: divSumInPeriod(activeEvents, p, 'odeme'),
       };
       for (const row of rows) resolved[row.key] = row.compute ? row.compute(ctx) : (raw[row.key] ?? null);
       out[p.id] = resolved;
@@ -142,13 +136,11 @@ export const FinancialData = ({ t, lang }: Props) => {
     ({ id: `A${Date.now()}-${seq++}`, ts: Date.now(), user: USER, tab: tabId, itemKey: key, itemLabel: lbl(key), periodId: pid, periodLabel: pl, oldValue: ov, newValue: nv, sourceNote: note });
 
   const startEditTab = (tb: TabKey) => {
-    if (tb === 'dividends') setDraftDivs(clone(events));
-    else if (tb === 'meta') setSettingsSnap(clone(settings));
+    if (tb === 'meta') setSettingsSnap(clone(settings));
     else { setDraftStores((d) => ({ ...d, [tb]: clone(stores[tb as StoreKey]) })); if (tb === 'expense') setDraftTree(clone(tree)); }
   };
   const cancelEditTab = (tb: TabKey) => {
-    if (tb === 'dividends') setDraftDivs(null);
-    else if (tb === 'meta') { if (settingsSnap) setSettings(settingsSnap); setSettingsSnap(null); }
+    if (tb === 'meta') { if (settingsSnap) setSettings(settingsSnap); setSettingsSnap(null); }
     else { setDraftStores((d) => { const n = { ...d }; delete n[tb as StoreKey]; return n; }); if (tb === 'expense') setDraftTree(null); }
   };
   const editCell = (s: StoreKey, pid: string, key: string, raw: string) => {
@@ -179,18 +171,6 @@ export const FinancialData = ({ t, lang }: Props) => {
     if (newEdited.size !== editedCells.size) setEditedCells(newEdited);
     setDraftStores((d) => { const n = { ...d }; delete n[s]; return n; });
   };
-  const saveDivsTab = () => {
-    if (!draftDivs) return;
-    const entries: AuditEntry[] = [];
-    for (const e of draftDivs) {
-      const old = events.find((x) => x.id === e.id);
-      if (old && old.amountTRY !== e.amountTRY) {
-        const pn = PARTNERS.find((p) => p.id === e.partnerId)?.name ?? e.partnerId;
-        entries.push(mkEntry('dividends', 'cfDiv', e.date, pn, old.amountTRY, e.amountTRY, e.date));
-      }
-    }
-    setEvents(draftDivs); if (entries.length) setAudit((a) => [...entries, ...a]); setDraftDivs(null);
-  };
   const saveSettingsTab = () => {
     if (!settingsSnap) return;
     const entries: AuditEntry[] = [];
@@ -202,8 +182,7 @@ export const FinancialData = ({ t, lang }: Props) => {
     setSettingsSnap(null);
   };
   const doSave = (tb: TabKey) => {
-    if (tb === 'dividends') saveDivsTab();
-    else if (tb === 'meta') saveSettingsTab();
+    if (tb === 'meta') saveSettingsTab();
     else if (tb === 'expense') saveDatasetTab('expense', activeTree.flatMap((c) => c.items.map((it) => ({ key: it.key, source: it.source } as RowSpec))));
     else saveDatasetTab(tb as StoreKey, ROWS_BY[tb as StoreKey]);
   };
@@ -465,100 +444,6 @@ export const FinancialData = ({ t, lang }: Props) => {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ORTAK GETİRİSİ (Temettü)
-  // ═══════════════════════════════════════════════════════════════════════════
-  const renderDividends = () => {
-    const editingThis = isEditing('dividends');
-    const evs = activeEvents;
-    const declaredOf = (pid: PartnerId) => evs.filter((e) => e.type === 'beyan' && e.partnerId === pid).reduce((s, e) => s + e.amountTRY, 0);
-    const paidOf = (pid: PartnerId) => evs.filter((e) => e.type === 'odeme' && e.partnerId === pid).reduce((s, e) => s + e.amountTRY, 0);
-    // distribution gruplama
-    const distIds = [...new Set(evs.filter((e) => e.type === 'beyan').map((e) => e.distributionId!))];
-    const usd = (tryVal: number, rate: number) => `$${fmtNumber(Math.round(tryVal / rate))}`;
-    const disp = (tryVal: number, rate: number) => currency === 'USD' ? usd(tryVal, rate) : `${fmtNumber(tryVal)} ₺`;
-    const editOdeme = (did: string, pid: PartnerId, date: string, rate: number, raw: string) => {
-      const d = raw.trim() === '' ? 0 : Number(raw.replace(/[^\d.-]/g, ''));
-      const tryVal = currency === 'USD' ? Math.round(d * rate) : d;
-      setDraftDivs((prev) => {
-        const base = prev ?? clone(events);
-        const idx = base.findIndex((x) => x.type === 'odeme' && x.distributionId === did && x.partnerId === pid);
-        if (idx >= 0) { const n = [...base]; n[idx] = { ...n[idx], amountTRY: Number.isNaN(tryVal) ? 0 : tryVal }; return n; }
-        return [...base, { id: `${did}-${pid}-o`, partnerId: pid, type: 'odeme', date, amountTRY: Number.isNaN(tryVal) ? 0 : tryVal, fxRate: rate, distributionId: did }];
-      });
-    };
-
-    return (
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: t.tx }}>{f('tabs.dividends')}</span>
-          <button onClick={() => setModalOpen(true)} style={{ ...btnPrimary, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="plus" size={13} color="#fff" />{f('dividends.addRecord')}</button>
-        </div>
-        {/* Ortak özet kartları */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-          {PARTNERS.map((p) => {
-            const dec = declaredOf(p.id), paid = paidOf(p.id), bal = dec - paid;
-            return (
-              <div key={p.id} style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: t.tx, marginBottom: 2 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: t.tx3, marginBottom: 10 }}>%{p.pct}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <Row3 label={f('dividends.declaredCard')} val={currency === 'USD' ? '—' : `${fmtNumber(dec)} ₺`} t={t} />
-                  <Row3 label={f('dividends.paidCard')} val={currency === 'USD' ? '—' : `${fmtNumber(paid)} ₺`} t={t} />
-                  <div style={{ height: 1, background: t.bd, margin: '2px 0' }} />
-                  <Row3 label={f('dividends.balanceCard')} val={`${fmtNumber(bal)} ₺`} strong color={bal > 0 ? t.am : t.gn} t={t} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        {/* Distribution bazlı gruplu tablo */}
-        <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>
-                {[f('dividends.date'), f('dividends.partner'), f('dividends.beyan'), f('dividends.rate'), f('dividends.usd'), f('dividends.odeme'), f('dividends.balance')].map((h, i) => (
-                  <th key={i} style={{ ...periodTh, textAlign: i < 2 ? 'left' : 'right', minWidth: 0 }}>{h}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {distIds.map((did) => {
-                  const beyanRows = evs.filter((e) => e.type === 'beyan' && e.distributionId === did);
-                  const date = beyanRows[0]?.date, rate = beyanRows[0]?.fxRate ?? 1;
-                  return (
-                    <Fragment key={did}>
-                      <tr style={{ background: t.bg2 }}><td colSpan={7} style={{ padding: '6px 12px', fontSize: 11, fontWeight: 700, color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{f('dividends.distribution')} · {date}</td></tr>
-                      {beyanRows.map((e) => {
-                        const paid = evs.filter((x) => x.type === 'odeme' && x.distributionId === did && x.partnerId === e.partnerId).reduce((s, x) => s + x.amountTRY, 0);
-                        const bal = e.amountTRY - paid;
-                        const pName = PARTNERS.find((p) => p.id === e.partnerId)?.name ?? e.partnerId;
-                        return (
-                          <tr key={e.id}>
-                            <td style={{ padding: '7px 12px', fontSize: 12, color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{e.date}</td>
-                            <td style={{ padding: '7px 12px', fontSize: 12, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{pName}</td>
-                            <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{disp(e.amountTRY, rate)}</td>
-                            <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{fmtNumber(rate, 2)}</td>
-                            <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{usd(e.amountTRY, rate)}</td>
-                            <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', color: t.tx, borderBottom: `1px solid ${t.bd}` }}>
-                              {editingThis
-                                ? <input value={currency === 'USD' ? String(Math.round(paid / rate)) : String(paid)} onChange={(ev) => editOdeme(did, e.partnerId, e.date, rate, ev.target.value)} style={{ width: 100, textAlign: 'right', padding: '3px 7px', borderRadius: 6, border: `1px solid ${t.bd}`, background: t.bg, color: t.tx, fontSize: 12 }} />
-                                : disp(paid, rate)}
-                            </td>
-                            <td style={{ padding: '7px 12px', fontSize: 12, textAlign: 'right', fontWeight: 600, color: bal > 0 ? t.am : t.gn, borderBottom: `1px solid ${t.bd}` }}>{disp(bal, rate)}</td>
-                          </tr>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // META / AYARLAR
   // ═══════════════════════════════════════════════════════════════════════════
   const renderMeta = () => {
@@ -600,30 +485,6 @@ export const FinancialData = ({ t, lang }: Props) => {
                   <td style={{ padding: '4px 0', fontSize: 12, color: t.tx }}>{pLabel(p)}</td>
                   <td style={{ padding: '4px 0', fontSize: 12, color: t.tx2, textAlign: 'right' }}>{fmtNumber(p.fxRate, 2)}</td>
                   <td style={{ padding: '4px 0', fontSize: 12, color: t.tx2, textAlign: 'right' }}>{fmtNumber(p.sharePrice, 2)} ₺</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{ background: t.cd, border: `1px solid ${t.bd}`, borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', borderBottom: `1px solid ${t.bd}` }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: t.tx }}>{f('meta.capTable')}</div>
-            <div style={{ fontSize: 11, color: t.tx3, marginTop: 2 }}>{f('meta.capNote')}</div>
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr>
-              <th style={{ ...periodTh, textAlign: 'left' }}>{f('meta.partner')}</th>
-              <th style={{ ...periodTh }}>{f('meta.shares')}</th>
-              <th style={{ ...periodTh }}>{f('meta.stake')}</th>
-              <th style={{ ...periodTh }}>{f('meta.value')}</th>
-            </tr></thead>
-            <tbody>
-              {PARTNERS.map((p) => (
-                <tr key={p.id}>
-                  <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 500, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{p.name}</td>
-                  <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', color: t.tx2, borderBottom: `1px solid ${t.bd}` }}>{fmtNumber(TOTAL_SHARES * p.pct / 100)}</td>
-                  <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', color: t.tx, borderBottom: `1px solid ${t.bd}` }}>%{fmtNumber(p.pct)}</td>
-                  <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', fontWeight: 600, color: t.tx, borderBottom: `1px solid ${t.bd}` }}>{money(latest.sharePrice * TOTAL_SHARES * p.pct / 100, latest)}</td>
                 </tr>
               ))}
             </tbody>
@@ -811,7 +672,7 @@ export const FinancialData = ({ t, lang }: Props) => {
 
       {/* ── TAB ŞERİDİ ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, borderBottom: `1px solid ${t.bd}`, flexWrap: 'wrap' }}>
-        {(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'recurring', 'meta'] as TabKey[]).map((tb) => (
+        {(['income', 'balance', 'cashflow', 'expense', 'loans', 'recurring', 'meta'] as TabKey[]).map((tb) => (
           <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 16px', fontSize: 13, fontWeight: tab === tb ? 600 : 500, border: 'none', borderBottom: `2px solid ${tab === tb ? t.pr : 'transparent'}`, background: 'transparent', color: tab === tb ? t.pr : t.tx2, cursor: 'pointer', marginBottom: -1, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             {f(`tabs.${tb}`)}
             {isEditing(tb) && <span style={{ width: 6, height: 6, borderRadius: 3, background: t.am }} title={f('edit')} />}
@@ -825,13 +686,11 @@ export const FinancialData = ({ t, lang }: Props) => {
         {tab === 'balance' && renderGrid('balance', BALANCE_ROWS, 'totalAssets')}
         {tab === 'cashflow' && renderGrid('cashflow', CASHFLOW_ROWS, 'revenue')}
         {tab === 'expense' && renderExpense()}
-        {tab === 'dividends' && renderDividends()}
         {tab === 'loans' && <LoansTab t={t} lang={lang} f={f} onAudit={(e) => setAudit((a) => [e, ...a])} />}
         {tab === 'recurring' && renderRecurring()}
         {tab === 'meta' && renderMeta()}
       </div>
 
-      {modalOpen && <DividendModal t={t} f={f} onClose={() => setModalOpen(false)} onSave={(ev) => { setEvents((e) => [...e, ...ev]); setModalOpen(false); }} />}
       {chart && <MetricChart t={t} lang={lang} currency={currency} periods={periodsFor} data={chart} onClose={() => setChart(null)} />}
       {historyOpen && <HistoryModal t={t} f={f} lang={lang} audit={audit} currentTab={tab} onClose={() => setHistoryOpen(false)} />}
       {recModal && <RecurringModal t={t} lang={lang} defaultTip={recModal} onClose={() => setRecModal(null)} />}
@@ -874,70 +733,6 @@ function Dropdown<T extends string>({ t, opts, value, onChange }: { t: Theme; op
     </div>
   );
 }
-
-const Row3 = ({ label, val, strong, color, t }: { label: string; val: string; strong?: boolean; color?: string; t: Theme }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-    <span style={{ fontSize: 11.5, color: t.tx2 }}>{label}</span>
-    <span style={{ fontSize: strong ? 14 : 12.5, fontWeight: strong ? 700 : 500, color: color ?? t.tx }}>{val}</span>
-  </div>
-);
-
-// ── Temettü Kaydı Ekle modalı ────────────────────────────────────────────────
-const DividendModal = ({ t, f, onClose, onSave }: { t: Theme; f: (k: string) => string; onClose: () => void; onSave: (ev: DividendEvent[]) => void }) => {
-  const [date, setDate] = useState('');
-  const [rate, setRate] = useState('');
-  const [note, setNote] = useState('');
-  const [total, setTotal] = useState('');
-  const [split, setSplit] = useState<Record<PartnerId, number>>({ abdulhamit: 0, ahmet: 0, hasan: 0 });
-  const [manualSplit, setManualSplit] = useState(false);
-
-  const totalNum = Number(total.replace(/[^\d.]/g, '')) || 0;
-  const rateNum = Number(rate.replace(/[^\d.]/g, '')) || 0;
-  const autoSplit: Record<PartnerId, number> = { abdulhamit: Math.round(totalNum * 0.35), ahmet: Math.round(totalNum * 0.35), hasan: Math.round(totalNum * 0.30) };
-  const effSplit = manualSplit ? split : autoSplit;
-  const valid = date !== '' && rateNum > 0 && totalNum > 0;
-
-  const save = () => {
-    if (!valid) return;
-    const did = `DX${Date.now()}`;
-    const ev: DividendEvent[] = PARTNERS.map((p) => ({
-      id: `${did}-${p.id}-b`, partnerId: p.id, type: 'beyan', date, amountTRY: effSplit[p.id], fxRate: rateNum, distributionId: did, note: note || undefined,
-    }));
-    onSave(ev);
-  };
-
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: t.cd, borderRadius: 14, padding: 24, width: 460, maxWidth: '100%', border: `1px solid ${t.bd}`, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: t.tx, marginBottom: 16 }}>{f('dividends.modal.title')}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Field label={f('dividends.modal.date')} t={t} required><input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inp(t)} /></Field>
-          <Field label={f('dividends.modal.fxRate')} t={t} required><input value={rate} onChange={(e) => setRate(e.target.value)} placeholder="0,00" style={inp(t)} /></Field>
-          <Field label={f('dividends.modal.totalAmount')} t={t} required><input value={total} onChange={(e) => { setTotal(e.target.value); setManualSplit(false); }} placeholder="0" style={inp(t)} /></Field>
-          <Field label={f('dividends.modal.note')} t={t}><input value={note} onChange={(e) => setNote(e.target.value)} style={inp(t)} /></Field>
-          {/* Cap table böl önizleme */}
-          <div style={{ border: `1px solid ${t.bd}`, borderRadius: 8, padding: 12 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 600, color: t.tx2, marginBottom: 8 }}>{f('dividends.modal.split')}</div>
-            {PARTNERS.map((p) => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: t.tx }}>{p.name} <span style={{ color: t.tx3 }}>%{p.pct}</span></span>
-                <input value={String(effSplit[p.id])} onChange={(e) => { setManualSplit(true); setSplit((s) => ({ ...s, [p.id]: Number(e.target.value.replace(/[^\d]/g, '')) || 0 })); }}
-                  style={{ ...inp(t), width: 130, textAlign: 'right', padding: '4px 8px' }} />
-              </div>
-            ))}
-            <div style={{ fontSize: 11, color: t.tx3, marginTop: 6, textAlign: 'right' }}>
-              {f('dividends.modal.usdEquivalent')}: {rateNum > 0 ? `$${fmtNumber(Math.round((effSplit.abdulhamit + effSplit.ahmet + effSplit.hasan) / rateNum))}` : '—'}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 18 }}>
-          <button onClick={onClose} style={btnGhost}>{f('dividends.modal.cancel')}</button>
-          <button onClick={save} disabled={!valid} style={{ ...btnPrimary, opacity: valid ? 1 : 0.5, cursor: valid ? 'pointer' : 'not-allowed' }}>{f('dividends.modal.save')}</button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ── Metrik mini-grafik pop-up (son 10 periyot; bar=tutar, line=oran) ─────────
 const MetricChart = ({ t, lang, currency, periods, data, onClose }: {
@@ -1005,7 +800,7 @@ const HistoryModal = ({ t, f, lang, audit, currentTab, onClose }: {
   const fmtTs = (ts: number) => new Date(ts).toLocaleString(loc, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const fmtLog = (v: number | null) => v === null ? null : `${fmtNumber(v)} ₺`;
   const rows = audit.filter((a) => filter === 'all' || a.tab === filter);
-  const opts = [{ v: 'all', label: f('historyAll') }, ...(['income', 'balance', 'cashflow', 'expense', 'dividends', 'loans', 'recurring', 'meta'].map((tb) => ({ v: tb, label: f(`tabs.${tb}`) })))];
+  const opts = [{ v: 'all', label: f('historyAll') }, ...(['income', 'balance', 'cashflow', 'expense', 'loans', 'recurring', 'meta'].map((tb) => ({ v: tb, label: f(`tabs.${tb}`) })))];
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: t.cd, borderRadius: 14, width: 640, maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: `1px solid ${t.bd}`, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
@@ -1037,13 +832,5 @@ const HistoryModal = ({ t, f, lang, audit, currentTab, onClose }: {
     </div>
   );
 };
-
-const inp = (t: Theme): CSSProperties => ({ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${t.bd}`, background: t.bg, color: t.tx, fontSize: 13, boxSizing: 'border-box' });
-const Field = ({ label, t, required, children }: { label: string; t: Theme; required?: boolean; children: ReactNode }) => (
-  <div>
-    <div style={{ fontSize: 12, fontWeight: 500, color: t.tx2, marginBottom: 4 }}>{label}{required && <span style={{ color: t.rd }}> *</span>}</div>
-    {children}
-  </div>
-);
 
 export default FinancialData;

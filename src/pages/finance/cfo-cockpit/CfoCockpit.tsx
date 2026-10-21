@@ -61,7 +61,7 @@ export const CfoCockpit = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
 
   // 6 above-the-fold KPI (her biri kaynak sayfaya drill-down)
   const kpis = [
-    { title: en ? 'Composite Health' : 'Kompozit Sağlık', value: `${composite.toFixed(0)} · ${gradeOf(composite)}`, hint: en ? '8-category weighted' : '8 kategori ağırlıklı', spark: series(() => composite).map((v, i) => v * (0.92 + 0.08 * (i / 5))), color: gradeColor(gradeOf(composite)), goodDir: 'up' as const, rep: 'muhasebe__8' },
+    { title: en ? 'Composite Health' : 'Kompozit Sağlık', value: `${composite.toFixed(0)} · ${gradeOf(composite)}`, hint: en ? '7-category weighted' : '7 kategori ağırlıklı', spark: series(() => composite).map((v, i) => v * (0.92 + 0.08 * (i / 5))), color: gradeColor(gradeOf(composite)), goodDir: 'up' as const, rep: 'muhasebe__7' },
     { title: en ? 'Cash + Runway' : 'Nakit + Runway', value: fmtC(conv(M.cash)), hint: `${en ? 'Runway' : 'Runway'} ${M.runway.toFixed(1)} ${en ? 'mo' : 'ay'}`, spark: series((m) => m.cash), color: t.pr, goodDir: 'up' as const, rep: 'muhasebe__1' },
     { title: en ? 'Growth & EBITDA Margin' : 'Büyüme & FAVÖK Marjı', value: `${M.ebitdaMargin.toFixed(1)}%`, hint: `${en ? 'Revenue' : 'Hasılat'} +${M.revGrowth.toFixed(0)}%`, spark: series((m) => m.ebitdaMargin), color: t.tl, goodDir: 'up' as const, rep: 'muhasebe__0' },
     { title: en ? 'Net Debt/EBITDA' : 'Net Borç/FAVÖK', value: `${M.ndEbitda.toFixed(2)}x`, hint: en ? 'Covenant 3.0x' : 'Kovenant 3.0x', spark: series((m) => m.ndEbitda), color: t.pu, goodDir: 'down' as const, rep: 'muhasebe__5' },
@@ -85,7 +85,7 @@ export const CfoCockpit = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   const modules = Array.from(new Set(rollupAlerts.map((a) => a.moduleKey)));
   const alarmCount = (modKey: string, sev: string) => rollupAlerts.filter((a) => a.moduleKey === modKey && a.severity === sev).length;
   const modLabel = (modKey: string) => rollupAlerts.find((a) => a.moduleKey === modKey)?.module[en ? 'en' : 'tr'] ?? modKey;
-  const modRep = (modKey: string) => rollupAlerts.find((a) => a.moduleKey === modKey)?.repKey ?? 'muhasebe__9';
+  const modRep = (modKey: string) => rollupAlerts.find((a) => a.moduleKey === modKey)?.repKey ?? 'muhasebe__8';
 
   // KPI sparkline grid
   const sparkGrid = [
@@ -109,7 +109,7 @@ export const CfoCockpit = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
       t={t} lang={lang} title={l.mhFin9}
       subtitle={en ? 'Command center — rolls up the whole suite (score + alarms + KPIs). Reads only; produces no data.' : 'Komuta merkezi — tüm suite’i toplar (skor + alarm + KPI). Sadece okur; veri üretmez.'}
       currency={currency} onCurrency={setCurrency}
-      crossLink={{ label: en ? 'Scorecard detail →' : 'Skorkart detayı →', onClick: () => onSelectRep?.('muhasebe__8') }}
+      crossLink={{ label: en ? 'Scorecard detail →' : 'Skorkart detayı →', onClick: () => onSelectRep?.('muhasebe__7') }}
     >
       {/* 6 above-the-fold KPI — tıklanabilir drill-down */}
       <KPIBand>

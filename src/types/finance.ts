@@ -7,7 +7,6 @@ export type PeriodType = 'annual' | 'quarter';
 export type ViewMode = 'absolute' | 'yoy' | 'pct';
 export type OrderMode = 'newestLeft' | 'newestRight';
 export type InflationMethod = 'nominal' | 'ias29';
-export type PartnerId = 'abdulhamit' | 'ahmet' | 'hasan';
 
 export interface FinancialPeriod {
   id: string;          // 'A2025' benzeri benzersiz kimlik
@@ -34,24 +33,6 @@ export interface StatementGroup {
   id: string;
   labelKey: string;
   lines: StatementLine[];
-}
-
-/** Temettü olayı (§7) — beyan / ödeme; distributionId ile gruplu. */
-export interface DividendEvent {
-  id: string;
-  partnerId: PartnerId;
-  type: 'beyan' | 'odeme';
-  date: string;            // ISO YYYY-MM-DD
-  amountTRY: number;
-  fxRate?: number;
-  distributionId?: string;
-  note?: string;
-}
-
-export interface Partner {
-  id: PartnerId;
-  name: string;            // 3 ortak (gerçek isim — brief §1 istisnası)
-  pct: number;
 }
 
 /** Audit / değişiklik geçmişi girişi (§2). */

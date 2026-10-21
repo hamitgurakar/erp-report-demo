@@ -9,7 +9,6 @@ import type { DcfSettings, BaseMetric } from '../../constants/dcfData';
 import { dcfDefaults, BASE_BY_METRIC, DCF_SHARES } from '../../constants/dcfData';
 import { runDcf, scenarioWeighted, reverseDcf, projectCashflows, sensitivityMatrix } from '../../lib/finance/dcfEngine';
 import { useDcf } from '../../context/DcfContext';
-import { PARTNERS } from '../../constants/financeData';
 import { supabase } from '../../lib/supabase';
 import {
   ReportPageLayout, KPIBand, KPICard, ChartCard, AIAlertPanel, StatusBadge, InfoTip, Dropdown, type FinAlert,
@@ -48,8 +47,8 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
   const [scenarioName, setScenarioName] = useState('');
   const [loadName, setLoadName] = useState('');
 
-  const partnerName = (id: string) => PARTNERS.find((p) => p.id === id)?.name ?? id;
-  const partnerIdx = (id: string) => { const i = PARTNERS.findIndex((p) => p.id === id); return i < 0 ? 999 : i; };
+  // Ortak adları/payları repoda tutulmuyor — görünen ad Supabase'deki partner_id'den türetilir.
+  const partnerLabel = (id: string) => id.charAt(0).toLocaleUpperCase('tr-TR') + id.slice(1);
 
   // ── Cap table — Supabase (public.cap_table_evolution, en güncel dönem) ──
   // Ortaklık yüzdeleri artık mock'ta değil; DLOM sonrası özkaynağı buradan böleriz.
@@ -88,10 +87,10 @@ export const DcfCalculator = ({ t, l, lang, onSelectRep }: FinancePageProps) => 
   const latestPeriod = capRows.reduce((mx, r) => (r.period > mx ? r.period : mx), '');
   const capTableView = capRows
     .filter((r) => r.period === latestPeriod)
-    .sort((a, b) => partnerIdx(a.partner_id) - partnerIdx(b.partner_id))
+    .sort((a, b) => Number(b.share_pct) - Number(a.share_pct) || a.partner_id.localeCompare(b.partner_id))
     .map((r) => ({
       partnerId: r.partner_id,
-      name: partnerName(r.partner_id).split(' ')[0],
+      name: partnerLabel(r.partner_id),
       pct: Number(r.share_pct),
       value: res.equityAfterDLOM * (Number(r.share_pct) / 100),
     }));

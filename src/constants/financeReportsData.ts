@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // Finans Suite — sayfa-özel demo veri (P0 seed).
-// financeData.ts (multi-period) ve temettü dataset'i KAYNAK-of-truth'tur; burada
+// financeData.ts (multi-period) KAYNAK-of-truth'tur; burada
 // yalnızca sayfaların türetemediği ek demo alanlar mock'lanır. Deterministik,
 // gerçekçi TR isim/tutarları. Değerler TRY tabanında; USD = değer / fxRate.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -237,23 +237,6 @@ export const footballField: { ranges: FFRange[]; current: number; aiFairValue: n
   aiFairValue: 7.1,
 };
 
-// ── SAYFA 8 — Yatırım & Ortak Getirisi ──────────────────────────────────────
-// partnerReturns / PartnerReturn KALDIRILDI — veri artık Supabase'ten gelir
-// (public.ortak_getirisi). Kaynak dosyada tutulmuyor (bundle sızması/güvenlik).
-
-// capTableEvolution / CapTableSnapshot KALDIRILDI — veri artık Supabase'ten gelir
-// (public.cap_table_evolution). HASSAS ortaklık yüzdeleri kaynak dosyada tutulmuyor.
-
-/** DuPont 5-faktör (ROE ayrıştırması). */
-export interface DuPontFactor { key: Bi; value: number; unit: string }
-export const dupontFactors: DuPontFactor[] = [
-  { key: { tr: 'Vergi Yükü', en: 'Tax Burden' }, value: 0.75, unit: 'x' },
-  { key: { tr: 'Faiz Yükü', en: 'Interest Burden' }, value: 0.82, unit: 'x' },
-  { key: { tr: 'Faaliyet Marjı', en: 'Operating Margin' }, value: 14.2, unit: '%' },
-  { key: { tr: 'Aktif Devir', en: 'Asset Turnover' }, value: 1.35, unit: 'x' },
-  { key: { tr: 'Özkaynak Çarpanı', en: 'Equity Multiplier' }, value: 2.10, unit: 'x' },
-];
-
 // ── SAYFA 9 — Finansal Sağlık Skorkartı ─────────────────────────────────────
 export interface ScoreCategory { key: Bi; score: number; grade: string; weight: number; trend: 'up' | 'down' | 'flat' }
 export const scorecardCategories: ScoreCategory[] = [
@@ -262,9 +245,8 @@ export const scorecardCategories: ScoreCategory[] = [
   { key: { tr: 'Finansal Sağlık', en: 'Financial Health' }, score: 74, grade: 'B', weight: 15, trend: 'flat' },
   { key: { tr: 'Sermaye Verimliliği', en: 'Capital Efficiency' }, score: 81, grade: 'A', weight: 13, trend: 'up' },
   { key: { tr: 'Büyüme', en: 'Growth' }, score: 79, grade: 'B', weight: 12, trend: 'up' },
-  { key: { tr: 'Ortak Getirisi', en: 'Shareholder Returns' }, score: 72, grade: 'B', weight: 10, trend: 'flat' },
-  { key: { tr: 'Değerleme', en: 'Valuation' }, score: 58, grade: 'C', weight: 8, trend: 'down' },
-  { key: { tr: 'Yönetim Kalitesi', en: 'Management Quality' }, score: 70, grade: 'B', weight: 8, trend: 'flat' },
+  { key: { tr: 'Değerleme', en: 'Valuation' }, score: 58, grade: 'C', weight: 13, trend: 'down' },
+  { key: { tr: 'Yönetim Kalitesi', en: 'Management Quality' }, score: 70, grade: 'B', weight: 13, trend: 'flat' },
 ];
 export const compositeScore = { score: 74, grade: 'B' };
 
@@ -285,7 +267,6 @@ export const moduleHealth: ModuleHealth[] = [
   { moduleKey: 'tax', module: { tr: 'Vergi & Uyum', en: 'Tax & Compliance' }, score: 71, grade: 'B', trend: 'flat', openAlerts: 1, repKey: 'muhasebe__4' },
   { moduleKey: 'leverage', module: { tr: 'Borçluluk', en: 'Leverage' }, score: 73, grade: 'B', trend: 'down', openAlerts: 1, repKey: 'muhasebe__5' },
   { moduleKey: 'valuation', module: { tr: 'Değerleme', en: 'Valuation' }, score: 58, grade: 'C', trend: 'flat', openAlerts: 0, repKey: 'muhasebe__6' },
-  { moduleKey: 'returns', module: { tr: 'Ortak Getirisi', en: 'Shareholder Returns' }, score: 72, grade: 'B', trend: 'flat', openAlerts: 0, repKey: 'yonetim__6' },
 ];
 
 export interface RollupAlert {

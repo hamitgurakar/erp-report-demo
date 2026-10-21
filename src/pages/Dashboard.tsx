@@ -57,7 +57,6 @@ import { Payables as FinPayables } from './finance/payables/Payables';
 import { TaxCompliance } from './finance/tax-compliance/TaxCompliance';
 import { Leverage } from './finance/leverage/Leverage';
 import { Valuation } from './finance/valuation/Valuation';
-import { ShareholderReturns } from './finance/shareholder-returns/ShareholderReturns';
 import { Scorecard } from './finance/scorecard/Scorecard';
 import { CfoCockpit } from './finance/cfo-cockpit/CfoCockpit';
 import { CashFlowOps } from './finance/cash-flow-ops/CashFlowOps';
@@ -107,8 +106,7 @@ export default function Dashboard() {
     'yonetim__3': db.l.yonetimHedefler,
     'yonetim__4': db.l.finansalVeriler,
     'yonetim__5': db.l.dcfCalculator,
-    'yonetim__6': db.l.mhFin7,
-    'yonetim__7': db.l.yonetimAyarlar,
+    'yonetim__6': db.l.yonetimAyarlar,
     'satis__0': db.l.satisOzeti,
     'satis__1': db.l.satisRaporu,
     'satis__2': db.l.pipelineAnalizi,
@@ -140,10 +138,9 @@ export default function Dashboard() {
     'muhasebe__4': db.l.mhFin4,
     'muhasebe__5': db.l.mhFin5,
     'muhasebe__6': db.l.mhFin6,
-    'muhasebe__7': db.l.mhFin7,
-    'muhasebe__8': db.l.mhFin8,
-    'muhasebe__9': db.l.mhFin9,
-    'muhasebe__10': db.l.mhFin10,
+    'muhasebe__7': db.l.mhFin8,
+    'muhasebe__8': db.l.mhFin9,
+    'muhasebe__9': db.l.mhFin10,
   };
   const toolbarTitle = db.isPanel
     ? (db.activePanelName ?? '')
@@ -195,7 +192,7 @@ export default function Dashboard() {
             onChangeAcct={db.setAcct}
             dateRange={db.dateRange}
             setDateRange={db.setDateRange}
-            hideAccount={db.activeRep === 'yonetim__4' || db.activeRep === 'yonetim__5' || db.activeRep === 'yonetim__6' || db.activeRep === 'yonetim__7' || db.activeRep.startsWith('muhasebe__')}
+            hideAccount={db.activeRep === 'yonetim__4' || db.activeRep === 'yonetim__5' || db.activeRep === 'yonetim__6' || db.activeRep.startsWith('muhasebe__')}
           />
 
           <div style={{ padding: '5px 24px', fontSize: 11, color: db.t.tx3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -224,8 +221,6 @@ export default function Dashboard() {
             ) : db.activeRep === 'yonetim__5' ? (
               <DcfCalculator {...kp} />
             ) : db.activeRep === 'yonetim__6' ? (
-              <ShareholderReturns {...kp} />
-            ) : db.activeRep === 'yonetim__7' ? (
               <AdminSettings t={db.t} l={db.l} lang={db.lang} />
             ) : db.activeRep === 'satis__0' ? (
               <SalesOverview {...kp} />
@@ -308,12 +303,10 @@ export default function Dashboard() {
             ) : db.activeRep === 'muhasebe__6' ? (
               <Valuation {...kp} />
             ) : db.activeRep === 'muhasebe__7' ? (
-              <ShareholderReturns {...kp} />
-            ) : db.activeRep === 'muhasebe__8' ? (
               <Scorecard {...kp} />
-            ) : db.activeRep === 'muhasebe__9' ? (
+            ) : db.activeRep === 'muhasebe__8' ? (
               <CfoCockpit {...kp} />
-            ) : db.activeRep === 'muhasebe__10' ? (
+            ) : db.activeRep === 'muhasebe__9' ? (
               <CashFlowOps {...kp} />
             ) : (
               <>

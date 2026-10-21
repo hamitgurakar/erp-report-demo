@@ -6,7 +6,7 @@ import {
 import type { FinancialPeriod, FinCurrency, PeriodType, ViewMode, OrderMode, ComputeCtx, FinSource } from '../../../types/finance';
 import {
   PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, INCOME_ROWS, netIncomeOf, TOTAL_SHARES,
-  divSumInPeriod, dividendEventsSeed, LINE_LABELS, expenseRaw, EXPENSE_TREE,
+  LINE_LABELS, expenseRaw, EXPENSE_TREE,
 } from '../../../constants/financeData';
 import { segmentProfitability, marginBridgePVM } from '../../../constants/financeReportsData';
 import {
@@ -31,8 +31,6 @@ const resolveIncome = (p: FinancialPeriod): Record<string, number | null> => {
     revenue: raw.revenue ?? null,
     netIncome: netIncomeOf(p.id),
     shares: TOTAL_SHARES,
-    divDeclared: divSumInPeriod(dividendEventsSeed, p, 'beyan'),
-    divPaid: divSumInPeriod(dividendEventsSeed, p, 'odeme'),
   };
   for (const row of INCOME_ROWS) resolved[row.key] = row.compute ? row.compute(ctx) : (raw[row.key] ?? null);
   return resolved;

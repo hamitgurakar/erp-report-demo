@@ -296,16 +296,8 @@ export const FIN_TERMS: Record<string, { tr: string; en: string }> = {
   dcfBase: { tr: 'DCF Baz Senaryo Değeri: 25/50/25 ağırlıklı beklenen indirgenmiş nakit akışı değeri.', en: 'DCF Base Value: 25/50/25 probability-weighted discounted-cash-flow value.' },
   dlom: { tr: 'DLOM: Pazarlanabilirliğin göreli yokluğunu yansıtan iskonto (~%25, özel şirket).', en: 'DLOM: Discount for lack of marketability (~25%, private company).' },
   terminalGrowth: { tr: 'Terminal Büyüme: DCF sonsuz dönem büyüme oranı (WACC altında, ≈GSYİH).', en: 'Terminal Growth: DCF perpetuity growth rate (below WACC, ≈GDP).' },
-  // ── Yatırım & Ortak Getirisi (SAYFA 8) ──
-  roe: { tr: 'ROE (Özkaynak Kârlılığı): Net Kâr / Ortalama Özkaynak. Yüksek iyi.', en: 'ROE: Net Income / Average Equity. Higher is better.' },
-  roic: { tr: 'ROIC (Yatırılan Sermaye Getirisi): NOPAT / Yatırılan Sermaye (maddi). WACC ile kıyaslanır.', en: 'ROIC: NOPAT / Invested Capital (tangible). Compared against WACC.' },
-  roa: { tr: 'ROA (Aktif Kârlılığı): Net Kâr / Ortalama Varlık. Yüksek iyi.', en: 'ROA: Net Income / Average Assets. Higher is better.' },
-  dividendCoverage: { tr: 'Temettü Karşılama: Net Kâr (veya FCF) / Temettü. >1.5x iyi.', en: 'Dividend Coverage: Net Income (or FCF) / Dividends. >1.5x good.' },
-  tsr: { tr: 'TSR (Toplam Hissedar Getirisi): (Değer artışı + Temettü) / Başlangıç değeri.', en: 'TSR: (Value appreciation + Dividends) / Starting value.' },
-  eva: { tr: 'EVA (Ekonomik Katma Değer): (ROIC − WACC) × Yatırılan Sermaye. >0 değer yaratır. Burada reel bazda WACC kullanılır.', en: 'EVA: (ROIC − WACC) × Invested Capital. >0 creates value. Uses a real-terms WACC here.' },
-  dupont: { tr: 'DuPont ROE Ayrıştırması: Vergi Yükü × Faiz Yükü × Faaliyet Marjı × Aktif Devir × Özkaynak Çarpanı.', en: 'DuPont ROE: Tax Burden × Interest Burden × Operating Margin × Asset Turnover × Equity Multiplier.' },
   // ── Finansal Sağlık Skorkartı (SAYFA 9) ──
-  healthComposite: { tr: 'Kompozit Sağlık Skoru: 8 kategorinin ağırlıklı ortalaması (0-100). Kritik kategori F ise en fazla C. Harf: A≥85, B70, C55, D40, F<40.', en: 'Composite Health Score: Weighted average of 8 categories (0-100). Capped at C if a critical category is F. Grades: A≥85, B70, C55, D40, F<40.' },
+  healthComposite: { tr: 'Kompozit Sağlık Skoru: 7 kategorinin ağırlıklı ortalaması (0-100). Kritik kategori F ise en fazla C. Harf: A≥85, B70, C55, D40, F<40.', en: 'Composite Health Score: Weighted average of 8 categories (0-100). Capped at C if a critical category is F. Grades: A≥85, B70, C55, D40, F<40.' },
   altmanZ: { tr: 'Altman Z-Score: 1.2·(İşl.Serm/Aktif)+1.4·(Dağ.Kâr/Aktif)+3.3·(EBIT/Aktif)+0.6·(Özk.PD/Borç)+1.0·(Hasılat/Aktif). Z>2.99 Güvenli, 1.81-2.99 Gri, <1.81 Tehlike.', en: 'Altman Z-Score: 1.2·(WC/TA)+1.4·(RE/TA)+3.3·(EBIT/TA)+0.6·(MktEq/Liab)+1.0·(Sales/TA). >2.99 Safe, 1.81-2.99 Grey, <1.81 Distress.' },
   piotroskiF: { tr: 'Piotroski F-Score (0-9): Kârlılık (4) + kaldıraç/likidite (3) + operasyonel verim (2) kriteri. 8-9 güçlü.', en: 'Piotroski F-Score (0-9): Profitability (4) + leverage/liquidity (3) + operating efficiency (2). 8-9 strong.' },
   beneishM: { tr: 'Beneish M-Score: Kâr manipülasyonu adli göstergesi. < −2.22 düşük manipülasyon riski.', en: 'Beneish M-Score: Earnings-manipulation forensic score. < −2.22 low manipulation risk.' },

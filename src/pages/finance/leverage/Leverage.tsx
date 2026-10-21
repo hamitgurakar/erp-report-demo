@@ -6,7 +6,7 @@ import {
 import type { FinancialPeriod, FinCurrency, PeriodType, OrderMode, ComputeCtx } from '../../../types/finance';
 import {
   PERIODS_ANNUAL, PERIODS_QUARTER, incomeRaw, balanceRaw, BALANCE_ROWS, INCOME_ROWS,
-  netIncomeOf, TOTAL_SHARES, divSumInPeriod, dividendEventsSeed,
+  netIncomeOf, TOTAL_SHARES,
 } from '../../../constants/financeData';
 import { waccInputs, fxPosition } from '../../../constants/financeReportsData';
 import { loansSeed } from '../../../constants/loansData';
@@ -39,7 +39,6 @@ const resolveRows = (rows: typeof BALANCE_ROWS, store: Record<string, Record<str
   const ctx: ComputeCtx = {
     get: (k) => resolved[k] ?? null, raw,
     revenue: incomeRaw[p.id]?.revenue ?? null, netIncome: netIncomeOf(p.id), shares: TOTAL_SHARES,
-    divDeclared: divSumInPeriod(dividendEventsSeed, p, 'beyan'), divPaid: divSumInPeriod(dividendEventsSeed, p, 'odeme'),
   };
   for (const row of rows) resolved[row.key] = row.compute ? row.compute(ctx) : (raw[row.key] ?? null);
   return resolved;

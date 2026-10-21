@@ -6,7 +6,7 @@ import {
 import type { FinancialPeriod, ComputeCtx } from '../../../types/finance';
 import {
   PERIODS_ANNUAL, incomeRaw, balanceRaw, cashflowRaw, BALANCE_ROWS, INCOME_ROWS, CASHFLOW_ROWS,
-  netIncomeOf, TOTAL_SHARES, divSumInPeriod, dividendEventsSeed,
+  netIncomeOf, TOTAL_SHARES,
 } from '../../../constants/financeData';
 import { scorecardCategories, riskModels } from '../../../constants/financeReportsData';
 import {
@@ -30,7 +30,7 @@ const compositeScore = (() => {
 // Drill-down eşlemesi
 const DRILL: Record<string, string> = {
   'Değerleme': 'muhasebe__6', 'Büyüme': 'muhasebe__0', 'Karlılık': 'muhasebe__0', 'Finansal Sağlık': 'muhasebe__5',
-  'Nakit-Likidite': 'muhasebe__1', 'Sermaye Verimliliği': 'muhasebe__1', 'Ortak Getirisi': 'yonetim__6', 'Yönetim Kalitesi': 'muhasebe__0',
+  'Nakit-Likidite': 'muhasebe__1', 'Sermaye Verimliliği': 'muhasebe__1', 'Yönetim Kalitesi': 'muhasebe__0',
 };
 const SUBMETRIC: Record<string, { tr: string; en: string; bench: string }> = {
   'Değerleme': { tr: 'EV/EBITDA, F/K peer’a göre', en: 'EV/EBITDA, P/E vs peers', bench: 'Peer medyan' },
@@ -39,7 +39,6 @@ const SUBMETRIC: Record<string, { tr: string; en: string; bench: string }> = {
   'Finansal Sağlık': { tr: 'Kaldıraç + likidite + Altman Z', en: 'Leverage + liquidity + Altman Z', bench: 'Z>2.99' },
   'Nakit-Likidite': { tr: 'FCF marjı, cari/quick, runway', en: 'FCF margin, current/quick, runway', bench: 'Quick≥1.0' },
   'Sermaye Verimliliği': { tr: 'ROIC, CCC, aktif devir', en: 'ROIC, CCC, asset turnover', bench: 'ROIC>WACC' },
-  'Ortak Getirisi': { tr: 'TSR, temettü karşılama, EVA', en: 'TSR, dividend coverage, EVA', bench: 'EVA>0' },
   'Yönetim Kalitesi': { tr: 'Kâr kalitesi, Piotroski F, Beneish M', en: 'Earnings quality, Piotroski F, Beneish M', bench: 'F≥7' },
 };
 
@@ -49,7 +48,6 @@ const resolveRows = (rows: typeof BALANCE_ROWS, store: Record<string, Record<str
   const ctx: ComputeCtx = {
     get: (k) => resolved[k] ?? null, raw,
     revenue: incomeRaw[p.id]?.revenue ?? null, netIncome: netIncomeOf(p.id), shares: TOTAL_SHARES,
-    divDeclared: divSumInPeriod(dividendEventsSeed, p, 'beyan'), divPaid: divSumInPeriod(dividendEventsSeed, p, 'odeme'),
   };
   for (const row of rows) resolved[row.key] = row.compute ? row.compute(ctx) : (raw[row.key] ?? null);
   return resolved;
@@ -94,7 +92,7 @@ export const Scorecard = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
 
   const beneishM = riskModels.find((r) => r.model.tr.includes('Beneish'))?.value ?? -1.9;
 
-  // ── KPI: 8 kategori ──
+  // ── KPI: 7 kategori ──
   const gradeColor = (g: string) => (g === 'A' ? t.gn : g === 'B' ? t.pr : g === 'C' ? t.am : g === 'D' ? t.co : t.rd);
   const kpis = scorecardCategories.map((c) => ({
     title: c.key[en ? 'en' : 'tr'], value: `${c.score} · ${gradeOf(c.score)}`,
@@ -142,8 +140,8 @@ export const Scorecard = ({ t, l, lang, onSelectRep }: FinancePageProps) => {
   return (
     <ReportPageLayout
       t={t} lang={lang} title={l.mhFin8}
-      subtitle={en ? 'Composite health from 8 categories fed by pages P1–P8; the scoring definition lives here (single source).' : '8 kategoriden kompozit sağlık — P1–P8’den beslenir; hesaplama tanımı burada (tek yer).'}
-      crossLink={{ label: en ? 'CFO Cockpit →' : 'CFO Kokpiti →', onClick: () => onSelectRep?.('muhasebe__9') }}
+      subtitle={en ? 'Composite health from 7 categories fed by pages P1–P7; the scoring definition lives here (single source).' : '7 kategoriden kompozit sağlık — P1–P7’den beslenir; hesaplama tanımı burada (tek yer).'}
+      crossLink={{ label: en ? 'CFO Cockpit →' : 'CFO Kokpiti →', onClick: () => onSelectRep?.('muhasebe__8') }}
     >
       {/* Kompozit skor başlık */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 4, flexWrap: 'wrap', alignItems: 'stretch' }}>

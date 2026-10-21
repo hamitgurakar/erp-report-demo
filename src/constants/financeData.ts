@@ -1,15 +1,8 @@
 // Finans — Katman A mock verisi (docs/finance-brief.md). Deterministik.
 // Değerler TRY tabanında; USD = değer / period.fxRate. Çok-dönem: 6 yıl (annual) + 8 çeyrek.
-import type {
-  FinancialPeriod, FinSource, DividendEvent, Partner, PartnerId,
-} from '../types/finance';
+import type { FinancialPeriod, FinSource } from '../types/finance';
 
-// ── Ortaklar / Cap table (§1) ───────────────────────────────────────────────
-export const PARTNERS: Partner[] = [
-  { id: 'abdulhamit', name: 'Abdülhamit Gürakar', pct: 35 },
-  { id: 'ahmet', name: 'Ahmet Üreme', pct: 35 },
-  { id: 'hasan', name: 'Hasan Topalakcı', pct: 30 },
-];
+// ── Sermaye (§1) ─────────────────────────────────────────────────────────────
 export const TOTAL_SHARES = 20_000_000;
 export const REGISTERED_CAPITAL = 20_000_000;
 
@@ -231,45 +224,6 @@ const buildBalance = (): Store => {
 };
 export const balanceRaw: Store = buildBalance();
 
-// ── Temettü olayları (§7) — gerçek beyan kayıtları + tam ödeme event'leri ────
-type DivRow = { date: string; rate: number; ahmet: number; hasan: number; abdulhamit: number };
-const DIV_ROWS: DivRow[] = [
-  { date: '2020-12-31', rate: 7.36, ahmet: 233450, hasan: 200100, abdulhamit: 233450 },
-  { date: '2021-12-31', rate: 13.28, ahmet: 262500, hasan: 225000, abdulhamit: 262500 },
-  { date: '2022-12-31', rate: 18.70, ahmet: 1100000, hasan: 942900, abdulhamit: 1100000 },
-  { date: '2023-12-31', rate: 29.42, ahmet: 233000, hasan: 200000, abdulhamit: 233000 },
-  { date: '2024-04-01', rate: 32.21, ahmet: 490000, hasan: 400000, abdulhamit: 490000 },
-  { date: '2024-05-13', rate: 32.21, ahmet: 350000, hasan: 300000, abdulhamit: 350000 },
-  { date: '2024-12-31', rate: 35.27, ahmet: 3500000, hasan: 3000000, abdulhamit: 3500000 },
-  { date: '2025-01-03', rate: 35.36, ahmet: 385000, hasan: 330000, abdulhamit: 385000 },
-  { date: '2025-12-31', rate: 42.85, ahmet: 1166900, hasan: 1000000, abdulhamit: 1166900 },
-];
-const buildDividends = (): DividendEvent[] => {
-  const out: DividendEvent[] = [];
-  DIV_ROWS.forEach((row, i) => {
-    const distId = `D${String(i + 1).padStart(2, '0')}`;
-    (['ahmet', 'hasan', 'abdulhamit'] as PartnerId[]).forEach((pid) => {
-      const amt = row[pid];
-      out.push({ id: `${distId}-${pid}-b`, partnerId: pid, type: 'beyan', date: row.date, amountTRY: amt, fxRate: row.rate, distributionId: distId });
-      // geçmiş beyanlar tam ödenmiş (aynı tarih/kur)
-      out.push({ id: `${distId}-${pid}-o`, partnerId: pid, type: 'odeme', date: row.date, amountTRY: amt, fxRate: row.rate, distributionId: distId });
-    });
-  });
-  return out;
-};
-export const dividendEventsSeed: DividendEvent[] = buildDividends();
-
-// Dönem içi temettü toplamları (beyan/ödeme) — nakit akışı türetmesi için
-export const periodContainsDate = (p: FinancialPeriod, iso: string): boolean => {
-  const [y, m] = iso.split('-').map(Number);
-  if (p.type === 'annual') return String(y) === p.label;
-  const [py, pq] = p.label.split('/');
-  const q = Number(pq.replace('Q', ''));
-  return String(y) === py && Math.ceil(m / 3) === q;
-};
-export const divSumInPeriod = (events: DividendEvent[], p: FinancialPeriod, type: 'beyan' | 'odeme'): number =>
-  events.filter((e) => e.type === type && periodContainsDate(p, e.date)).reduce((s, e) => s + e.amountTRY, 0);
-
 const buildCashflow = (): Store => {
   const out: Store = {};
   for (const p of ALL_PERIODS) {
@@ -281,12 +235,11 @@ const buildCashflow = (): Store => {
     const cfWC = arChange + invChange + apChange + otherWCChange;
     const capex = -r1(rev * 0.06), invPurchaseSale = -r1(rev * 0.01), otherInvest = -r1(rev * 0.005);
     const borrowIn = r1(rev * 0.04), debtRepay = -r1(rev * 0.02), interestPaidCF = -r1(rev * 0.05);
-    const cfDivDefault = -divSumInPeriod(dividendEventsSeed, p, 'odeme');
     const fxEffect = r1(rev * 0.003);
     const taxPaid = incomeRaw[id].tax ?? 0;
     const operating = cfNet + cfDA + impairment + cfWC;
     const investing = capex + invPurchaseSale + otherInvest;
-    const financing = borrowIn + debtRepay + interestPaidCF + cfDivDefault;
+    const financing = borrowIn + debtRepay + interestPaidCF;
     const netChange = operating + investing + financing + fxEffect;
     const beginCash = (balanceRaw[id].cash ?? 0) - netChange;
     out[id] = { cfDA, impairment, arChange, invChange, apChange, otherWCChange, capex, invPurchaseSale, otherInvest, borrowIn, debtRepay, interestPaidCF, fxEffect, taxPaid, beginCash };
@@ -349,8 +302,6 @@ export interface ComputeCtx {
   revenue: number | null;
   netIncome: number;
   shares: number;
-  divDeclared: number;
-  divPaid: number;
 }
 export interface RowSpec {
   key: string;
@@ -395,8 +346,9 @@ export const INCOME_ROWS: RowSpec[] = [
   { key: 'effTax', source: 'computed', isMargin: true, compute: (c) => { const p = g(c, 'pretax'); return p ? (-g(c, 'tax') / p) * 100 : null; } },
   { key: 'eps', source: 'computed', compute: (c) => g(c, 'netIncome') / c.shares },
   { key: 'revenuePerShare', source: 'computed', compute: (c) => (c.revenue ?? 0) / c.shares },
-  { key: 'dps', source: 'computed', compute: (c) => c.divDeclared / c.shares },
-  { key: 'payout', source: 'computed', isMargin: true, compute: (c) => pct(c.divDeclared, g(c, 'netIncome')) },
+  // Temettü verisi repoda tutulmuyor → dps / payout 0.
+  { key: 'dps', source: 'computed', compute: () => 0 },
+  { key: 'payout', source: 'computed', isMargin: true, compute: () => 0 },
   { key: 'interestPaid', source: 'computed', memo: true, compute: (c) => g(c, 'interestExpense') },
 ];
 
@@ -460,7 +412,7 @@ export const CASHFLOW_ROWS: RowSpec[] = [
   { key: 'borrowIn', source: 'parasut' },
   { key: 'debtRepay', source: 'parasut' },
   { key: 'interestPaidCF', source: 'parasut' },
-  { key: 'cfDiv', source: 'computed', compute: (c) => -c.divPaid },  // temettü dataset'inden türetilir
+  { key: 'cfDiv', source: 'computed', compute: () => 0 },  // temettü verisi repoda tutulmuyor
   { key: 'financingCF', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'borrowIn') + g(c, 'debtRepay') + g(c, 'interestPaidCF') + g(c, 'cfDiv') },
   { key: 'fxEffect', source: 'manual' },
   { key: 'netChange', source: 'computed', isSubtotal: true, compute: (c) => g(c, 'operatingCF') + g(c, 'investingCF') + g(c, 'financingCF') + g(c, 'fxEffect') },
@@ -481,5 +433,4 @@ export const FIN_COUNTS = {
   balanceRows: BALANCE_ROWS.length,
   cashflowRows: CASHFLOW_ROWS.length,
   expenseCats: EXPENSE_TREE.length,
-  dividendEvents: dividendEventsSeed.length,
 };
