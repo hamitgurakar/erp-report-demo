@@ -1,60 +1,60 @@
 # Muhiku ERP Raporlama Modülü
 
 ## Proje Nedir?
-Muhiku, mid-market / SME+ segmentine hizmet veren all-in-one SaaS platformudur (ERP + CRM + CMS). Bu proje, ERP'nin raporlama modülünün frontend demo'sudur. Vercel'de yayında: https://erp-report-demo.vercel.app/
+Muhiku, mid-market / SME+ segmentine hizmet veren all-in-one SaaS platformudur (ERP + CRM + CMS). Bu proje, ERP'nin raporlama modülünün frontend demo'sudur.
+- **Canlı:** https://lab.mhkapp.com/erp (Vite `base: '/erp/'`, rewrite'lar `vercel.json`'da)
+- **Deploy:** Vercel — `main`'e push → otomatik prod deploy
+- **Portal:** Login ve oturum `muhiku-portal` tarafında; bu repo aynı Supabase projesini kullanır ve oturumu aynı origin üzerinden paylaşır. Kardeş projelere geçiş `ProjectSwitcher` ile.
 
 ## Tech Stack
-- **Vite + React** (TypeScript ağırlıklı, bazı dosyalar JSX)
+- **React 19 + TypeScript + Vite** (giriş: `src/main.jsx`, `src/App.jsx`; geri kalanı `.tsx`)
 - **Recharts** — tüm grafikler
-- **React Router** — sayfa navigasyonu
-- **Lucide React** — ikonlar
-- **CSS Modules veya inline styles** — stil yönetimi
-- **Deploy:** GitHub → Vercel (otomatik)
+- **react-gauge-component** — gauge'lar (`GaugeCard`)
+- **Supabase** (`@supabase/supabase-js`) — auth oturumu + rol + hassas veriler (`src/lib/supabase.ts`, env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, bkz. `.env.example`)
+- **Stil:** inline styles + tema objesi (`src/constants/theme.ts`, light/dark)
+- **İkonlar:** kendi `Icon` wrapper'ı (`src/components/ui/Icon.tsx`)
+- **i18n:** TR/EN (`src/i18n/` — `LanguageContext`, `tr.ts`, `en.ts`; eski `src/constants/i18n.ts` de hâlâ kullanılıyor)
+- **Navigasyon: state-tabanlı nav (React Router YOK).**
+  - Aktif rapor anahtarı `activeRep` (`<dept>__<index>`, örn. `satis__2`) → `src/hooks/useDashboard.ts`
+  - Departman/rapor listesi → `mkDeptReports` (`src/constants/data.ts`), rapor adları → `src/i18n/tr.ts` / `en.ts` (`sidebar.reports`)
+  - Anahtar → sayfa eşlemesi → `src/pages/Dashboard.tsx` içindeki render zinciri
 
-## Dosya Yapısı (33 dosya)
+## Dosya Yapısı (üst düzey)
 ```
 src/
-├── App.jsx                    # Router + ana layout
-├── main.jsx                   # Entry point
-├── Dashboard.tsx              # Ana dashboard wrapper
+├── App.jsx / main.jsx        # Giriş; App.jsx Dashboard + (yalnız DEV) DevAuthGate
+├── pages/
+│   ├── Dashboard.tsx         # Ana layout + activeRep → sayfa render zinciri + admin gate
+│   ├── management/           # Yönetim: DcfCalculator, AdminSettings
+│   ├── finance/              # Muhasebe/Finans suite (her sayfa kendi klasöründe) + FinancialData, LoansTab
+│   ├── procurement/          # Satın Alma sayfaları
+│   └── support/              # Destek sayfaları
 ├── components/
-│   ├── layout/
-│   │   ├── Header.tsx         # MUHIKU mega menü + Ara + TL/$ + refresh + Son 30 gün
-│   │   ├── Sidebar.tsx        # Sol tree navigasyon (Favori/Özel/Raporlar)
-│   │   └── Toolbar.tsx        # Sayfa başlığı + filtre barı
-│   ├── ui/
-│   │   ├── KPICard.tsx        # Metrik kartı (sparkline + trend + TL/% toggle)
-│   │   ├── PinMenu.tsx        # Panolarıma ekle hover menüsü
-│   │   ├── Spark.tsx          # Mini sparkline grafiği
-│   │   ├── Icon.tsx           # İkon wrapper
-│   │   ├── FilterBar.tsx      # Kategori/Alt Kategori/Ürün/Kanal + Filtre Uygula
-│   │   ├── ChartContainer.tsx # Chart wrapper (hover pin + export)
-│   │   ├── SectionHeader.tsx  # Teal bar + uppercase başlık + sağa uzanan gri çizgi
-│   │   ├── ExpandableTable.tsx# Sıralama + pagination + Excel export
-│   │   ├── ColumnManager.tsx  # Tablo kolon yönetimi
-│   │   └── ColumnPresetDropdown.tsx # Sütunlar: Varsayılan/Performans
-│   ├── charts/
-│   │   ├── WaterfallChart.tsx # P&L waterfall
-│   │   ├── HealthScore.tsx    # Sağlık skoru gauge
-│   │   └── AlertsPanel.tsx    # Uyarı kartları
-│   ├── sections/              # Yönetim dashboard section'ları
-│   │   ├── GeneralSection.tsx
-│   │   ├── RevenueSection.tsx
-│   │   ├── StrategicSection.tsx
-│   │   ├── DepartmentSection.tsx
-│   │   ├── CashFlowSection.tsx
-│   │   └── DebtSection.tsx
-│   ├── kategori/              # Kategori departmanı sayfaları
-│   │   ├── CategoryOverview.tsx
-│   │   ├── CategoryPerformance.tsx
-│   │   ├── CategoryStock.tsx
-│   │   ├── CategoryBrand.tsx
-│   │   └── CategoryABC.tsx
-│   └── shared/
-│       ├── ChatAssistant.tsx  # AI FAB + sağ slide-over panel
-│       ├── PanelView.tsx      # Panel görünüm wrapper
-│       └── DatePicker.tsx     # Tarih seçici (preset + takvim)
+│   ├── finance/              # Finans suite shared component'leri (index.ts'ten import edilir)
+│   ├── ui/                   # Genel UI: SectionHeader, ExpandableTable, FilterBar, ChartContainer, AccessGate…
+│   ├── kpi/                  # Eski KPICard + PinMenu (Yönetim Özet Rapor / Satış / Kategori)
+│   ├── layout/               # Header, Sidebar, Toolbar
+│   ├── sections/             # Yönetim Özet Rapor section'ları + category/ (Kategori sayfaları)
+│   ├── satis/                # Satış sayfaları
+│   ├── yonetim/              # ManagementTargets
+│   ├── charts/ chat/ panels/ # Waterfall/HealthScore/AlertsPanel, ChatAssistant, PanelView/DatePicker
+│   └── ProjectSwitcher.tsx
+├── constants/                # Mock data (*Data.ts), theme, IMPLEMENTED_REPORTS, taxConfig…
+├── lib/                      # supabase.ts + finance/ hesap motorları (cashflow, dcf, loan, recurring)
+├── auth/                     # RoleContext (rol/admin), DevAuthGate (yalnız DEV)
+├── context/ hooks/ i18n/ types/ utils/format.ts
+docs/                         # Departman brief'leri (finance, finance-suite, cashflow, PROCUREMENT, support-suite)
+supabase/migrations/          # RLS'li tablo migration'ları (Supabase'de elle çalıştırılır)
 ```
+`hamit-erp-report.tsx` (repo kökü) eski tek-dosya prototiptir; build'e dahil değil, dokunma.
+
+## Shared Component'ler
+**Finans suite seti — `src/components/finance` (`import { … } from '../../components/finance'`)** — yeni sayfalarda öncelikli:
+`ReportPageLayout`, `KPIBand`, `KPICard`, `ChartCard`, `AIAlertPanel`, `StatusBadge`, `SourceBadge`, `ChangePct`, `InfoTip`, `MiniChartPopover`, `Dropdown`, `CurrencyToggle`, `Waterfall`, `GaugeCard`, `TahsilatTrendChart`, `RecurringModal`, `OccurrenceDialog`
+
+**Genel UI — `src/components/ui`:** `SectionHeader`, `ChartContainer`, `ExpandableTable`, `ColumnManager`, `ColumnPresetDropdown`, `FilterBar`, `Spark`, `Icon`, `AccessGate` (`RoleLoading`, `AccessDenied`)
+
+**Diğer:** `kpi/KPICard` + `kpi/PinMenu` (eski KPI kartı), `charts/` (`WaterfallChart`, `HealthScore`, `AlertsPanel`), `chat/ChatAssistant`, `panels/` (`PanelView`, `DatePicker`), `layout/` (`Header`, `Sidebar`, `Toolbar`)
 
 ## Tasarım Sistemi (Muhiku DNA)
 
@@ -106,89 +106,51 @@ src/
 - Chip'ler: Aktif filtreler chip olarak gösterilir
 
 ## Tamamlanan Sayfalar
+- **Yönetim (5, admin-only):** Özet Rapor, Toplam Hedefler, Finansal Veriler, DCF Calculator, Ayarlar (admin e-posta yönetimi)
+- **Satış (12):** Yönetici Özeti, Gelir & Karlılık, Pipeline & Deal, Uzman Performans, Müşteri & Segment, Ürün & Kategori, Sezonsal & Zaman, AI Sales Coach, İletişim & Aktivite, Forecasting, Hedefler, Tahsilat
+- **Kategori (5):** Kategori Özeti, Performans Analizi, Stok & Envanter, Marka Analizi, ABC / Portföy Analizi
+- **Satın Alma (9):** Yönetici Özeti, Tedarikçi, Satın Alma Operasyonu, Uzman Performans, Proje Fiyatlama, Maliyet, Karlılık, Borçluluk, Stok & İkmal
+- **Muhasebe (10):** Gelir & Karlılık, Nakit & Likidite, Alacak Yönetimi, Borç Yönetimi, Vergi & Uyum, Borçluluk & Sermaye, Değerleme, Finansal Skorkart, CFO Kokpiti, Nakit Akışı
+- **Destek (7):** Destek Genel Bakış, Ticket Analizi, SLA Performansı, Ekip Raporu, Çağrı Merkezi, Kanal Raporu, Nedenler
 
-### 1. Yönetim (Özet Rapor) ✅
-- Genel Performans (10 KPI kart)
-- Satış Geliri ve Karlılık (grouped bar + donut + area chart)
-- P&L Waterfall
-- Stratejik Sağlık & Uyarılar (health score gauge + alert kartları)
-- Departman Özeti (6 kart sparkline'lı)
-- Nakit Akış Özeti (grouped bar + tahsilat line chart)
-- Borçluluk (KPI'lar + borç dağılımı + nakit detay)
+Henüz yok (Yakında): Yönetim > Finansal Sağlık, Büyüme Analizi; Operasyon (tümü); Pazarlama (tümü).
 
-### 2. Yönetim > Finansal Sağlık ✅
-### 3. Yönetim > Büyüme Analizi ✅
-
-### 4. Kategori > Kategori Özeti ✅
-- 12 KPI kart + Kategori Bazlı Ciro (horizontal bar) + Aylık Ciro Trendi
-- Stok Sağlığı Dağılımı (donut) + ABC Özet + Kategori Uyarıları
-- Ürün Bazlı Net Marj % (stacked bar) + Stok Sağlığı Segmentleri
-- Stok Değeri & Olaylar + Verimlilik: Devir & Elde Tutma
-- Fiyatlama & İskonto Bütünlüğü + Kanal Performans Kırılımı
-- Satış Hız Endeksi + Kategori Karar Matrisi (bubble chart)
-- Top/Bottom 5 Performans & Kritik Riskler
-
-### 5. Kategori > Performans Analizi ✅
-- Filtre barı (Kategori > Alt Kategori > Ürün > Kanal)
-- Performans tablosu (siralama + renk kodlama + sparkline trend)
-- Kategori Karlılık Matrisi (bubble chart)
-- Ciro & Marj Trendi (combo chart) + Ciro Payı Değişim Tablosu
-- Aylık Ciro Trendi (multi-line, kategori bazlı)
-
-### 6. Kategori > Stok & Envanter ✅
-- Stok Sağlığı Dağılımı + Stok Devir Trendi
-- Stok Yaşlanma Analizi (stacked bar) + Stok vs Satış Hızı (scatter)
-- Kritik Stok Tablosu (durum badge + aksiyon butonları)
-- Stok Verimsizlik Analizi + Verimsiz Ürünler Tablosu
-
-### 7. Kategori > Marka Analizi ✅
-- Top 20 Marka (horizontal bar) + Marka Büyüme Matrisi (bubble)
-- Marka Performans Tablosu (sıralama + Excel export)
-
-### 8. Kategori > ABC / Portföy Analizi ✅
-- ABC Pareto chart + ABC Geçiş Matrisi (3x3 grid, renkli)
-- Ürün Hayat Döngüsü (bubble: Yeni → Büyüyen → Olgun → Düşüşte)
-- Aksiyon Önerileri Tablosu
-
-## Sidebar Navigasyon Yapısı
+## Sidebar Yapısı
+Tanım: `src/components/layout/Sidebar.tsx` (render), `mkDeptReports` + `IMPLEMENTED_REPORTS` + `isAdminOnlyReport` (`src/constants/data.ts`), rapor adları `src/i18n/tr.ts` / `en.ts`.
 ```
-⭐ FAVORİ RAPORLAR
-  📊 Özet Rapor (yıldız ile favorilenen)
-  📊 Pipeline Analizi
-
-📋 ÖZEL RAPORLAR
-  📊 Haftalık Kontrolüm (düzenlenebilir)
-  📊 CFO Görünümü
-
+⭐ FAVORİ RAPORLAR     # favs state'i (useDashboard), yıldızla eklenir
+📋 ÖZEL RAPORLAR       # panels state'i (Haftalık Kontrolüm, CFO Görünümü…), PanelView ile açılır
 📁 RAPORLAR
-  📂 Yönetim
-    ├── Özet Rapor ⭐
-    ├── Finansal Sağlık
-    └── Büyüme Analizi
-  📂 Satış (SIRADAKI — BU DEPARTMANI OLUŞTURACAĞIZ)
-    ├── Kategori
-    │   ├── Kategori Özeti
-    │   ├── Performans Analizi
-    │   ├── Stok & Envanter
-    │   ├── Marka Analizi
-    │   └── ABC / Portföy Analizi
-    ├── (Satış Executive Overview — YENİ)
-    ├── (Gelir & Karlılık — YENİ)
-    ├── (Pipeline & Deal — YENİ)
-    ├── ...
-  📂 Satın Alma
-  📂 Operasyon
-  📂 Muhasebe
-  📂 Pazarlama
-  📂 Müşteri Destek
+  Yönetim      (yalnız admin)
+  Satış
+  Kategori
+  Satın Alma
+  Operasyon    (Yakında)
+  Muhasebe
+  Pazarlama    (Yakında)
+  Destek
 ```
+**"Yakında" rozeti kuralı:** Veri/sayfa karşılığı olmayan her link "Yakında" rozetiyle, tıklanamaz ve soluk gösterilir. Bu otomatiktir: `IMPLEMENTED_REPORTS`'ta olmayan her anahtar Yakında'dır. Yeni sayfa bağlanınca anahtarını bu set'e ekle; boş/placeholder sayfaya link açma.
+
+## Veri & Yetki
+- **Varsayılan: mock data** (`src/constants/*Data.ts`). Gerçekçi Türkçe bağlam (TL, Türk firmaları).
+- **Hassas veri** (ortaklık/pay bilgisi, isim–pay eşleşmesi, gerçek finansal tutarlar) mock, seed, migration veya koda **ASLA hardcode edilmez**; Supabase'den RLS ile okunur. Migration'lar yalnız şema + RLS policy içerir, veri içermez.
+- **Admin yetkisi:** `admin_emails` allowlist tablosu + `public.is_admin()` (RLS policy'lerinde) ve `public.is_current_user_admin()` (client RPC, `src/auth/RoleContext.tsx`).
+- **Yönetim yalnız admin'e görünür, FAIL-CLOSED:** oturum yok / RPC hata / rol yüklenmedi → admin değil. Menü yalnız `roleLoaded && isAdmin` iken gösterilir; admin-only sayfa için `RoleLoading` / `AccessDenied` (`Dashboard.tsx`).
+- **RLS asıl kilittir; client gate sadece UX'tir.** Client tarafı gizlemeye güvenip RLS'siz tablo/veri ekleme.
+- **Login:** Prod login akışı portal'dadır — dokunma. Localhost'ta yalnız DEV modda `DevAuthGate` (`import.meta.env.DEV` guard'ı, prod bundle'a girmez) ile dev-login yapılır.
 
 ## Geliştirme Kuralları
-1. **Mevcut component'ları kullan:** KPICard, SectionHeader, ChartContainer, ExpandableTable, FilterBar, Spark — bunlar zaten var, yeniden yazma.
-2. **Aynı tasarım dilini koru:** Teal section bar, mor butonlar, yeşil/kırmızı trend renkleri.
-3. **Recharts kullan:** Tüm grafikler Recharts ile. D3 veya Chart.js kullanma.
-4. **Mock data:** Gerçekçi Türkçe veriler kullan (firma isimleri, TL para birimi, Türkiye bağlamı).
-5. **Responsive değil:** Desktop-first, 1440px genişlik optimize.
-6. **Dosya isimlendirme:** PascalCase, .tsx uzantısı.
-7. **Her sayfa tek dosya:** Section'ları ayrı component yapma (Kategori'de yaptığımız gibi).
-8. **Sidebar'a otomatik ekle:** Yeni sayfa oluşturulunca Sidebar.tsx'e ve App.jsx router'a ekle.
+1. **Önce brief'i oku:** İş bir brief'e referans veriyorsa (veya ilgili departmanın brief'i varsa) önce `docs/` altındaki brief'i oku; spec'i oradan al.
+2. **Mevcut component'ları kullan:** Yeni sayfalarda `components/finance` setini (ReportPageLayout, KPIBand, ChartCard, AIAlertPanel…) ve `components/ui`'ı kullan — yeniden yazma.
+3. **Aynı tasarım dilini koru:** Teal section bar, mor butonlar, yeşil/kırmızı trend renkleri.
+4. **Recharts kullan:** Tüm grafikler Recharts ile (gauge hariç: react-gauge-component). D3 veya Chart.js kullanma.
+5. **Mock data:** Gerçekçi Türkçe veriler; hassas veri için "Veri & Yetki" kurallarına uy.
+6. **Responsive değil:** Desktop-first, 1440px genişlik optimize (sayfalar sabit kolonlu grid kullanır).
+7. **Dosya isimlendirme:** PascalCase, .tsx uzantısı.
+8. **Her sayfa tek dosya:** Section'ları ayrı component yapma.
+9. **Yeni sayfa bağlama:** rapor adı → `src/i18n/tr.ts` + `en.ts` (`sidebar.reports`); render dalı + başlık (`repTitles`) → `src/pages/Dashboard.tsx`; anahtar → `IMPLEMENTED_REPORTS` (`src/constants/data.ts`).
+10. **Kapsam dışına dokunma:** Yalnız istenen dosya/sayfa üzerinde çalış; ilgisiz refactor, format veya "iyileştirme" yapma.
+11. **Build temiz:** Her iş sonunda `npm run build` hatasız geçmeli.
+12. **Belirsizlikte sor:** Spec, veri kaynağı veya kapsam net değilse varsayım yapmadan sor.
+13. **Commit/push'u kullanıcı yapar:** Commit veya push atma (main push = prod deploy).
