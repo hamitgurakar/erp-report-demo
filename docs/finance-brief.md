@@ -11,16 +11,13 @@
 2. **Tek gerçek kaynak = ERP.** Paraşüt, Finekra, Sheet, Coupler (marketing) — hepsi günün sonunda ERP'ye raporlar. ERP'de olmayan veriyi kullanıcı **Manuel alanlar**dan doldurur.
 3. **Global para birimi toggle: TRY / USD.** Fintables'taki gibi sayfanın tamamında geçerli tek bir `currency` seçici (üst barda). TRY girişleri çeyrek/dönem kuru ile USD'ye çevrilir. **İstisna: Peers/Rakip Analizi sadece USD** (peer'lar farklı ülke borsalarında, kafa karışmasın).
 4. **Ölçek referansı:** ~2,5M ₺ aylık gelir bandı (demo geneli).
-5. **Mock isim politikası:** gerçek çalışan/müşteri adı YOK, jenerik kullan. İstisna: 3 ortak gerçek isim (aşağıda).
+5. **Mock isim politikası:** gerçek çalışan/müşteri/ortak adı YOK, jenerik kullan.
 6. **Kullanıcının dağınık Sheet yapısı kopyalanmaz.** Sıfırdan doğru veri modeli, temiz satır/sütun, doğru gösterim tasarlanır.
 
 ## 1. Sermaye Yapısı (Cap Table)
 
 - **20.000.000 hisse**, **20.000.000 ₺ kayıtlı sermaye** (1 ₺ nominal/hisse).
-- 3 ortak:
-  - **Abdülhamit Gürakar** — 7.000.000 hisse — **%35**
-  - **Ahmet Üreme** — 7.000.000 hisse — **%35**
-  - **Hasan Topalakcı** — 6.000.000 hisse — **%30**
+- Ortak listesi ve pay oranları **repoda tutulmaz**; Supabase `cap_table_evolution` tablosundan (RLS, yalnız admin) okunur.
 - Her çeyrek sonu kullanıcı **1 hisse fiyatı** girer → market cap, tüm çarpanlar, ortak-bazlı değer otomatik hesaplanır.
 
 ## 2. Üç Katmanlı Mimari
@@ -34,7 +31,6 @@ Kullanıcının her çeyrek dolduracağı yer. Tab'lar (global currency toggle'a
 | Bilanço (Balance Sheet) | Dönen/duran varlıklar, KV/UV yükümlülükler, özkaynak, net borç |
 | Nakit Akışı (Cash Flow) | İşletme / yatırım / finansman faaliyetleri, FCF |
 | Gider Ağacı (Expense Tree) | Toggle ile açılan kalemler — aşağıda detay |
-| Ortak Getirisi (Temettü) | Kişi × Tarih × Ödenecek × Kur × Ödenen × Bakiye |
 | Meta / Ayarlar | Dönem kuru (USD/TRY), enflasyon düzeltme yöntemi (nominal / IAS 29), **1 hisse fiyatı** |
 
 **Kaynak rozetleri** (her satır/alan):
@@ -47,7 +43,7 @@ Kullanıcının her çeyrek dolduracağı yer. Tab'lar (global currency toggle'a
 ### Katman B — Analiz & Görselleştirme (Yatırımcı-gözü)
 Doldurulan veri buraya akar. Alt sayfalar:
 
-1. **Özet / Genel Bakış** — fair value gauge (girilen fiyat vs AI adil değer, upside %), 8-kategori scorecard, cap table donut (Abdülhamit %35 / Ahmet %35 / Hasan %30)
+1. **Özet / Genel Bakış** — fair value gauge (girilen fiyat vs AI adil değer, upside %), 7-kategori scorecard, cap table donut (veri Supabase'den)
 2. **Finansallar** — gelir tablosu waterfall/Sankey, çeyreklik trend barlar, detaylı tablolar (income statement / balance sheet / cash flow)
 3. **Değerleme** — çarpanlar (F/K, PD/DD, FD/FAVÖK, FD/Satış, PEG) tarihsel bant + AI senaryo (Ayı %25 / Baz %50 / Boğa %25) + WACC×büyüme duyarlılık matrisi + revizyon geçmişi
 4. **Peers / Rakip Analizi** — 4 peer + metrik heatmap (**SADECE USD**)
@@ -79,7 +75,7 @@ Gelir ve gider = tüm mali tabloların çatısı. "Finansal Veriler > Gider Ağa
 
 Her kalem: değer girilebilir/editlenebilir, **Kaydet** butonu, değişiklik logu, log'a geri dönüş. Global currency toggle'a tabi.
 
-## 4. 8-Kategori Scorecard (Yatırımcı-gözü)
+## 4. 7-Kategori Scorecard (Yatırımcı-gözü)
 
 Her kategori peer setine göre **A–F harf notu** (Seeking Alpha mantığı; sektör yerine seçili peer grubu):
 
@@ -89,10 +85,9 @@ Her kategori peer setine göre **A–F harf notu** (Seeking Alpha mantığı; se
 4. **Finansal Sağlık** (Financial Health) — net borç, kaldıraç, borç/FAVÖK
 5. **Nakit / Likidite** (Cash & Liquidity) — FCF, cari oran, nakit dönüşüm
 6. **Sermaye Verimliliği** (Capital Efficiency) — ROE, ROIC, ROA
-7. **Ortak Getirisi** (Shareholder Return) — temettü, kâr payı
-8. **Yönetim Kalitesi** (Management Quality) — marj tutarlılığı, öngörü isabeti
+7. **Yönetim Kalitesi** (Management Quality) — marj tutarlılığı, öngörü isabeti
 
-> Not: 6, 7, 8 ayrı ayrı — kullanıcının açık tercihi ("bizimki farklı olsun"). Momentum yok (private company, çeyrekte tek fiyat).
+> Not: 6 ve 7 ayrı ayrı — kullanıcının açık tercihi ("bizimki farklı olsun"). Momentum yok (private company, çeyrekte tek fiyat).
 
 ## 5. Peers / Rakip Analizi (SADECE USD)
 
@@ -118,11 +113,9 @@ Her kategori peer setine göre **A–F harf notu** (Seeking Alpha mantığı; se
 - **Duyarlılık matrisi:** WACC × büyüme, heatmap, mevcut varsayım hücresi vurgulu.
 - **Revizyon geçmişi:** çeyrek bazlı adil değer değişim timeline'ı.
 
-## 7. Temettü / Ortak Getirisi
+## 7. (Kaldırıldı)
 
-Muhiku Temettü Sheet yapısı → temiz tabloya dönüştürülür:
-- Kişi (3 ortak) × Tarih × Ödenecek Tutar × Dönem Kuru × USD Tutar × Ödenen × Bakiye.
-- Raporda: ortak-bazlı temettü akışı, kümülatif bakiye, USD karşılık, ödeme geçmişi.
+Ortak Getirisi / temettü özelliği kapsamdan çıkarıldı; ortaklık ve temettü verisi repoda tutulmaz.
 
 ## 8. Nakit Akışı — Tam Kapsam (Katman C detay)
 
@@ -182,8 +175,8 @@ Her prompt sonrası: commit + `/clear` + `npm run build`.
 
 | # | Kapsam | Bağımlılık |
 |---|---|---|
-| F1 | Finansal Veriler giriş katmanı (3 tab + gider ağacı + temettü + meta + kaynak rozet + audit log + versiyonlama + global currency toggle) | — |
-| F2 | Özet + 8-kategori scorecard + fair value gauge + cap table donut | F1 |
+| F1 | Finansal Veriler giriş katmanı (3 tab + gider ağacı + meta + kaynak rozet + audit log + versiyonlama + global currency toggle) | — |
+| F2 | Özet + 7-kategori scorecard + fair value gauge + cap table donut | F1 |
 | F3 | Finansallar (waterfall/Sankey + çeyreklik trend + detaylı tablolar + tooltip) | F1 |
 | F4 | Değerleme + AI adil değer + senaryo + duyarlılık matrisi + revizyon | F1, F3 |
 | F5 | Peers / Rakip Analizi (SADECE USD, heatmap) | F4 |

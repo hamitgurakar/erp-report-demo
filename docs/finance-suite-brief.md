@@ -247,56 +247,29 @@ Tasarım, jenerik tavsiye değil **gerçek platform desenlerine** dayandırıld�
 
 ---
 
-# SAYFA 8 — YATIRIM & GETİRİ / ORTAK GETİRİSİ (Investment & Shareholder Returns)
+# SAYFA 8 — (Kaldırıldı)
 
-## KPI Kartları (8)
-1. **ROE / Özkaynak Kârlılığı %** — Net Kâr / Ort. Özkaynak. ↑ iyi.
-2. **ROIC / Yatırılan Sermaye Getirisi %** — NOPAT / Yatırılan Sermaye; WACC ile kıyas. ↑ iyi.
-3. **ROA / Aktif Kârlılığı %** — Net Kâr / Ort. Varlık. ↑ iyi.
-4. **Temettü Dağıtım Oranı / Payout %** — Temettü / Net Kâr. Denge.
-5. **Temettü Karşılama / Dividend Coverage** — Net Kâr (veya FCF) / Temettü. >1.5x iyi.
-6. **Hisse Başına Temettü (DPS)** — ↑ iyi.
-7. **TSR / Toplam Getiri %** — (Değer artışı + Temettü) / Başlangıç. ↑ iyi.
-8. **EVA / Ekonomik Kâr** — (ROIC − WACC) × Yatırılan Sermaye. >0 değer yaratır.
-
-## Grafik/Görselleştirmeler (6)
-1. **DuPont ROE Ağacı (5-faktör: Vergi Yükü × Faiz Yükü × Faaliyet Marjı × Aktif Devir × Özkaynak Çarpanı):** **Neden:** Wall Street Prep/Umbrex DuPont-tree standardı; ROE'yi operasyon/kaldıraç sürücülerine ayrıştırır.
-2. **Temettü Geçmişi Bar + Karşılama Çizgi:** **Neden:** Seeking Alpha dividend-history-with-coverage deseni.
-3. **TSR Köprüsü Waterfall (Kâr Büyümesi + Çarpan Değişimi + Temettü/Net Payout Getirisi):** **Neden:** Morgan Stanley/Umbrex TSR-decomposition deseni.
-4. **Ortak Bazında Getiri Stacked-Bar:** Abdülhamit Gürakar %35 / Ahmet Üreme %35 / Hasan Topalakcı %30. **Neden:** cap-table per-partner return deseni.
-5. **Cap Table Evrimi Stacked-Area:** pay dağılımı zaman içinde (20.000.000 hisse). **Neden:** Carta cap-table-evolution deseni.
-6. **ROIC vs WACC Trend Çizgi (spread):** **Neden:** value-creation/EVA deseni.
-
-## Tablo Spesifikasyonları (2)
-**Tablo 1 — Temettü Defteri:** Tarih | Dönem | Toplam Temettü | DPS | Payout % | Karşılama | Ortak Payları (₺). Row aksiyon: "Temettü Kaydı Ekle" modal (mevcut). Sıralama: tarih azalan.
-**Tablo 2 — Ortak Getiri Özeti:** Ortak | Pay % | Pay Adedi | Kümülatif Temettü | Bu Dönem | Toplam Getiri. Satırlar: 3 ortak + toplam.
-
-## AI Öneri/Uyarı Örnekleri
-- ✅ "ROIC %21 > WACC %17; şirket 4 pp pozitif spread ile değer yaratıyor (pozitif EVA)."
-- 🔵 **İzle:** "DuPont: ROE artışının çoğu özkaynak çarpanından (kaldıraç) geliyor, marjdan değil — kalıcılığı sorgulanmalı."
-- 🟠 **Uyarı:** "Payout %85; FCF karşılaması 1.1x'e düştü, temettü sürdürülebilirliği baskı altında."
-- 💡 "Hasan Topalakcı kümülatif ₺3.2M temettü aldı (%30 pay); dağıtım cap table ile tutarlı."
+Ortak Getirisi / temettü sayfası kapsamdan çıkarıldı; ortaklık ve temettü verisi repoda tutulmaz.
 
 ---
 
 # SAYFA 9 — FİNANSAL SAĞLIK SKORKARTI (Financial Health Scorecard)
 
-## KPI Kartları (8 kategori skoru; her biri 0-100 + harf notu A–F)
+## KPI Kartları (7 kategori skoru; her biri 0-100 + harf notu A–F)
 1. **Değerleme / Valuation** — çarpanlar peer'a göre; ucuz = yüksek skor.
 2. **Büyüme / Growth** — hasılat/FAVÖK/FCF CAGR (3 yıl).
 3. **Karlılık / Profitability** — marjlar + ROE/ROA.
 4. **Finansal Sağlık / Financial Health** — kaldıraç + likidite + Altman Z.
 5. **Nakit-Likidite / Cash-Liquidity** — FCF marjı, cari/quick, runway.
 6. **Sermaye Verimliliği / Capital Efficiency** — ROIC, CCC, aktif devir.
-7. **Ortak Getirisi / Shareholder Returns** — TSR, temettü karşılama, EVA.
-8. **Yönetim Kalitesi / Management Quality** — kâr kalitesi, Piotroski F, Beneish M, tahakkuk oranı.
+7. **Yönetim Kalitesi / Management Quality** — kâr kalitesi, Piotroski F, Beneish M, tahakkuk oranı.
 
 ## Grafik/Görselleştirmeler (6)
-1. **8-Kategori Radar/Örümcek (her eksen 0-100):** **Neden:** Fintables Karne + Seeking Alpha factor-grade radar deseni.
+1. **7-Kategori Radar/Örümcek (her eksen 0-100):** **Neden:** Fintables Karne + Seeking Alpha factor-grade radar deseni.
 2. **Altman Z-Score Gauge (Güvenli/Gri/Tehlike bantlı):** Z = 1.2·(İşl.Serm/Aktif) + 1.4·(Dağıtılmamış Kâr/Aktif) + 3.3·(EBIT/Aktif) + 0.6·(Özkaynak PD/Toplam Borç) + 1.0·(Hasılat/Aktif). **Neden:** Stock Rover Altman-Z gauge standardı (Edward Altman, NYU 1968); **Z>2.99 Güvenli, 1.81–2.99 Gri, <1.81 Tehlike** — Altman tehlike bölgesindeki firmaların %70+'sının 2 yıl içinde battığını bulmuştur.
 3. **Piotroski F-Score Bar (0-9, 9 kriter):** kârlılık(4)+kaldıraç/likidite(3)+operasyonel verim(2). **Neden:** Stockopedia/Quant-Investing F-score deseni; 8-9 güçlü.
 4. **Beneish M-Score Göstergesi (< −2.22 düşük manipülasyon riski):** **Neden:** earnings-manipulation forensic (Beneish 1999) deseni.
-5. **Kategori Skor Bar (8 kategori yatay, renk kodlu harf notu):** **Neden:** Seeking Alpha A+–F factor-grade deseni.
+5. **Kategori Skor Bar (7 kategori yatay, renk kodlu harf notu):** **Neden:** Seeking Alpha A+–F factor-grade deseni.
 6. **Kompozit Skor Trend Çizgi (son 10 dönem):** **Neden:** StockTitan financial-health-score trend deseni.
 
 ## Tablo Spesifikasyonları (2)
@@ -316,7 +289,7 @@ Tasarım, jenerik tavsiye değil **gerçek platform desenlerine** dayandırıld�
 Tüm alt sayfaların en kritik KPI+uyarılarını toplayan komuta merkezi. Kural: **4-6 KPI "above the fold", gerisi drill-down** (usedatabrain / Deloitte CFO Signals 2026 deseni; 25-KPI grid anti-pattern'inden kaçınılır).
 
 ## KPI Kartları (6, above-the-fold)
-1. **Kompozit Finansal Sağlık Skoru (0-100 + harf A-F)** — 8 kategori ağırlıklı.
+1. **Kompozit Finansal Sağlık Skoru (0-100 + harf A-F)** — 7 kategori ağırlıklı.
 2. **Nakit Pozisyonu + Runway** — likidite.
 3. **Hasılat Büyümesi & FAVÖK Marjı** — büyüme+kârlılık kombine kart.
 4. **Net Borç/EBITDA** — kaldıraç.
@@ -327,7 +300,7 @@ Tüm alt sayfaların en kritik KPI+uyarılarını toplayan komuta merkezi. Kural
 1. **Kompozit Sağlık Skoru Gauge/Donut + Harf Notu:** **Neden:** Calqulate/StockTitan financial-health-index gauge (speedometer) deseni.
 2. **13-Aylık Nakit Trend + 4 KPI kartı:** **Neden:** Mosaic/Pigment board-mode single-screen deseni.
 3. **Alarm Taksonomisi Isı Listesi (severity × modül):** **Neden:** Orbit Analytics RAG-tile alert deseni.
-4. **8-Kategori Mini Radar:** Skorkart özeti. **Neden:** yönetici radar deseni.
+4. **7-Kategori Mini Radar:** Skorkart özeti. **Neden:** yönetici radar deseni.
 5. **KPI Trend Sparkline Grid:** tüm ana metrikler. **Neden:** insightsoftware sparkline-trend deseni.
 
 ## Tablo Spesifikasyonları (2)
@@ -341,7 +314,7 @@ Tüm alt sayfaların en kritik KPI+uyarılarını toplayan komuta merkezi. Kural
 - ✅ **İyi / 💡 İpucu:** benchmark üstü performans, optimizasyon fırsatı (atıl nakit, vade yönetimi).
 
 ## Kompozit Finansal Sağlık Skoru Tasarımı
-0-100 ağırlıklı kompozit. Önerilen ağırlıklar (mid-market TR e-ticaret/perakende, nakit-öncelikli bağlam): **Nakit-Likidite %18, Karlılık %16, Finansal Sağlık %15, Sermaye Verimliliği %13, Büyüme %12, Ortak Getirisi %10, Değerleme %8, Yönetim Kalitesi %8.** Harf skalası: **A ≥85, B 70-84, C 55-69, D 40-54, F <40.** Gösterim: donut+gauge, orta metin harf notu, altında 8 kategori mini-bar. **Diskalifiye kuralı (Seeking Alpha deseni):** herhangi kritik kategori (Finansal Sağlık veya Nakit-Likidite) F ise kompozit en fazla C ile sınırlanır. Eksik veri kategorisi 0 sayılır (veri boşluğunun skoru şişirmesini önler — StockTitan deseni).
+0-100 ağırlıklı kompozit. Önerilen ağırlıklar (mid-market TR e-ticaret/perakende, nakit-öncelikli bağlam): **Nakit-Likidite %18, Karlılık %16, Finansal Sağlık %15, Sermaye Verimliliği %13, Büyüme %12, Değerleme %13, Yönetim Kalitesi %13.** Harf skalası: **A ≥85, B 70-84, C 55-69, D 40-54, F <40.** Gösterim: donut+gauge, orta metin harf notu, altında 7 kategori mini-bar. **Diskalifiye kuralı (Seeking Alpha deseni):** herhangi kritik kategori (Finansal Sağlık veya Nakit-Likidite) F ise kompozit en fazla C ile sınırlanır. Eksik veri kategorisi 0 sayılır (veri boşluğunun skoru şişirmesini önler — StockTitan deseni).
 
 ## AI Öneri/Uyarı Örnekleri
 - 🔴 "3 kritik alarm açık: Q1 geçici vergi nakit açığı, Yıldız Hediyelik 90+ alacak, faiz karşılama 2.1x. CFO onayı bekleniyor."
@@ -361,15 +334,14 @@ Tüm alt sayfaların en kritik KPI+uyarılarını toplayan komuta merkezi. Kural
 | Vergi & Uyum | Muhasebe / GİB & Paraşüt entegrasyonu | Gelir/Bilanço grid + e-belge statü | Tek vergi otoritesi bu sayfa; diğer sayfalar buraya link |
 | Borçluluk/Sermaye | Finansal Veriler > Bilanço | Net Borç/özkaynak grid'den | Bilanço kalemleri grid'de |
 | Değerleme | Finansal Veriler > Ayarlar (varsayımlar) | Tüm tablolar + comps seti | Comps/DCF varsayımları Ayarlar'da saklanır (tek yer) |
-| Yatırım/Ortak Getirisi | Finansal Veriler > Ortak Getirisi | Temettü defteri + cap table (mevcut) | Temettü kaydı tek yerde (mevcut "Temettü Kaydı Ekle" modal) |
-| Skorkart | Tüm sayfaları toplar | 8 kategori alt-sayfalardan besleme | Hesaplama tanımı tek yerde; sayfalar veri besler |
+| Skorkart | Tüm sayfaları toplar | 7 kategori alt-sayfalardan besleme | Hesaplama tanımı tek yerde; sayfalar veri besler |
 | CFO Kokpiti | Tüm sayfaların roll-up'ı | Skor + alarm + KPI | Sadece okur/link'ler; veri üretmez |
 | Category modülü | Category (ürün/kategori maliyet) | Segment karlılığı için ürün maliyeti Category'den | Ürün-bazlı marj Category'de; Finans segment/toplam seviyede kalır |
 
 ## Recommendations
 1. **Faz 1 — Temel (en hızlı değer):** Gelir/Karlılık, Nakit&Likidite, Alacak, Borç. Mevcut grid verisini kullanır. *Değişim eşiği:* grid API'si stabilse başla; değilse önce grid read-API'sini sabitle.
 2. **Faz 2 — Uyum:** Vergi&Uyum + e-belge statü. GİB/Paraşüt entegrasyonu gerektirir; 2026 takvimi (özellikle Q4 geçici vergi ve e-Defter berat) kritik. *Eşik:* Paraşüt/GİB connector canlı olduğunda.
-3. **Faz 3 — Analitik:** Borçluluk, Değerleme, Ortak Getirisi. Ayarlar'da varsayım altyapısı (WACC/ERP/DLOM/senaryo ağırlıkları) gerekir. *Eşik:* Ayarlar sekmesi varsayım şeması hazır olduğunda.
+3. **Faz 3 — Analitik:** Borçluluk, Değerleme. Ayarlar'da varsayım altyapısı (WACC/ERP/DLOM/senaryo ağırlıkları) gerekir. *Eşik:* Ayarlar sekmesi varsayım şeması hazır olduğunda.
 4. **Faz 4 — Üst katman:** Skorkart + CFO Kokpiti. Alt sayfalar bittiğinde besleme mantığıyla kurulur. *Eşik:* en az 6 alt sayfa canlı.
 5. **Prompt üretimi:** Her Claude Code prompt'u sayfa başına bu dokümandan kopyalanır — KPI formülleri + tablo kolonları/sıralama/badge + chart tipi/"Neden" + AI uyarı şablonu (emoji severity) hazır blok halindedir.
 6. **Kalibrasyon benchmark'ları (aksiyonu değiştirir):** Runway <12 ay → Faz 2'yi öne al (nakit kritik); Net Borç/EBITDA >3.5x → Borçluluk sayfası Faz 1'e çekilir; e-İrsaliye 10M TL eşiği aşıldıysa Vergi sayfası önceliklenir.
