@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   /** Proje başına tam URL override'ı — local'de birden fazla projeyi gezmek için. */
   readonly VITE_ERP_URL?: string
   readonly VITE_INFLUENCER_URL?: string
+  readonly VITE_MOCKUP_URL?: string
   readonly VITE_TAHSILAT_URL?: string
 }
 

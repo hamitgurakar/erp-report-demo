@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-type ProjectId = 'erp' | 'influencer' | 'tahsilat';
+type ProjectId = 'erp' | 'influencer' | 'mockup' | 'tahsilat';
 type ProjectStatus = 'live' | 'soon';
-type ProjectIcon = 'bar-chart' | 'rating' | 'coin';
+type ProjectIcon = 'bar-chart' | 'rating' | 'wand' | 'coin';
 
 interface Project {
   id: ProjectId;
@@ -42,6 +42,16 @@ const PROJECTS: Project[] = [
     icon: 'rating',
   },
   {
+    id: 'mockup',
+    name: 'Mockup Oluşturucu',
+    desc: 'Logolu ürün görselleri, AI ile saniyeler içinde',
+    status: 'live',
+    url: '/mockup',
+    iconBg: '#DB2777',
+    iconColor: '#FFFFFF',
+    icon: 'wand',
+  },
+  {
     id: 'tahsilat',
     name: 'Muhasebe Tahsilat',
     desc: 'Tahsilat takip ve alacak yönetimi',
@@ -63,6 +73,7 @@ const PORTAL_ORIGIN = import.meta.env.VITE_PORTAL_ORIGIN ?? 'https://lab.mhkapp.
 const URL_OVERRIDES: Record<ProjectId, string | undefined> = {
   erp: import.meta.env.VITE_ERP_URL,
   influencer: import.meta.env.VITE_INFLUENCER_URL,
+  mockup: import.meta.env.VITE_MOCKUP_URL,
   tahsilat: import.meta.env.VITE_TAHSILAT_URL,
 };
 
@@ -147,6 +158,14 @@ const ProjectGlyph = ({ icon, color }: { icon: ProjectIcon; color: string }) => 
           d="M17.5 12l1.24 2.5 2.76.4-2 1.95.47 2.75-2.47-1.3-2.47 1.3.47-2.75-2-1.95 2.76-.4L17.5 12z"
           fill={color}
         />
+      </svg>
+    );
+  }
+  if (icon === 'wand') {
+    return (
+      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 20l10-10" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M15 3l1.2 2.8L19 7l-2.8 1.2L15 11l-1.2-2.8L11 7l2.8-1.2L15 3z" fill={color} />
       </svg>
     );
   }
