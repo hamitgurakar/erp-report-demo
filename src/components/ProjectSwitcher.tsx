@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-type ProjectId = 'erp' | 'influencer' | 'mockup' | 'tahsilat';
+type ProjectId = 'erp' | 'influencer' | 'mockup' | 'owl' | 'tahsilat';
 type ProjectStatus = 'live' | 'soon';
-type ProjectIcon = 'bar-chart' | 'rating' | 'wand' | 'coin';
+type ProjectIcon = 'bar-chart' | 'rating' | 'wand' | 'owl' | 'coin';
 
 interface Project {
   id: ProjectId;
@@ -52,6 +52,16 @@ const PROJECTS: Project[] = [
     icon: 'wand',
   },
   {
+    id: 'owl',
+    name: 'Owl Copilot',
+    desc: 'Satış ve muhasebe için AI asistan, birleşik iletişim',
+    status: 'live',
+    url: '/owl',
+    iconBg: '#7C3AED',
+    iconColor: '#FFFFFF',
+    icon: 'owl',
+  },
+  {
     id: 'tahsilat',
     name: 'Muhasebe Tahsilat',
     desc: 'Tahsilat takip ve alacak yönetimi',
@@ -74,6 +84,7 @@ const URL_OVERRIDES: Record<ProjectId, string | undefined> = {
   erp: import.meta.env.VITE_ERP_URL,
   influencer: import.meta.env.VITE_INFLUENCER_URL,
   mockup: import.meta.env.VITE_MOCKUP_URL,
+  owl: import.meta.env.VITE_OWL_URL,
   tahsilat: import.meta.env.VITE_TAHSILAT_URL,
 };
 
@@ -166,6 +177,15 @@ const ProjectGlyph = ({ icon, color }: { icon: ProjectIcon; color: string }) => 
       <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M4 20l10-10" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
         <path d="M15 3l1.2 2.8L19 7l-2.8 1.2L15 11l-1.2-2.8L11 7l2.8-1.2L15 3z" fill={color} />
+      </svg>
+    );
+  }
+  if (icon === 'owl') {
+    return (
+      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 5l3 2.5h8L19 5v10a7 7 0 0 1-14 0V5z" fill={color} />
+        <circle cx="9.3" cy="12" r="2.4" fill="#7C3AED" />
+        <circle cx="14.7" cy="12" r="2.4" fill="#7C3AED" />
       </svg>
     );
   }
