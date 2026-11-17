@@ -61,16 +61,6 @@ const PROJECTS: Project[] = [
     iconColor: '#FFFFFF',
     icon: 'owl',
   },
-  {
-    id: 'tahsilat',
-    name: 'Muhasebe Tahsilat',
-    desc: 'Tahsilat takip ve alacak yönetimi',
-    status: 'soon',
-    url: '#',
-    iconBg: '#0D9488',
-    iconColor: '#FFFFFF',
-    icon: 'coin',
-  },
 ];
 
 const PORTAL_ORIGIN = import.meta.env.VITE_PORTAL_ORIGIN ?? 'https://lab.mhkapp.com';
