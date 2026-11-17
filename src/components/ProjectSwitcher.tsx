@@ -53,7 +53,7 @@ const PROJECTS: Project[] = [
   },
   {
     id: 'owl',
-    name: 'Owl Copilot',
+    name: 'Kuzgun Copilot',
     desc: 'Satış ve muhasebe için AI asistan, birleşik iletişim',
     status: 'live',
     url: '/owl',
